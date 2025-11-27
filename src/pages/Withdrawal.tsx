@@ -7,6 +7,7 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { useDemoMode } from "@/hooks/useDemoMode";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -28,54 +29,106 @@ export default function Withdrawal() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { settings } = usePlatformSettings();
+  const { realBalance, loading: balanceLoading } = useDemoMode();
   const [accountType, setAccountType] = useState<"real" | "crypto" | "bonus">("real");
   const [withdrawalType, setWithdrawalType] = useState<"BRL" | "USDT">("BRL");
   const [keyType, setKeyType] = useState<"cpf" | "cnpj" | "phone" | "email" | "random">("cpf");
   const [pixKey, setPixKey] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const quickAmounts = [150, 200, 300, 500];
 
-  // Mock balance data
+  // Use real balance from database
   const balances = {
-    real: 0,
-    crypto: 0,
-    bonus: 0,
+    real: realBalance,
+    crypto: 0, // TODO: Implement crypto balance
+    bonus: 0,  // TODO: Implement bonus balance
   };
 
   const handleWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
 
-    // Check verification status
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("verification_status")
-      .eq("user_id", user!.id)
-      .single();
+    try {
+      // Check verification status
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("verification_status, balance")
+        .eq("user_id", user!.id)
+        .single();
 
-    if (profile?.verification_status !== "approved") {
-      toast.error("Você precisa verificar sua identidade antes de fazer saques");
-      navigate("/verify-identity");
-      return;
-    }
+      if (profile?.verification_status !== "approved") {
+        toast.error("Você precisa verificar sua identidade antes de fazer saques");
+        navigate("/verify-identity");
+        return;
+      }
 
-    if (!pixKey.trim()) {
-      toast.error("Digite a chave PIX");
-      return;
+      if (!pixKey.trim()) {
+        toast.error("Digite a chave PIX");
+        return;
+      }
+      
+      const withdrawalAmount = parseFloat(amount);
+      
+      if (!amount || withdrawalAmount < settings.min_withdrawal) {
+        toast.error(`Valor mínimo de retirada é R$ ${settings.min_withdrawal.toFixed(2)}`);
+        return;
+      }
+      if (withdrawalAmount > settings.max_withdrawal) {
+        toast.error(`Valor máximo de retirada é R$ ${settings.max_withdrawal.toFixed(2)}`);
+        return;
+      }
+      if (withdrawalAmount > balances[accountType]) {
+        toast.error("Saldo insuficiente");
+        return;
+      }
+
+      // Create withdrawal transaction
+      const { error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: user!.id,
+          type: "withdrawal",
+          amount: withdrawalAmount,
+          status: "pending",
+          payment_method: withdrawalType === "BRL" ? "PIX" : "USDT",
+          notes: `Chave ${keyTypeLabels[keyType]}: ${pixKey}`,
+        });
+
+      if (transactionError) {
+        console.error("Error creating withdrawal transaction:", transactionError);
+        toast.error("Erro ao processar saque. Tente novamente.");
+        return;
+      }
+
+      // Deduct balance
+      const newBalance = (profile?.balance || 0) - withdrawalAmount;
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ balance: newBalance })
+        .eq("user_id", user!.id);
+
+      if (updateError) {
+        console.error("Error updating balance:", updateError);
+        toast.error("Erro ao atualizar saldo. Entre em contato com o suporte.");
+        return;
+      }
+
+      toast.success("Solicitação de saque enviada com sucesso!");
+      setAmount("");
+      setPixKey("");
+      
+      // Navigate to transactions page
+      setTimeout(() => {
+        navigate("/transactions");
+      }, 1500);
+    } catch (error) {
+      console.error("Error processing withdrawal:", error);
+      toast.error("Erro ao processar saque. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
     }
-    if (!amount || parseFloat(amount) < settings.min_withdrawal) {
-      toast.error(`Valor mínimo de retirada é R$ ${settings.min_withdrawal.toFixed(2)}`);
-      return;
-    }
-    if (parseFloat(amount) > settings.max_withdrawal) {
-      toast.error(`Valor máximo de retirada é R$ ${settings.max_withdrawal.toFixed(2)}`);
-      return;
-    }
-    if (parseFloat(amount) > balances[accountType]) {
-      toast.error("Saldo insuficiente");
-      return;
-    }
-    toast.success("Solicitação de saque enviada!");
   };
 
   const keyTypeLabels = {
@@ -249,9 +302,10 @@ export default function Withdrawal() {
                 type="submit"
                 className="w-full h-12 text-base font-semibold"
                 size="lg"
+                disabled={isSubmitting || balanceLoading}
               >
-                <span>Sacar</span>
-                <ArrowRight className="w-5 h-5 ml-2" />
+                <span>{isSubmitting ? "Processando..." : "Sacar"}</span>
+                {!isSubmitting && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
             </form>
           </div>
