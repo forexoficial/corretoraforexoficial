@@ -19,7 +19,7 @@ export const ChartDataManager = ({
   timeframe,
   onCurrentPriceUpdate
 }: ChartDataManagerProps) => {
-  const { chartRef, userId, setUserId, autoGenerateIntervalRef, candleCheckIntervalRef } = useChartContext();
+  const { chartRef, candleSeriesRef, userId, setUserId, autoGenerateIntervalRef, candleCheckIntervalRef } = useChartContext();
   const { settings: appearanceSettings } = useChartAppearance();
   
   const {
@@ -49,12 +49,20 @@ export const ChartDataManager = ({
     getUserId();
   }, [setUserId]);
 
-  // Load candles on mount
+  // Load candles when candleSeriesRef is ready
   useEffect(() => {
-    if (chartRef.current) {
-      loadCandles();
+    if (!candleSeriesRef.current) {
+      console.log('[ChartDataManager] Aguardando candleSeriesRef...');
+      return;
     }
-  }, [assetId, timeframe, chartRef, loadCandles]);
+    
+    console.log('[ChartDataManager] candleSeriesRef pronto, carregando candles...');
+    const timer = setTimeout(() => {
+      loadCandles();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [assetId, timeframe, candleSeriesRef, loadCandles]);
 
   // Load active trades when userId changes
   useEffect(() => {
