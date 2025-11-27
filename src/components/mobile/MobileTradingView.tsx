@@ -3,7 +3,6 @@ import { MobileTradingHeader } from "./MobileTradingHeader";
 import { MobileChartView } from "./MobileChartView";
 import { MobileTradingControls } from "./MobileTradingControls";
 import PlatformPopup from "@/components/PlatformPopup";
-import { VictoryCelebration } from "@/components/VictoryCelebration";
 import { TradeResultPopup } from "@/components/TradeResultPopup";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -30,8 +29,6 @@ export function MobileTradingView({
 }: MobileTradingViewProps) {
   const [selectedAsset, setSelectedAsset] = useState<Asset>(initialAsset);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
-  const [showVictoryCelebration, setShowVictoryCelebration] = useState(false);
-  const [victoryData, setVictoryData] = useState<{ amount: number; profit: number }>({ amount: 0, profit: 0 });
   const [finishedTrade, setFinishedTrade] = useState<{
     id: string;
     status: 'won' | 'lost';
@@ -132,16 +129,6 @@ export function MobileTradingView({
               amount: trade.amount,
               asset_name: asset?.name
             });
-            
-            // Also show victory celebration if won
-            if (trade.status === 'won') {
-              const profit = trade.result || 0;
-              setVictoryData({
-                amount: trade.amount,
-                profit: profit
-              });
-              setShowVictoryCelebration(true);
-            }
           }
         )
         .subscribe();
@@ -189,14 +176,6 @@ export function MobileTradingView({
       <TradeResultPopup
         trade={finishedTrade}
         onClose={() => setFinishedTrade(null)}
-      />
-
-      {/* Victory Celebration */}
-      <VictoryCelebration
-        show={showVictoryCelebration}
-        amount={victoryData.amount}
-        profit={victoryData.profit}
-        onComplete={() => setShowVictoryCelebration(false)}
       />
     </>
   );
