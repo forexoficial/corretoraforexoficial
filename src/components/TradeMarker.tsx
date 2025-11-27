@@ -176,8 +176,8 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
 
   return (
     <div 
-      className={`absolute right-0 flex items-center gap-1 md:gap-2 px-1.5 md:px-3 py-1 md:py-1.5 rounded-l-lg transition-all duration-500 ease-out max-w-[95vw] md:max-w-none ${
-        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      className={`absolute left-0 flex items-center gap-1 md:gap-2 px-1.5 md:px-3 py-1 md:py-1.5 rounded-r-lg transition-all duration-500 ease-out max-w-[95vw] md:max-w-none ${
+        isVisible ? 'translate-x-0 opacity-100' : '-translate-x-full opacity-0'
       }`}
       style={{ 
         pointerEvents: 'none',
@@ -189,7 +189,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
             : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.25) 100%)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderLeft: isCriticalTime
+        borderRight: isCriticalTime
           ? `4px solid #eab308`
           : `4px solid ${isCall ? '#10b981' : '#ef4444'}`,
         boxShadow: isCriticalTime
