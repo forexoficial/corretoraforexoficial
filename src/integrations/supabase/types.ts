@@ -1200,6 +1200,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      process_single_expired_trade: {
+        Args: { p_trade_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user"
