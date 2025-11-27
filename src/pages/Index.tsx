@@ -24,9 +24,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileTradingView } from "@/components/mobile/MobileTradingView";
 import { usePersistentPlatformState } from "@/hooks/usePersistentPlatformState";
 import { useFullscreen } from "@/hooks/useFullscreen";
-import { TradeResultPopup } from "@/components/TradeResultPopup";
 import { PriceLineSettings, PriceLineConfig } from "@/components/PriceLineSettings";
-import { VictoryCelebration } from "@/components/VictoryCelebration";
 
 interface Asset {
   id: string;
@@ -52,9 +50,6 @@ const Index = () => {
   const [user, setUser] = useState<any>(null);
   const [currentPrice, setCurrentPrice] = useState<number>(100);
   const [currentAssetId, setCurrentAssetId] = useState<string | null>(null);
-  const [finishedTrade, setFinishedTrade] = useState<any>(null);
-  const [showVictoryCelebration, setShowVictoryCelebration] = useState(false);
-  const [victoryData, setVictoryData] = useState<{ amount: number; profit: number }>({ amount: 0, profit: 0 });
   
   // Price Line configuration
   const [priceLineConfig, setPriceLineConfig] = useState<PriceLineConfig>(() => {
@@ -178,34 +173,6 @@ const Index = () => {
                   is_demo_mode: profile.is_demo_mode
                 }
               }));
-            }
-            
-            // Get asset name
-            const { data: asset } = await supabase
-              .from('assets')
-              .select('name')
-              .eq('id', trade.asset_id)
-              .single();
-
-            console.log('[Index] Preparando notificação de resultado...');
-
-            // Show notification with trade result
-            setFinishedTrade({
-              id: trade.id,
-              status: trade.status,
-              result: trade.result,
-              amount: trade.amount,
-              asset_name: asset?.name
-            });
-
-            // Show victory celebration if won
-            if (trade.status === 'won') {
-              const profit = trade.result || 0;
-              setVictoryData({
-                amount: trade.amount,
-                profit: profit
-              });
-              setShowVictoryCelebration(true);
             }
           }
         }
@@ -544,20 +511,6 @@ const Index = () => {
         </div>
       </DialogContent>
     </Dialog>
-
-    {/* Trade Result Popup */}
-    <TradeResultPopup 
-      trade={finishedTrade}
-      onClose={() => setFinishedTrade(null)}
-    />
-
-    {/* Victory Celebration */}
-    <VictoryCelebration
-      show={showVictoryCelebration}
-      amount={victoryData.amount}
-      profit={victoryData.profit}
-      onComplete={() => setShowVictoryCelebration(false)}
-    />
     </>
   );
 };
