@@ -100,7 +100,7 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   watermark_text: null,
   trade_line_call_color: '#22c55e',
   trade_line_put_color: '#ef4444',
-  trade_line_width: 2,
+  trade_line_width: 12,
   trade_line_style: 2,
   trade_line_show_label: true,
 };
@@ -1299,19 +1299,22 @@ export default function AdminChartAppearance() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="trade_line_width">Espessura da Linha (1-5)</Label>
+            <Label htmlFor="trade_line_width">Espessura da Linha (1-20 pixels)</Label>
             <div className="flex items-center gap-4">
               <input
                 id="trade_line_width"
                 type="range"
                 min="1"
-                max="5"
+                max="20"
                 value={settings.trade_line_width}
                 onChange={(e) => setSettings({ ...settings, trade_line_width: parseInt(e.target.value) })}
                 className="flex-1"
               />
-              <span className="text-sm font-mono w-8 text-center">{settings.trade_line_width}px</span>
+              <span className="text-sm font-mono w-12 text-center">{settings.trade_line_width}px</span>
             </div>
+            <p className="text-xs text-muted-foreground">
+              Ajuste a espessura da linha de entrada do trade no gráfico. Valores maiores tornam a linha mais visível.
+            </p>
           </div>
 
           <div className="space-y-2">
