@@ -211,8 +211,8 @@ export function TradingViewChart({
         timeVisible: true,
         secondsVisible: false,
         rightOffset: 12,
-        barSpacing: 8,
-        minBarSpacing: 3,
+        barSpacing: 12,        // Espaçamento maior para candles mais visíveis
+        minBarSpacing: 6,      // Espaçamento mínimo maior para evitar candles minúsculos
         fixLeftEdge: false,
         fixRightEdge: false,
         lockVisibleTimeRangeOnResize: true,
@@ -374,15 +374,15 @@ export function TradingViewChart({
   const loadCandles = async () => {
     setIsLoading(true);
     try {
-      // Calcular quantos candles carregar baseado no timeframe
-      // Carregar aproximadamente 2 horas de dados históricos para cada timeframe
+      // Carregar quantidade otimizada de candles para cada timeframe
+      // Foco em histórico recente relevante para binary options
       const candleLimitMap: Record<string, number> = {
-        '10s': 720,  // 2 horas = 7200s / 10s = 720 candles
-        '30s': 240,  // 2 horas = 7200s / 30s = 240 candles
-        '1m': 120,   // 2 horas = 120 minutos
-        '5m': 24     // 2 horas = 24 candles de 5 minutos
+        '10s': 60,   // ~10 minutos de histórico
+        '30s': 60,   // ~30 minutos de histórico
+        '1m': 60,    // ~1 hora de histórico
+        '5m': 48     // ~4 horas de histórico
       };
-      const candleLimit = candleLimitMap[timeframe] || 120;
+      const candleLimit = candleLimitMap[timeframe] || 60;
 
       const { data: candles, error } = await supabase
         .from('candles')
@@ -738,14 +738,14 @@ export function TradingViewChart({
   };
 
   const getVisibleCandlesForTimeframe = (tf: string): number => {
-    // Otimizado para timeframes curtos de binary options
+    // Quantidade otimizada de candles visíveis para cada timeframe
     const map: Record<string, number> = {
-      '10s': 30,  // Show last 30 candles (~5 minutes)
-      '30s': 30,  // Show last 30 candles (~15 minutes)
-      '1m': 25,   // Show last 25 candles (~25 minutes)
-      '5m': 20    // Show last 20 candles (~1.7 hours)
+      '10s': 40,  // Show last 40 candles (~6-7 minutes) - melhor visualização
+      '30s': 35,  // Show last 35 candles (~17 minutes)
+      '1m': 30,   // Show last 30 candles (~30 minutes)
+      '5m': 24    // Show last 24 candles (~2 hours)
     };
-    return map[tf] || 25;
+    return map[tf] || 30;
   };
 
   const renderIndicators = (chartData: CandlestickData<Time>[]) => {
