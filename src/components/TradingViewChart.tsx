@@ -373,13 +373,23 @@ export function TradingViewChart({
   const loadCandles = async () => {
     setIsLoading(true);
     try {
+      // Calcular quantos candles carregar baseado no timeframe
+      // Carregar aproximadamente 2 horas de dados históricos para cada timeframe
+      const candleLimitMap: Record<string, number> = {
+        '10s': 720,  // 2 horas = 7200s / 10s = 720 candles
+        '30s': 240,  // 2 horas = 7200s / 30s = 240 candles
+        '1m': 120,   // 2 horas = 120 minutos
+        '5m': 24     // 2 horas = 24 candles de 5 minutos
+      };
+      const candleLimit = candleLimitMap[timeframe] || 120;
+
       const { data: candles, error } = await supabase
         .from('candles')
         .select('*')
         .eq('asset_id', assetId)
         .eq('timeframe', timeframe)
         .order('timestamp', { ascending: true })
-        .limit(1000);
+        .limit(candleLimit);
 
       if (error) {
         console.error('Error loading candles:', error);
