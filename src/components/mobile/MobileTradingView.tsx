@@ -53,6 +53,9 @@ export function MobileTradingView({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Track already processed trades to avoid duplicates
+      const processedTrades = new Set<string>();
+
       const channel = supabase
         .channel('mobile-trade-status-changes')
         .on(
@@ -66,22 +69,34 @@ export function MobileTradingView({
           async (payload) => {
             const trade = payload.new as any;
             
-            console.log('[MobileTradingView] Trade update:', {
+            console.log('[MobileTradingView] 📡 Trade update recebido:', {
               id: trade.id,
               status: trade.status,
-              old_status: payload.old?.status
+              old_status: payload.old?.status,
+              result: trade.result,
+              closed_at: trade.closed_at
             });
             
-            if ((trade.status === 'won' || trade.status === 'lost') && payload.old?.status === 'open') {
-              console.log('[MobileTradingView] 🎉 Trade FECHADO!', {
+            // Check if trade was just closed (won or lost)
+            // Use closed_at as reliable indicator that trade was finalized
+            const isTradeJustClosed = 
+              (trade.status === 'won' || trade.status === 'lost') && 
+              trade.closed_at && 
+              !processedTrades.has(trade.id);
+            
+            if (isTradeJustClosed) {
+              console.log('[MobileTradingView] 🎉 Trade FINALIZADA detectada!', {
+                id: trade.id,
                 status: trade.status,
                 result: trade.result,
-                amount: trade.amount,
-                is_demo: trade.is_demo
+                amount: trade.amount
               });
 
+              // Mark as processed to avoid duplicates
+              processedTrades.add(trade.id);
+
               // Force refresh balance
-              console.log('[MobileTradingView] 🔄 Forçando refresh do saldo...');
+              console.log('[MobileTradingView] 🔄 Atualizando saldo...');
               const { data: profile } = await supabase
                 .from('profiles')
                 .select('balance, demo_balance, is_demo_mode')
@@ -89,7 +104,7 @@ export function MobileTradingView({
                 .single();
 
               if (profile) {
-                console.log('[MobileTradingView] ✅ Saldos atualizados:', {
+                console.log('[MobileTradingView] ✅ Saldos obtidos:', {
                   demo: profile.demo_balance,
                   real: profile.balance
                 });
@@ -111,6 +126,8 @@ export function MobileTradingView({
                 .eq('id', trade.asset_id)
                 .single();
 
+              console.log('[MobileTradingView] 🎯 Exibindo popup de resultado...');
+              
               // Show result popup
               setFinishedTrade({
                 id: trade.id,
@@ -123,6 +140,7 @@ export function MobileTradingView({
               // Also show victory celebration if won
               if (trade.status === 'won') {
                 const profit = trade.result || 0;
+                console.log('[MobileTradingView] 🏆 Exibindo celebração de vitória!');
                 setVictoryData({
                   amount: trade.amount,
                   profit: profit
