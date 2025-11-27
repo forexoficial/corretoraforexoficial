@@ -6,7 +6,6 @@ import PlatformPopup from "@/components/PlatformPopup";
 import { VictoryCelebration } from "@/components/VictoryCelebration";
 import { TradeResultPopup } from "@/components/TradeResultPopup";
 import { supabase } from "@/integrations/supabase/client";
-import { useTradeExpiration } from "@/hooks/useTradeExpiration";
 
 interface Asset {
   id: string;
@@ -40,20 +39,6 @@ export function MobileTradingView({
     amount: number;
     asset_name?: string;
   } | null>(null);
-
-  // Get current user ID for trade expiration monitoring
-  const [userId, setUserId] = useState<string | undefined>();
-
-  useEffect(() => {
-    const getUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUserId(user?.id);
-    };
-    getUser();
-  }, []);
-
-  // Monitor and process expired trades
-  useTradeExpiration(userId);
 
   // Update local state when prop changes
   useEffect(() => {
