@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -7,7 +7,6 @@ import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
-import { useDemoMode } from "@/hooks/useDemoMode";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import {
@@ -29,22 +28,57 @@ export default function Withdrawal() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { settings } = usePlatformSettings();
-  const { realBalance, loading: balanceLoading } = useDemoMode();
   const [accountType, setAccountType] = useState<"real" | "crypto" | "bonus">("real");
   const [withdrawalType, setWithdrawalType] = useState<"BRL" | "USDT">("BRL");
   const [keyType, setKeyType] = useState<"cpf" | "cnpj" | "phone" | "email" | "random">("cpf");
   const [pixKey, setPixKey] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [balances, setBalances] = useState<Record<"real" | "crypto" | "bonus", number>>({
+    real: 0,
+    crypto: 0,
+    bonus: 0,
+  });
+  const [balanceLoading, setBalanceLoading] = useState(true);
 
   const quickAmounts = [150, 200, 300, 500];
 
-  // Use real balance from database
-  const balances = {
-    real: realBalance,
-    crypto: 0, // TODO: Implement crypto balance
-    bonus: 0,  // TODO: Implement bonus balance
-  };
+  useEffect(() => {
+    if (!user) {
+      setBalanceLoading(false);
+      return;
+    }
+
+    const loadBalance = async () => {
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("balance")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Error fetching profile balance for withdrawal:", error);
+          toast.error("Não foi possível carregar seu saldo para saque.");
+          return;
+        }
+
+        if (profile?.balance != null) {
+          setBalances((prev) => ({
+            ...prev,
+            real: Number(profile.balance),
+          }));
+        }
+      } catch (err) {
+        console.error("Unexpected error loading balance for withdrawal:", err);
+        toast.error("Erro ao carregar saldo para saque.");
+      } finally {
+        setBalanceLoading(false);
+      }
+    };
+
+    loadBalance();
+  }, [user]);
 
   const handleWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault();
