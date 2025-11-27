@@ -18,7 +18,7 @@ export function useTradeAlerts(userId: string | undefined, isDemoMode: boolean) 
 
   // Initialize alert sound
   useEffect(() => {
-    alertSound.current = new Audio('/sounds/alert.mp3');
+    alertSound.current = new Audio('/sounds/alert.MP3');
     alertSound.current.volume = 0.6;
   }, []);
 
