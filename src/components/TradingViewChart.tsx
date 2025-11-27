@@ -1117,11 +1117,12 @@ export function TradingViewChart({
     };
   }, [assetId, userId, loadActiveTrades]);
 
-  // Draw lines whenever activeTrades changes
+  // Draw lines whenever activeTrades changes OR timeframe/chart changes
   useEffect(() => {
     console.log('[UseEffect activeTrades] Trades ativos mudaram:', {
       count: activeTrades.length,
       hasCandleSeries: !!candleSeriesRef.current,
+      timeframe,
       trades: activeTrades.map(t => ({ id: t.id, price: t.entry_price, type: t.trade_type }))
     });
 
@@ -1146,7 +1147,7 @@ export function TradingViewChart({
         console.warn('[UseEffect activeTrades] Trade sem entry_price:', trade.id);
       }
     });
-  }, [activeTrades]);
+  }, [activeTrades, timeframe]);
 
   // Zoom control functions
   const handleZoomIn = useCallback(() => {
