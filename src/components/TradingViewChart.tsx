@@ -142,13 +142,13 @@ export function TradingViewChart({
     (window as any).__currentDrawingTool = drawingTool;
   }, [drawingTool]);
 
-  // Load active trades whenever userId changes
+  // Load active trades whenever userId, assetId, or timeframe changes
   useEffect(() => {
     if (userId && candleSeriesRef.current) {
-      console.log('[LoadActiveTrades] Carregando trades ativos para userId:', userId);
+      console.log('[LoadActiveTrades] Recarregando trades ativos:', { userId, assetId, timeframe });
       loadActiveTrades();
     }
-  }, [userId, assetId]);
+  }, [userId, assetId, timeframe]);
 
   // Re-render indicators when settings change
   useEffect(() => {
