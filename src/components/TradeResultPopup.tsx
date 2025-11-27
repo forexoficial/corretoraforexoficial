@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Trophy, TrendingDown, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
@@ -61,7 +62,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   const isWin = trade.status === 'won';
   const percentage = ((Math.abs(trade.result) / trade.amount) * 100).toFixed(1);
 
-  return (
+  const content = (
     <AnimatePresence>
       {isVisible && (
         <>
@@ -228,4 +229,6 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
       )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
