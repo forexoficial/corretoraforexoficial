@@ -221,9 +221,8 @@ export const TradingHeader = ({
 
           <Button 
             variant="default" 
-            className="bg-success hover:bg-success/90"
+            className="bg-warning hover:bg-warning/90 text-warning-foreground"
             onClick={() => navigate('/deposit')}
-            disabled={isDemoMode}
           >
             <Plus className="w-4 h-4 mr-2" />
             Depósito
