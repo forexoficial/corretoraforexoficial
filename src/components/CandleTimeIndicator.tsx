@@ -143,22 +143,22 @@ export function CandleTimeIndicator({
       label.textContent = "tempo restante";
       svgEl.appendChild(label);
 
-      // Price marker on candle
+      // Price marker on candle - NO DELAY, must be glued to price
       const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
       marker.setAttribute("cx", x.toString());
       marker.setAttribute("cy", y.toString());
       marker.setAttribute("r", "3");
       marker.setAttribute("fill", "hsl(var(--primary))");
       marker.setAttribute("opacity", "0.7");
-      marker.style.transition = "cx 0.3s ease-out, cy 0.3s ease-out";
+      // NO transition - instant position update
       svgEl.appendChild(marker);
     };
 
     // Initial render
     render();
 
-    // Keep synced with time (countdown), zoom/pan and size changes
-    const intervalId = window.setInterval(render, 1000);
+    // Keep synced at high frequency for instant price marker updates (60 FPS)
+    const intervalId = window.setInterval(render, 16);
 
     const timeScale = chart.timeScale();
     const handleVisibleRange = () => render();
