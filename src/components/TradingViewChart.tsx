@@ -903,10 +903,18 @@ export function TradingViewChart({
       ? (appearanceSettings?.trade_line_call_color || '#10b981') // Emerald green for CALL
       : (appearanceSettings?.trade_line_put_color || '#ef4444'); // Vibrant red for PUT
     
-    // Professional styling - much thicker and more prominent
-    const lineWidth = appearanceSettings?.trade_line_width || 6; // Increased from 3 to 6
+    // Professional styling - EXTRA THICK and highly prominent
+    // Force minimum width of 12 pixels, even if settings say otherwise
+    const configuredWidth = appearanceSettings?.trade_line_width || 12;
+    const lineWidth = Math.max(configuredWidth, 12); // Always at least 12 pixels thick
     const lineStyle = appearanceSettings?.trade_line_style ?? 2; // Dashed line for better visibility
     const showLabel = appearanceSettings?.trade_line_show_label ?? true;
+    
+    console.log('[DrawTradeLine] Configuração da linha:', {
+      configured_width: configuredWidth,
+      final_width: lineWidth,
+      style: lineStyle
+    });
     
     // Format entry price for display
     const formattedPrice = trade.entry_price.toFixed(5);
