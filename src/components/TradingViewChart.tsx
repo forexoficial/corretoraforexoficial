@@ -903,9 +903,9 @@ export function TradingViewChart({
       ? (appearanceSettings?.trade_line_call_color || '#10b981') // Emerald green for CALL
       : (appearanceSettings?.trade_line_put_color || '#ef4444'); // Vibrant red for PUT
     
-    // Professional styling - thicker and more prominent
-    const lineWidth = appearanceSettings?.trade_line_width || 3;
-    const lineStyle = appearanceSettings?.trade_line_style ?? 0; // Solid by default for clarity
+    // Professional styling - much thicker and more prominent
+    const lineWidth = appearanceSettings?.trade_line_width || 6; // Increased from 3 to 6
+    const lineStyle = appearanceSettings?.trade_line_style ?? 2; // Dashed line for better visibility
     const showLabel = appearanceSettings?.trade_line_show_label ?? true;
     
     // Format entry price for display
