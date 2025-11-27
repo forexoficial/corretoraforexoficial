@@ -90,15 +90,17 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
           )}
         </div>
 
-        {/* Center Section: Refresh + Balance */}
+        {/* Center Section: Refresh (only demo) + Balance */}
         <div className="flex items-center gap-2">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="h-9 w-9 rounded-full bg-muted/50"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          {isDemoMode && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-9 w-9 rounded-full bg-muted/50"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
 
           <div className="flex flex-col items-start">
             <DropdownMenu>
