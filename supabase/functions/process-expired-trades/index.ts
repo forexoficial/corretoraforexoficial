@@ -176,23 +176,25 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
 
         const status = won ? 'won' : 'lost'
 
-        // Calculate result amount for balance update
-        // CRITICAL: When the trade was created, the amount was already deducted from balance
-        // If WON: Add payout (which already includes investment + profit)
-        // If LOST: Do nothing (amount was already deducted when trade was created)
-        const result = won ? trade.payout : 0
+        // Calculate result for the trade
+        // The database trigger will apply: balance - amount + result
+        // If WON: result = amount + payout (user gets back investment + profit)
+        // If LOST: result = 0 (user loses the investment)
+        const result = won ? (trade.amount + trade.payout) : 0
 
-        console.log(`Trade ${trade.id} result: ${status.toUpperCase()}, balance change: ${won ? '+' : ''}${result}`)
+        console.log(`Trade ${trade.id} result: ${status.toUpperCase()}, result value: ${result}`)
 
-        // Update trade status with exit_price
-        // Store the actual result for display purposes (positive for win, negative for loss)
-        const tradeResult = won ? trade.payout : -trade.amount
+        // For display purposes: show profit/loss
+        const displayResult = won ? trade.payout : -trade.amount
         
+        // Update trade status
+        // The result field is used by the trigger: balance = balance - amount + result
+        // The database trigger handle_trade_balance_on_update will update the balance automatically
         const { error: updateTradeError } = await supabase
           .from('trades')
           .update({
             status: status,
-            result: tradeResult,
+            result: result,
             exit_price: exitPrice,
             closed_at: now
           })
@@ -204,44 +206,13 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
           continue
         }
 
-        // Update user balance
-        const balanceField = trade.is_demo ? 'demo_balance' : 'balance'
+        // Balance is updated automatically by the database trigger handle_trade_balance_on_update
+        // The trigger applies: balance = balance - amount + result
+        // If WON: balance = balance - amount + (amount + payout) = balance + payout ✓
+        // If LOST: balance = balance - amount + 0 = balance - amount ✓
         
-        console.log(`[Balance Update] Trade ${trade.id} - Mode: ${trade.is_demo ? 'DEMO' : 'REAL'}, Field: ${balanceField}`)
-        
-        // Get current balance
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('demo_balance, balance')
-          .eq('user_id', trade.user_id)
-          .single()
-
-        if (!profile) {
-          console.error(`Profile not found for user ${trade.user_id}`)
-          errorCount++
-          continue
-        }
-
-        const currentBalance = trade.is_demo ? parseFloat(profile.demo_balance || 0) : parseFloat(profile.balance || 0)
-        const newBalance = currentBalance + result
-
-        console.log(`[Balance Update] User ${trade.user_id} - Current ${balanceField}: ${currentBalance}, Adding: ${result}, New: ${newBalance}`)
-
-        const { error: updateBalanceError } = await supabase
-          .from('profiles')
-          .update({ [balanceField]: newBalance })
-          .eq('user_id', trade.user_id)
-
-        if (updateBalanceError) {
-          console.error(`Error updating balance for user ${trade.user_id}:`, updateBalanceError)
-          errorCount++
-          continue
-        }
-
-        console.log(`[Balance Update] SUCCESS - User ${trade.user_id} ${balanceField} updated to ${newBalance}`)
-
         processedCount++
-        console.log(`Successfully processed trade ${trade.id}`)
+        console.log(`Successfully processed trade ${trade.id} - Status: ${status}, Display: ${displayResult > 0 ? '+' : ''}${displayResult}`)
 
       } catch (error) {
         console.error(`Error processing trade ${trade.id}:`, error)
