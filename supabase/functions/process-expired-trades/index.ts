@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { rateLimitMiddleware, getRateLimitHeaders } from '../_shared/rate-limiter.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,16 +9,6 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
-  }
-
-  // Rate limiting: 10 requests por minuto por usuário
-  const rateLimitResponse = rateLimitMiddleware(req, {
-    windowMs: 60 * 1000, // 1 minuto
-    maxRequests: 10
-  });
-
-  if (rateLimitResponse) {
-    return rateLimitResponse;
   }
 
   try {
@@ -73,10 +62,6 @@ serve(async (req) => {
 
       console.log(`Continuous processing completed: ${cycles} cycles, ${totalProcessed} trades, ${totalErrors} errors`)
 
-      // Adicionar headers de rate limit
-      const ip = req.headers.get('x-forwarded-for') || 'unknown';
-      const rateLimitHeaders = getRateLimitHeaders(ip, { windowMs: 60000, maxRequests: 10 });
-
       return new Response(
         JSON.stringify({
           success: true,
@@ -86,17 +71,13 @@ serve(async (req) => {
           errors: totalErrors,
           duration: Date.now() - startTime
         }),
-        { headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     // Single execution mode
     console.log('Starting to process expired trades (single execution)...')
     const result = await processExpiredTrades(supabase, specificUserId)
-
-    // Adicionar headers de rate limit
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitHeaders = getRateLimitHeaders(ip, { windowMs: 60000, maxRequests: 10 });
 
     return new Response(
       JSON.stringify({ 
@@ -105,7 +86,7 @@ serve(async (req) => {
         errors: result.errors,
         total: result.total
       }),
-      { headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
@@ -117,14 +98,14 @@ serve(async (req) => {
   }
 })
 
-// Main processing function - Refactored to use database function
+// Main processing function
 async function processExpiredTrades(supabase: any, specificUserId: string | null = null) {
   // Get all expired open trades
   const now = new Date().toISOString()
   
   let query = supabase
     .from('trades')
-    .select('id, user_id, expires_at')
+    .select('*')
     .eq('status', 'open')
     .lt('expires_at', now)
   
@@ -149,35 +130,124 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
   let processedCount = 0
   let errorCount = 0
 
-  // Process each trade using the database function
   for (const trade of expiredTrades) {
-    try {
-      console.log(`Processing trade ${trade.id}...`)
-      
-      // Call the database function to process single trade
-      // This function handles all logic with proper locking and triggers
-      const { data, error } = await supabase.rpc('process_single_expired_trade', {
-        p_trade_id: trade.id
-      })
+      try {
+        console.log(`Processing trade ${trade.id}...`)
 
-      if (error) {
+        // CRITICAL: Use the entry_price that was saved when the trade was created
+        // This is the VISUAL price the user saw on the chart
+        const entryPrice = parseFloat(trade.entry_price)
+
+        if (!entryPrice || entryPrice <= 0) {
+          console.error(`Invalid entry_price for trade ${trade.id}: ${entryPrice}`)
+          errorCount++
+          continue
+        }
+
+        // Get closing price (candle at trade expiration time)
+        const { data: closeCandle } = await supabase
+          .from('candles')
+          .select('close')
+          .eq('asset_id', trade.asset_id)
+          .lte('timestamp', trade.expires_at)
+          .order('timestamp', { ascending: false })
+          .limit(1)
+          .single()
+
+        if (!closeCandle) {
+          console.error(`Missing close candle data for trade ${trade.id}`)
+          errorCount++
+          continue
+        }
+
+        const exitPrice = parseFloat(closeCandle.close)
+        
+        console.log(`Trade ${trade.id}: Entry=${entryPrice}, Exit=${exitPrice}, Type=${trade.trade_type}`)
+
+        // Binary Options Logic:
+        // CALL: Win if exit_price > entry_price
+        // PUT: Win if exit_price < entry_price
+        let won = false
+        if (trade.trade_type === 'call') {
+          won = exitPrice > entryPrice
+        } else {
+          won = exitPrice < entryPrice
+        }
+
+        const status = won ? 'won' : 'lost'
+
+        // Calculate result amount for balance update
+        // CRITICAL: When the trade was created, the amount was already deducted from balance
+        // If WON: Add payout (which already includes investment + profit)
+        // If LOST: Do nothing (amount was already deducted when trade was created)
+        const result = won ? trade.payout : 0
+
+        console.log(`Trade ${trade.id} result: ${status.toUpperCase()}, balance change: ${won ? '+' : ''}${result}`)
+
+        // Update trade status with exit_price
+        // Store the actual result for display purposes (positive for win, negative for loss)
+        const tradeResult = won ? trade.payout : -trade.amount
+        
+        const { error: updateTradeError } = await supabase
+          .from('trades')
+          .update({
+            status: status,
+            result: tradeResult,
+            exit_price: exitPrice,
+            closed_at: now
+          })
+          .eq('id', trade.id)
+
+        if (updateTradeError) {
+          console.error(`Error updating trade ${trade.id}:`, updateTradeError)
+          errorCount++
+          continue
+        }
+
+        // Update user balance
+        const balanceField = trade.is_demo ? 'demo_balance' : 'balance'
+        
+        console.log(`[Balance Update] Trade ${trade.id} - Mode: ${trade.is_demo ? 'DEMO' : 'REAL'}, Field: ${balanceField}`)
+        
+        // Get current balance
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('demo_balance, balance')
+          .eq('user_id', trade.user_id)
+          .single()
+
+        if (!profile) {
+          console.error(`Profile not found for user ${trade.user_id}`)
+          errorCount++
+          continue
+        }
+
+        const currentBalance = trade.is_demo ? parseFloat(profile.demo_balance || 0) : parseFloat(profile.balance || 0)
+        const newBalance = currentBalance + result
+
+        console.log(`[Balance Update] User ${trade.user_id} - Current ${balanceField}: ${currentBalance}, Adding: ${result}, New: ${newBalance}`)
+
+        const { error: updateBalanceError } = await supabase
+          .from('profiles')
+          .update({ [balanceField]: newBalance })
+          .eq('user_id', trade.user_id)
+
+        if (updateBalanceError) {
+          console.error(`Error updating balance for user ${trade.user_id}:`, updateBalanceError)
+          errorCount++
+          continue
+        }
+
+        console.log(`[Balance Update] SUCCESS - User ${trade.user_id} ${balanceField} updated to ${newBalance}`)
+
+        processedCount++
+        console.log(`Successfully processed trade ${trade.id}`)
+
+      } catch (error) {
         console.error(`Error processing trade ${trade.id}:`, error)
         errorCount++
-        continue
       }
-
-      if (data?.success) {
-        console.log(`Trade ${trade.id} processed: ${data.status}`)
-        processedCount++
-      } else {
-        console.log(`Trade ${trade.id} already processed or not found`)
-      }
-
-    } catch (error) {
-      console.error(`Error processing trade ${trade.id}:`, error)
-      errorCount++
     }
-  }
 
   console.log(`Finished processing. Success: ${processedCount}, Errors: ${errorCount}`)
 

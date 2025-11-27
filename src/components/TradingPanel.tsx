@@ -145,18 +145,31 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
       return;
     }
 
-    // O saldo é atualizado automaticamente pelo trigger do banco de dados
-    // Play trade open sound
-    playSound('trade-open');
-    
-    console.log(`[TradingPanel] Trade criada - Modo: ${isDemoMode ? 'DEMO' : 'REAL'}, Trigger atualizará saldo automaticamente`);
-    toast.success(`Operação ${type === 'call' ? 'Comprar' : 'Vender'} criada com sucesso!`);
-    
-    // Force reload of active trades via custom event
-    // Balance will be updated automatically via Supabase real-time subscription
-    window.dispatchEvent(new CustomEvent('trade-created', { 
-      detail: { assetId: selectedAsset.id, userId: user.id }
-    }));
+    // Atualizar saldo (demo ou real)
+    const balanceField = isDemoMode ? 'demo_balance' : 'balance';
+    const newBalance = currentBalance - amount;
+
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ [balanceField]: newBalance })
+      .eq('user_id', user.id);
+
+    if (updateError) {
+      console.error("Erro ao atualizar saldo:", updateError);
+      toast.error("Operação criada, mas houve erro ao atualizar saldo");
+    } else {
+      // Play trade open sound
+      playSound('trade-open');
+      
+      console.log(`[TradingPanel] Trade criada - Modo: ${isDemoMode ? 'DEMO' : 'REAL'}, Saldo atualizado: ${newBalance}`);
+      toast.success(`Operação ${type === 'call' ? 'Comprar' : 'Vender'} criada com sucesso!`);
+      
+      // Force reload of active trades via custom event
+      // Balance will be updated automatically via Supabase real-time subscription
+      window.dispatchEvent(new CustomEvent('trade-created', { 
+        detail: { assetId: selectedAsset.id, userId: user.id }
+      }));
+    }
   };
 
   return (

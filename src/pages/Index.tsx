@@ -4,7 +4,7 @@ import { TradingSidebar } from "@/components/TradingSidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTradeAlerts } from "@/hooks/useTradeAlerts";
 import { useVolatilityAlerts } from "@/hooks/useVolatilityAlerts";
-import { useTradeProcessing } from "@/hooks/useTradeProcessing";
+import { useTradeExpiration } from "@/hooks/useTradeExpiration";
 import { IndicatorsPanel, IndicatorSettings } from "@/components/IndicatorsPanel";
 import { ChartDrawingTools } from "@/components/ChartDrawingTools";
 import type { DrawingTool } from "@/hooks/useChartDrawing";
@@ -90,8 +90,8 @@ const Index = () => {
   useTradeAlerts(user?.id, isDemoMode);
   useVolatilityAlerts(currentAssetId);
   
-  // Initialize automatic trade expiration processing (centralized)
-  useTradeProcessing(user?.id);
+  // Initialize automatic trade expiration processing
+  useTradeExpiration(user?.id);
   
   // Load indicator settings from localStorage
   useEffect(() => {
