@@ -12,6 +12,7 @@ import { calculateSMA, calculateEMA, calculateRSI, calculateBollingerBands, calc
 import type { IndicatorSettings } from "./IndicatorsPanel";
 import { useChartDrawing, DrawingTool } from "@/hooks/useChartDrawing";
 import type { PriceLineConfig } from "./PriceLineSettings";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TradingViewChartProps {
   assetId: string;
@@ -60,6 +61,7 @@ export function TradingViewChart({
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const { settings: appearanceSettings } = useChartAppearance();
   const { theme } = useTheme();
+  const isMobile = useIsMobile();
   
   // Drawing tools
   const drawing = useChartDrawing(chartRef, candleSeriesRef, assetId, timeframe);
@@ -338,7 +340,7 @@ export function TradingViewChart({
           event: '*',
           schema: 'public',
           table: 'candles',
-          filter: `asset_id=eq.${assetId},timeframe=eq.${timeframe}`
+          filter: `asset_id=eq.${assetId}`
         },
         (payload) => {
           console.log('Candle update:', payload);
@@ -1177,7 +1179,7 @@ export function TradingViewChart({
               key={trade.id}
               style={{ 
                 position: 'absolute',
-                top: `${window.innerWidth >= 768 ? 120 + (index * 60) : 20 + (index * 60)}px`,
+                top: `${isMobile ? 20 + (index * 60) : 120 + (index * 60)}px`,
                 left: 0,
                 pointerEvents: 'auto'
               }}
