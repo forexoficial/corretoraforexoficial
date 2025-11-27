@@ -84,7 +84,8 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
               src={customization.currentLogo} 
               alt="Logo" 
               style={{ height: `${customization.logoHeight}px` }}
-              className="w-auto object-contain"
+              className="w-auto object-contain cursor-pointer"
+              onClick={withClickSound(() => navigate('/'))}
             />
           )}
         </div>
