@@ -82,8 +82,8 @@ export function ChartDrawingTools({
         <Button
           variant="ghost"
           className={cn(
-            "h-10 w-10 rounded-lg bg-muted/60 hover:bg-muted transition-colors",
-            selectedTool !== "select" && "bg-primary/20 hover:bg-primary/30"
+            "h-10 w-10 rounded-lg bg-card border border-border hover:bg-accent transition-colors",
+            selectedTool !== "select" && "bg-primary/10 dark:bg-primary/20 border-primary/50 hover:bg-primary/20 dark:hover:bg-primary/30 text-primary"
           )}
           title="Ferramentas de Desenho"
         >
@@ -102,7 +102,7 @@ export function ChartDrawingTools({
                   onClearAll();
                   setOpen(false);
                 }}
-                className="h-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                className="h-8 text-destructive hover:text-destructive hover:bg-destructive/20 dark:hover:bg-destructive/10 border border-transparent hover:border-destructive/20"
               >
                 <Trash2 className="h-3.5 w-3.5 mr-1.5" />
                 Limpar Tudo
@@ -122,13 +122,13 @@ export function ChartDrawingTools({
               className={cn(
                 "w-full flex items-start gap-3 px-3 py-2.5 rounded-lg transition-colors text-left",
                 selectedTool === tool.id
-                  ? "bg-primary/10 text-primary"
-                  : "hover:bg-muted"
+                  ? "bg-primary/10 dark:bg-primary/20 text-primary border border-primary/20"
+                  : "hover:bg-accent border border-transparent"
               )}
             >
               <div className={cn(
                 "mt-0.5 p-2 rounded-md",
-                selectedTool === tool.id ? "bg-primary/20" : "bg-muted"
+                selectedTool === tool.id ? "bg-primary/20 dark:bg-primary/30" : "bg-accent"
               )}>
                 <tool.icon className="h-4 w-4" />
               </div>
@@ -144,9 +144,9 @@ export function ChartDrawingTools({
 
         <Separator />
 
-        <div className="p-3 bg-muted/50">
+        <div className="p-3 bg-accent/50 border-t">
           <p className="text-xs text-muted-foreground">
-            💡 <strong>Dica:</strong> Clique duas vezes para começar a desenhar. 
+            💡 <strong className="text-foreground">Dica:</strong> Clique duas vezes para começar a desenhar. 
             Use ESC para cancelar ou voltar ao modo de seleção.
           </p>
         </div>
