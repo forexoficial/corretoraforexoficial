@@ -940,7 +940,7 @@ export function TradingViewChart({
 
   const fetchAndShowCompletedTrade = useCallback(async (tradeId: string) => {
     try {
-      console.log('[CompletedTrade] Buscando trade concluído para notificação:', tradeId);
+      console.log('[CompletedTrade] 🔍 Buscando trade concluído para notificação:', tradeId);
 
       const { data: completedTrade, error } = await supabase
         .from('trades')
@@ -954,18 +954,26 @@ export function TradingViewChart({
         .single();
 
       if (error) {
-        console.error('[CompletedTrade] Erro ao buscar trade concluído:', error);
+        console.error('[CompletedTrade] ❌ Erro ao buscar trade concluído:', error);
         return;
       }
 
-      if (completedTrade && completedTrade.status !== 'open') {
-        console.log('[CompletedTrade] Trade concluído encontrado, exibindo notificação:', {
-          id: completedTrade.id,
-          status: completedTrade.status,
-          result: completedTrade.result,
-          amount: completedTrade.amount,
-          asset_name: completedTrade.assets?.name,
-        });
+      if (!completedTrade) {
+        console.error('[CompletedTrade] ❌ Trade não encontrado no banco:', tradeId);
+        return;
+      }
+
+      console.log('[CompletedTrade] 📊 Trade encontrado:', {
+        id: completedTrade.id,
+        status: completedTrade.status,
+        result: completedTrade.result,
+        amount: completedTrade.amount,
+        closed_at: completedTrade.closed_at,
+        asset_name: completedTrade.assets?.name,
+      });
+
+      if (completedTrade.status !== 'open') {
+        console.log('[CompletedTrade] ✅ Definindo notificação no estado para exibir popup');
 
         setCompletedTradeNotification({
           id: completedTrade.id,
@@ -974,11 +982,13 @@ export function TradingViewChart({
           amount: completedTrade.amount,
           asset_name: completedTrade.assets?.name,
         });
+        
+        console.log('[CompletedTrade] 🎬 Notificação definida, TradeResultPopup deve aparecer agora');
       } else {
-        console.log('[CompletedTrade] Trade ainda não foi fechado, status atual:', completedTrade?.status);
+        console.warn('[CompletedTrade] ⚠️ Trade ainda está com status "open":', completedTrade.status);
       }
     } catch (error) {
-      console.error('[CompletedTrade] Exceção ao buscar trade concluído:', error);
+      console.error('[CompletedTrade] 💥 Exceção ao buscar trade concluído:', error);
     }
   }, []);
 
@@ -1073,27 +1083,55 @@ export function TradingViewChart({
           table: 'trades',
           filter: `user_id=eq.${userId}`
         },
-        (payload) => {
+        async (payload) => {
           const updatedTrade = payload.new as any;
           const oldTrade = payload.old as any;
 
-          console.log('[Realtime UPDATE] Trade atualizado:', {
-            id: updatedTrade.id,
+          console.log('[Realtime UPDATE] 📥 Payload completo recebido:', {
+            trade_id: updatedTrade.id,
             asset_id: updatedTrade.asset_id,
             status: updatedTrade.status,
             old_status: oldTrade?.status,
+            closed_at: updatedTrade.closed_at,
+            result: updatedTrade.result,
+            amount: updatedTrade.amount,
+            payload_old_keys: oldTrade ? Object.keys(oldTrade) : 'null'
           });
+          
+          // Check if status changed from 'open' to 'won' or 'lost'
+          const statusChanged = oldTrade?.status === 'open' && 
+                               (updatedTrade.status === 'won' || updatedTrade.status === 'lost');
           
           const isClosed = (updatedTrade.status === 'won' || updatedTrade.status === 'lost') && !!updatedTrade.closed_at;
 
-          if (isClosed) {
+          console.log('[Realtime UPDATE] 🔍 Verificação de fechamento:', {
+            trade_id: updatedTrade.id,
+            isClosed,
+            statusChanged,
+            status: updatedTrade.status,
+            closed_at: updatedTrade.closed_at,
+            already_notified: notifiedTradesRef.current.has(updatedTrade.id)
+          });
+
+          if (isClosed && statusChanged) {
             if (!notifiedTradesRef.current.has(updatedTrade.id)) {
-              console.log('[Realtime UPDATE] 🎉 Trade FECHADO detectado via realtime, exibindo notificação');
+              console.log('[Realtime UPDATE] 🎉 Trade FECHADO detectado via realtime!');
+              console.log('[Realtime UPDATE] 📢 Disparando notificação para trade:', updatedTrade.id);
               notifiedTradesRef.current.add(updatedTrade.id);
+              
+              // Force wait a bit to ensure DB transaction is committed
+              await new Promise(resolve => setTimeout(resolve, 300));
+              
               fetchAndShowCompletedTrade(updatedTrade.id);
             } else {
-              console.log('[Realtime UPDATE] Trade já notificado anteriormente, ignorando:', updatedTrade.id);
+              console.log('[Realtime UPDATE] ⚠️ Trade já notificado, ignorando:', updatedTrade.id);
             }
+          } else {
+            console.log('[Realtime UPDATE] ℹ️ Condições não atendidas para notificação:', {
+              isClosed,
+              statusChanged,
+              reason: !isClosed ? 'Trade não está fechado' : 'Status não mudou de open para won/lost'
+            });
           }
           
           if (updatedTrade.asset_id === assetId) {
