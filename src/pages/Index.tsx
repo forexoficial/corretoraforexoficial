@@ -132,48 +132,49 @@ const Index = () => {
           table: 'trades',
           filter: `user_id=eq.${user.id}`
         },
-          async (payload) => {
+        async (payload) => {
           const trade = payload.new as any;
           
           console.log('[Index] Trade update recebido:', {
             id: trade.id,
             status: trade.status,
-            old_status: payload.old?.status
+            old_status: payload.old?.status,
+            closed_at: trade.closed_at
           });
           
-          // Check if trade just closed (status changed from 'open' to 'won' or 'lost')
-          if ((trade.status === 'won' || trade.status === 'lost') && payload.old?.status === 'open') {
-            console.log('[Index] 🎉 Trade FECHADO detectado!', {
-              status: trade.status,
-              result: trade.result,
-              amount: trade.amount,
-              is_demo: trade.is_demo
+          const isClosed = (trade.status === 'won' || trade.status === 'lost') && !!trade.closed_at;
+          if (!isClosed) return;
+          
+          console.log('[Index] 🎉 Trade FECHADO detectado (Index listener)!', {
+            status: trade.status,
+            result: trade.result,
+            amount: trade.amount,
+            is_demo: trade.is_demo
+          });
+          
+          // Force refresh balance to ensure it updates immediately
+          console.log('[Index] 🔄 Forçando refresh do saldo...');
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('balance, demo_balance, is_demo_mode')
+            .eq('user_id', user.id)
+            .single();
+
+          if (profile) {
+            console.log('[Index] ✅ Saldos atualizados:', {
+              demo: profile.demo_balance,
+              real: profile.balance,
+              mode: profile.is_demo_mode ? 'DEMO' : 'REAL'
             });
             
-            // Force refresh balance to ensure it updates immediately
-            console.log('[Index] 🔄 Forçando refresh do saldo...');
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('balance, demo_balance, is_demo_mode')
-              .eq('user_id', user.id)
-              .single();
-
-            if (profile) {
-              console.log('[Index] ✅ Saldos atualizados:', {
-                demo: profile.demo_balance,
-                real: profile.balance,
-                mode: profile.is_demo_mode ? 'DEMO' : 'REAL'
-              });
-              
-              // Dispatch custom event to force balance update in useDemoMode
-              window.dispatchEvent(new CustomEvent('force-balance-refresh', {
-                detail: {
-                  balance: profile.balance,
-                  demo_balance: profile.demo_balance,
-                  is_demo_mode: profile.is_demo_mode
-                }
-              }));
-            }
+            // Dispatch custom event to force balance update in useDemoMode
+            window.dispatchEvent(new CustomEvent('force-balance-refresh', {
+              detail: {
+                balance: profile.balance,
+                demo_balance: profile.demo_balance,
+                is_demo_mode: profile.is_demo_mode
+              }
+            }));
           }
         }
       )

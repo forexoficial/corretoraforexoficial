@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { MobileTradingHeader } from "./MobileTradingHeader";
 import { MobileChartView } from "./MobileChartView";
 import { MobileTradingControls } from "./MobileTradingControls";
@@ -39,6 +39,7 @@ export function MobileTradingView({
     amount: number;
     asset_name?: string;
   } | null>(null);
+  const processedTradesRef = useRef<Set<string>>(new Set());
 
   // Update local state when prop changes
   useEffect(() => {
@@ -49,11 +50,14 @@ export function MobileTradingView({
 
   // Monitor trade status changes
   useEffect(() => {
+    let channel: any = null;
+    let isActive = true;
+
     const getUserAndSubscribe = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user || !isActive) return;
 
-      const channel = supabase
+      channel = supabase
         .channel('mobile-trade-status-changes')
         .on(
           'postgres_changes',
@@ -73,75 +77,85 @@ export function MobileTradingView({
               closed_at: trade.closed_at
             });
             
-            // Check if trade is finalized (has closed_at timestamp)
-            if ((trade.status === 'won' || trade.status === 'lost') && trade.closed_at) {
-              console.log('[MobileTradingView] 🎉 Trade FECHADO!', {
-                status: trade.status,
-                result: trade.result,
-                amount: trade.amount,
-                is_demo: trade.is_demo
-              });
+            const isClosed = (trade.status === 'won' || trade.status === 'lost') && !!trade.closed_at;
+            if (!isClosed) return;
 
-              // Force refresh balance
-              console.log('[MobileTradingView] 🔄 Forçando refresh do saldo...');
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('balance, demo_balance, is_demo_mode')
-                .eq('user_id', user.id)
-                .single();
+            if (processedTradesRef.current.has(trade.id)) {
+              console.log('[MobileTradingView] Trade já processado, ignorando:', trade.id);
+              return;
+            }
 
-              if (profile) {
-                console.log('[MobileTradingView] ✅ Saldos atualizados:', {
-                  demo: profile.demo_balance,
-                  real: profile.balance
-                });
-                
-                // Force balance update
-                window.dispatchEvent(new CustomEvent('force-balance-refresh', {
-                  detail: {
-                    balance: profile.balance,
-                    demo_balance: profile.demo_balance,
-                    is_demo_mode: profile.is_demo_mode
-                  }
-                }));
-              }
-              
-              // Get asset name
-              const { data: asset } = await supabase
-                .from('assets')
-                .select('name')
-                .eq('id', trade.asset_id)
-                .single();
+            processedTradesRef.current.add(trade.id);
+            
+            console.log('[MobileTradingView] 🎉 Trade FECHADO!', {
+              status: trade.status,
+              result: trade.result,
+              amount: trade.amount,
+              is_demo: trade.is_demo
+            });
 
-              // Show result popup
-              setFinishedTrade({
-                id: trade.id,
-                status: trade.status,
-                result: trade.result,
-                amount: trade.amount,
-                asset_name: asset?.name
+            // Force refresh balance
+            console.log('[MobileTradingView] 🔄 Forçando refresh do saldo...');
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('balance, demo_balance, is_demo_mode')
+              .eq('user_id', user.id)
+              .single();
+
+            if (profile) {
+              console.log('[MobileTradingView] ✅ Saldos atualizados:', {
+                demo: profile.demo_balance,
+                real: profile.balance
               });
               
-              // Also show victory celebration if won
-              if (trade.status === 'won') {
-                const profit = trade.result || 0;
-                setVictoryData({
-                  amount: trade.amount,
-                  profit: profit
-                });
-                setShowVictoryCelebration(true);
-              }
+              window.dispatchEvent(new CustomEvent('force-balance-refresh', {
+                detail: {
+                  balance: profile.balance,
+                  demo_balance: profile.demo_balance,
+                  is_demo_mode: profile.is_demo_mode
+                }
+              }));
+            }
+            
+            // Get asset name
+            const { data: asset } = await supabase
+              .from('assets')
+              .select('name')
+              .eq('id', trade.asset_id)
+              .single();
+
+            // Show result popup
+            setFinishedTrade({
+              id: trade.id,
+              status: trade.status,
+              result: trade.result,
+              amount: trade.amount,
+              asset_name: asset?.name
+            });
+            
+            // Also show victory celebration if won
+            if (trade.status === 'won') {
+              const profit = trade.result || 0;
+              setVictoryData({
+                amount: trade.amount,
+                profit: profit
+              });
+              setShowVictoryCelebration(true);
             }
           }
         )
         .subscribe();
-
-      return () => {
-        supabase.removeChannel(channel);
-      };
     };
 
     getUserAndSubscribe();
+
+    return () => {
+      isActive = false;
+      if (channel) {
+        console.log('[MobileTradingView] 🔌 Limpando canal realtime mobile-trade-status-changes');
+        supabase.removeChannel(channel);
+      }
+    };
   }, []);
 
   const handleAssetChange = (asset: Asset) => {
