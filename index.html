@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- PWA Meta Tags -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="BlackRock" />
+    <meta name="application-name" content="BlackRock Broker" />
+    <meta name="theme-color" content="#000000" />
+    <meta name="msapplication-TileColor" content="#000000" />
+    
+    <title>BlackRock Broker - Trading Profissional</title>
+    <meta name="description" content="Plataforma de trading profissional para opções binárias. Opere com segurança e precisão." />
+    <meta name="author" content="BlackRock Broker" />
+    <meta name="keywords" content="trading, opções binárias, investimentos, forex, análise técnica" />
+    
+    <!-- Apple Touch Icon -->
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <meta property="og:title" content="be3af648-9c38-462f-9aa5-284434f51fd1" />
+    <meta property="og:description" content="Lovable Generated Project" />
+    <meta property="og:type" content="website" />
+    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@Lovable" />
+    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    
+    <!-- IBM Plex Sans Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  </head>
+
+  <body>
+    <script>
+      // Apply cached colors immediately to prevent flash
+      (function() {
+        try {
+          const cachedColors = localStorage.getItem('platform_colors');
+          if (cachedColors) {
+            const colors = JSON.parse(cachedColors);
+            const root = document.documentElement;
+            
+            // Helper to convert hex to HSL
+            function hexToHSL(hex) {
+              hex = hex.replace(/^#/, '');
+              const r = parseInt(hex.substring(0, 2), 16) / 255;
+              const g = parseInt(hex.substring(2, 4), 16) / 255;
+              const b = parseInt(hex.substring(4, 6), 16) / 255;
+              
+              const max = Math.max(r, g, b);
+              const min = Math.min(r, g, b);
+              let h = 0, s = 0, l = (max + min) / 2;
+              
+              if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                  case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+                  case g: h = ((b - r) / d + 2) / 6; break;
+                  case b: h = ((r - g) / d + 4) / 6; break;
+                }
+              }
+              
+              h = Math.round(h * 360);
+              s = Math.round(s * 100);
+              l = Math.round(l * 100);
+              
+              return `${h} ${s}% ${l}%`;
+            }
+            
+            // Determine current theme
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const currentTheme = savedTheme === 'system' || !savedTheme 
+              ? (prefersDark ? 'dark' : 'light')
+              : savedTheme;
+            
+            const prefix = currentTheme === 'light' ? 'light' : 'dark';
+            
+            // Apply colors immediately
+            const colorMap = {
+              [`${prefix}_background`]: '--background',
+              [`${prefix}_foreground`]: '--foreground',
+              [`${prefix}_card`]: '--card',
+              [`${prefix}_primary`]: '--primary',
+              [`${prefix}_secondary`]: '--secondary',
+              [`${prefix}_accent`]: '--accent',
+              [`${prefix}_muted`]: '--muted',
+              [`${prefix}_border`]: '--border',
+            };
+            
+            Object.entries(colorMap).forEach(([key, cssVar]) => {
+              if (colors[key]) {
+                root.style.setProperty(cssVar, colors[key]);
+                
+                // Apply derived colors
+                if (cssVar === '--primary') {
+                  root.style.setProperty('--ring', colors[key]);
+                  root.style.setProperty('--sidebar-primary', colors[key]);
+                  root.style.setProperty('--sidebar-ring', colors[key]);
+                }
+                if (cssVar === '--background') {
+                  root.style.setProperty('--chart-bg', colors[key]);
+                  root.style.setProperty('--panel-bg', colors[key]);
+                  root.style.setProperty('--sidebar-background', colors[key]);
+                }
+                if (cssVar === '--card') {
+                  root.style.setProperty('--card-foreground', colors[`${prefix}_foreground`] || colors[key]);
+                  root.style.setProperty('--popover', colors[key]);
+                }
+                if (cssVar === '--foreground') {
+                  root.style.setProperty('--sidebar-foreground', colors[key]);
+                }
+                if (cssVar === '--muted') {
+                  root.style.setProperty('--muted-foreground', colors[`${prefix}_foreground`] || '');
+                }
+                if (cssVar === '--accent') {
+                  root.style.setProperty('--accent-foreground', colors[`${prefix}_foreground`] || '');
+                  root.style.setProperty('--sidebar-accent', colors[key]);
+                  root.style.setProperty('--sidebar-accent-foreground', colors[`${prefix}_foreground`] || '');
+                }
+                if (cssVar === '--secondary') {
+                  root.style.setProperty('--secondary-foreground', colors[`${prefix}_foreground`] || '');
+                }
+                if (cssVar === '--border') {
+                  root.style.setProperty('--input', colors[key]);
+                  root.style.setProperty('--sidebar-border', colors[key]);
+                }
+              }
+            });
+            
+            // Apply success color
+            if (colors.success_color) {
+              const successHSL = hexToHSL(colors.success_color);
+              root.style.setProperty('--success', successHSL);
+              root.style.setProperty('--success-foreground', '0 0% 100%');
+            }
+          }
+        } catch (e) {
+          console.error('Error applying cached colors:', e);
+        }
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

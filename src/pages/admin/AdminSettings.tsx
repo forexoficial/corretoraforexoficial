@@ -1,0 +1,675 @@
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Loader2, Upload, Palette, Sun, Moon } from "lucide-react";
+import { useAuth } from "@/contexts/AuthContext";
+
+interface Settings {
+  [key: string]: string;
+}
+
+export default function AdminSettings() {
+  const { user } = useAuth();
+  const [settings, setSettings] = useState<Settings>({});
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  // Logo states
+  const [uploadingLogoLight, setUploadingLogoLight] = useState(false);
+  const [uploadingLogoDark, setUploadingLogoDark] = useState(false);
+  const [logoLightFile, setLogoLightFile] = useState<File | null>(null);
+  const [logoDarkFile, setLogoDarkFile] = useState<File | null>(null);
+  const [logoLightPreview, setLogoLightPreview] = useState<string | null>(null);
+  const [logoDarkPreview, setLogoDarkPreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchSettings();
+    initializeDefaultSettings();
+  }, []);
+
+  const initializeDefaultSettings = async () => {
+    const defaultSettings = [
+      { key: 'allow_registration', value: 'true', description: 'Permitir novos cadastros' },
+      { key: 'require_verification', value: 'true', description: 'Exigir verificação de identidade' },
+      { key: 'maintenance_mode', value: 'false', description: 'Modo de manutenção' },
+      { key: 'usdt_enabled', value: 'false', description: 'Habilitar USDT' },
+      { key: 'logo_height', value: '48', description: 'Altura da logo em pixels' },
+      // Light theme defaults
+      { key: 'light_background', value: '0 0% 100%', description: 'Cor de fundo tema claro' },
+      { key: 'light_foreground', value: '240 10% 3.9%', description: 'Cor de texto tema claro' },
+      { key: 'light_card', value: '0 0% 100%', description: 'Cor de card tema claro' },
+      { key: 'light_primary', value: '142.1 76.2% 36.3%', description: 'Cor primária tema claro' },
+      { key: 'light_secondary', value: '240 4.8% 95.9%', description: 'Cor secundária tema claro' },
+      { key: 'light_accent', value: '240 4.8% 95.9%', description: 'Cor de destaque tema claro' },
+      { key: 'light_muted', value: '240 4.8% 95.9%', description: 'Cor muted tema claro' },
+      { key: 'light_border', value: '240 5.9% 90%', description: 'Cor de borda tema claro' },
+      // Dark theme defaults
+      { key: 'dark_background', value: '240 10% 3.9%', description: 'Cor de fundo tema escuro' },
+      { key: 'dark_foreground', value: '0 0% 98%', description: 'Cor de texto tema escuro' },
+      { key: 'dark_card', value: '240 10% 3.9%', description: 'Cor de card tema escuro' },
+      { key: 'dark_primary', value: '142.1 70.6% 45.3%', description: 'Cor primária tema escuro' },
+      { key: 'dark_secondary', value: '240 3.7% 15.9%', description: 'Cor secundária tema escuro' },
+      { key: 'dark_accent', value: '240 3.7% 15.9%', description: 'Cor de destaque tema escuro' },
+      { key: 'dark_muted', value: '240 3.7% 15.9%', description: 'Cor muted tema escuro' },
+      { key: 'dark_border', value: '220 13% 23%', description: 'Cor de borda tema escuro' },
+    ];
+
+    for (const setting of defaultSettings) {
+      const { data } = await supabase
+        .from('platform_settings')
+        .select('key')
+        .eq('key', setting.key)
+        .single();
+
+      if (!data) {
+        await supabase
+          .from('platform_settings')
+          .insert(setting);
+      }
+    }
+  };
+
+  const fetchSettings = async () => {
+    const { data, error } = await supabase
+      .from("platform_settings")
+      .select("key, value");
+
+    if (error) {
+      toast.error("Erro ao carregar configurações");
+      return;
+    }
+
+    const settingsObj = (data || []).reduce((acc, { key, value }) => {
+      acc[key] = value;
+      return acc;
+    }, {} as Settings);
+
+    setSettings(settingsObj);
+    if (settingsObj.logo_light) {
+      setLogoLightPreview(settingsObj.logo_light);
+    }
+    if (settingsObj.logo_dark) {
+      setLogoDarkPreview(settingsObj.logo_dark);
+    }
+    setLoading(false);
+  };
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'light' | 'dark') => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error("Por favor, selecione uma imagem");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    if (type === 'light') {
+      setLogoLightFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoLightPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setLogoDarkFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoDarkPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveLogo = async (type: 'light' | 'dark') => {
+    const file = type === 'light' ? logoLightFile : logoDarkFile;
+    if (!file) {
+      toast.error("Selecione uma logo primeiro");
+      return;
+    }
+
+    const setUploading = type === 'light' ? setUploadingLogoLight : setUploadingLogoDark;
+    setUploading(true);
+
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `platform-logos/logo-${type}-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(fileName, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(fileName);
+
+      const { error: upsertError } = await supabase
+        .from("platform_settings")
+        .upsert({
+          key: `logo_${type}`,
+          value: publicUrl,
+          description: `Logo para tema ${type === 'light' ? 'claro' : 'escuro'}`
+        }, { onConflict: "key" });
+
+      if (upsertError) throw upsertError;
+
+      setSettings(prev => ({ ...prev, [`logo_${type}`]: publicUrl }));
+      if (type === 'light') {
+        setLogoLightFile(null);
+      } else {
+        setLogoDarkFile(null);
+      }
+      toast.success(`Logo para tema ${type === 'light' ? 'claro' : 'escuro'} atualizada!`);
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error("Erro ao fazer upload da logo");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+
+    try {
+      const updates = Object.entries(settings)
+        .filter(([key]) => key !== 'logo_light' && key !== 'logo_dark') // Logo URLs handled separately, but allow logo_height
+        .map(([key, value]) =>
+          supabase
+            .from("platform_settings")
+            .upsert({ key, value, description: `Setting for ${key}` }, { onConflict: "key" })
+        );
+
+      const results = await Promise.all(updates);
+      const hasError = results.some((result) => result.error);
+
+      if (hasError) {
+        toast.error("Erro ao salvar configurações");
+      } else {
+        toast.success("Configurações salvas! As mudanças serão aplicadas em tempo real.");
+        await fetchSettings();
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      toast.error("Erro ao salvar configurações");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateSetting = (key: string, value: string) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const hslToHex = (hsl: string): string => {
+    const parts = hsl.split(' ');
+    if (parts.length !== 3) return '#000000';
+    
+    const h = parseFloat(parts[0]);
+    const s = parseFloat(parts[1]) / 100;
+    const l = parseFloat(parts[2]) / 100;
+
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+
+    let r = 0, g = 0, b = 0;
+    if (h >= 0 && h < 60) { r = c; g = x; b = 0; }
+    else if (h >= 60 && h < 120) { r = x; g = c; b = 0; }
+    else if (h >= 120 && h < 180) { r = 0; g = c; b = x; }
+    else if (h >= 180 && h < 240) { r = 0; g = x; b = c; }
+    else if (h >= 240 && h < 300) { r = x; g = 0; b = c; }
+    else if (h >= 300 && h < 360) { r = c; g = 0; b = x; }
+
+    const toHex = (n: number) => {
+      const hex = Math.round((n + m) * 255).toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    };
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+  };
+
+  const hexToHsl = (hex: string): string => {
+    hex = hex.replace(/^#/, '');
+    const r = parseInt(hex.slice(0, 2), 16) / 255;
+    const g = parseInt(hex.slice(2, 4), 16) / 255;
+    const b = parseInt(hex.slice(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+      const d = max - min;
+      s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      
+      switch (max) {
+        case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break;
+        case g: h = ((b - r) / d + 2) / 6; break;
+        case b: h = ((r - g) / d + 4) / 6; break;
+      }
+    }
+
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+  };
+
+  const ColorInput = ({ label, settingKey }: { label: string, settingKey: string }) => {
+    const hslValue = settings[settingKey] || '0 0% 0%';
+    const hexValue = hslToHex(hslValue);
+
+    return (
+      <div className="space-y-2">
+        <Label>{label}</Label>
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <Input
+              type="color"
+              value={hexValue}
+              onChange={(e) => updateSetting(settingKey, hexToHsl(e.target.value))}
+              className="w-16 h-16 cursor-pointer border-2 rounded-lg p-1"
+              style={{ colorScheme: 'light' }}
+            />
+          </div>
+          <div className="flex-1">
+            <Input
+              type="text"
+              value={hexValue.toUpperCase()}
+              onChange={(e) => {
+                const hex = e.target.value;
+                if (/^#[0-9A-Fa-f]{0,6}$/.test(hex)) {
+                  if (hex.length === 7) {
+                    updateSetting(settingKey, hexToHsl(hex));
+                  }
+                }
+              }}
+              placeholder="#000000"
+              className="font-mono text-sm uppercase"
+              maxLength={7}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Formato HEX (ex: #FF5733)
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-4xl font-bold mb-2">Configurações</h1>
+        <p className="text-muted-foreground">Configure as definições da plataforma</p>
+      </div>
+
+      <div className="grid gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Palette className="h-5 w-5" />
+              Personalização da Plataforma
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Tabs defaultValue="logos" className="w-full">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="logos">Logos</TabsTrigger>
+                <TabsTrigger value="light">
+                  <Sun className="h-4 w-4 mr-2" />
+                  Tema Claro
+                </TabsTrigger>
+                <TabsTrigger value="dark">
+                  <Moon className="h-4 w-4 mr-2" />
+                  Tema Escuro
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="logos" className="space-y-6 mt-6">
+                <div className="space-y-6">
+                  {/* Logo Size Control */}
+                  <div className="p-4 border rounded-lg bg-muted/20">
+                    <Label className="text-base font-semibold">Tamanho da Logo</Label>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Ajuste o tamanho da logo exibida em toda a plataforma
+                    </p>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <Input
+                          type="range"
+                          min="16"
+                          max="128"
+                          step="2"
+                          value={settings.logo_height || "48"}
+                          onChange={(e) => updateSetting('logo_height', e.target.value)}
+                          className="flex-1 cursor-pointer"
+                        />
+                        <div className="flex items-center gap-2 min-w-[80px]">
+                          <Input
+                            type="number"
+                            min="16"
+                            max="128"
+                            value={settings.logo_height || "48"}
+                            onChange={(e) => {
+                              const val = Math.max(16, Math.min(128, parseInt(e.target.value) || 48));
+                              updateSetting('logo_height', val.toString());
+                            }}
+                            className="w-20 text-center"
+                          />
+                          <span className="text-sm text-muted-foreground">px</span>
+                        </div>
+                      </div>
+                      {logoLightPreview && (
+                        <div className="p-4 border rounded-lg bg-background flex items-center justify-center">
+                          <img
+                            src={logoLightPreview || logoDarkPreview || ""} 
+                            alt="Preview do tamanho" 
+                            style={{ height: `${settings.logo_height || 48}px` }}
+                            className="object-contain"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <Label>Logo para Tema Claro (escura)</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Esta logo será exibida no tema claro (use logo escura)
+                    </p>
+                    <div className="flex items-center gap-4">
+                      {logoLightPreview && (
+                        <div className="flex items-center gap-3 p-3 border rounded-lg bg-card">
+                          <img
+                            src={logoLightPreview} 
+                            alt="Logo preview" 
+                            className="h-12 object-contain"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleLogoUpload(e, 'light')}
+                          className="cursor-pointer"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PNG, JPG ou WEBP (máx. 2MB)
+                        </p>
+                      </div>
+                    </div>
+                    {logoLightFile && (
+                      <Button 
+                        onClick={() => handleSaveLogo('light')} 
+                        disabled={uploadingLogoLight}
+                        className="w-full mt-3"
+                      >
+                        {uploadingLogoLight ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Fazendo upload...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Salvar Logo Claro
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  <div>
+                    <Label>Logo para Tema Escuro (clara)</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Esta logo será exibida no tema escuro (use logo clara)
+                    </p>
+                    <div className="flex items-center gap-4">
+                      {logoDarkPreview && (
+                        <div className="flex items-center gap-3 p-3 border rounded-lg bg-background">
+                          <img 
+                            src={logoDarkPreview}
+                            alt="Logo preview" 
+                            className="h-12 object-contain"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleLogoUpload(e, 'dark')}
+                          className="cursor-pointer"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PNG, JPG ou WEBP (máx. 2MB)
+                        </p>
+                      </div>
+                    </div>
+                    {logoDarkFile && (
+                      <Button 
+                        onClick={() => handleSaveLogo('dark')} 
+                        disabled={uploadingLogoDark}
+                        className="w-full mt-3"
+                      >
+                        {uploadingLogoDark ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Fazendo upload...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Salvar Logo Escuro
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="light" className="space-y-4 mt-6">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Configure as cores para o tema claro (Light). Formato HSL.
+                </p>
+                <ColorInput label="Fundo" settingKey="light_background" />
+                <ColorInput label="Texto" settingKey="light_foreground" />
+                <ColorInput label="Card" settingKey="light_card" />
+                <ColorInput label="Primária" settingKey="light_primary" />
+                <ColorInput label="Secundária" settingKey="light_secondary" />
+                <ColorInput label="Destaque" settingKey="light_accent" />
+                <ColorInput label="Muted" settingKey="light_muted" />
+                <ColorInput label="Borda" settingKey="light_border" />
+              </TabsContent>
+
+              <TabsContent value="dark" className="space-y-4 mt-6">
+                <p className="text-sm text-muted-foreground mb-4">
+                  Configure as cores para o tema escuro (Default). Formato HSL.
+                </p>
+                <ColorInput label="Fundo" settingKey="dark_background" />
+                <ColorInput label="Texto" settingKey="dark_foreground" />
+                <ColorInput label="Card" settingKey="dark_card" />
+                <ColorInput label="Primária" settingKey="dark_primary" />
+                <ColorInput label="Secundária" settingKey="dark_secondary" />
+                <ColorInput label="Destaque" settingKey="dark_accent" />
+                <ColorInput label="Muted" settingKey="dark_muted" />
+                <ColorInput label="Borda" settingKey="dark_border" />
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Configurações da Plataforma</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Permitir Cadastros</Label>
+                <p className="text-sm text-muted-foreground">
+                  Permite que novos usuários se cadastrem
+                </p>
+              </div>
+              <Switch
+                checked={settings.allow_registration === "true"}
+                onCheckedChange={(checked) =>
+                  updateSetting("allow_registration", checked.toString())
+                }
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Exigir Verificação</Label>
+                <p className="text-sm text-muted-foreground">
+                  Requer verificação de identidade para negociar
+                </p>
+              </div>
+              <Switch
+                checked={settings.require_verification === "true"}
+                onCheckedChange={(checked) =>
+                  updateSetting("require_verification", checked.toString())
+                }
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>Modo Manutenção</Label>
+                <p className="text-sm text-muted-foreground">
+                  Plataforma em modo de manutenção
+                </p>
+              </div>
+              <Switch
+                checked={settings.maintenance_mode === "true"}
+                onCheckedChange={(checked) =>
+                  updateSetting("maintenance_mode", checked.toString())
+                }
+              />
+            </div>
+            <Separator />
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label>USDT Habilitado</Label>
+                <p className="text-sm text-muted-foreground">
+                  Habilitar depósitos e saques em USDT
+                </p>
+              </div>
+              <Switch
+                checked={settings.usdt_enabled === "true"}
+                onCheckedChange={(checked) =>
+                  updateSetting("usdt_enabled", checked.toString())
+                }
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Limites Financeiros</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-4">
+              <div>
+                <Label htmlFor="min_deposit">Depósito Mínimo (R$)</Label>
+                <Input
+                  id="min_deposit"
+                  type="number"
+                  value={settings.min_deposit || "50"}
+                  onChange={(e) => updateSetting("min_deposit", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="min_withdrawal">Saque Mínimo (R$)</Label>
+                <Input
+                  id="min_withdrawal"
+                  type="number"
+                  value={settings.min_withdrawal || "100"}
+                  onChange={(e) => updateSetting("min_withdrawal", e.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="withdrawal_fee">Taxa de Saque (%)</Label>
+                <Input
+                  id="withdrawal_fee"
+                  type="number"
+                  step="0.1"
+                  value={settings.withdrawal_fee || "0"}
+                  onChange={(e) => updateSetting("withdrawal_fee", e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Contato e Suporte</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="support_email">Email de Suporte</Label>
+              <Input
+                id="support_email"
+                type="email"
+                value={settings.support_email || ""}
+                onChange={(e) => updateSetting("support_email", e.target.value)}
+                placeholder="suporte@plataforma.com"
+              />
+            </div>
+            <div>
+              <Label htmlFor="support_whatsapp">WhatsApp de Suporte</Label>
+              <Input
+                id="support_whatsapp"
+                type="tel"
+                value={settings.support_whatsapp || ""}
+                onChange={(e) => updateSetting("support_whatsapp", e.target.value)}
+                placeholder="+55 11 99999-9999"
+              />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Button onClick={handleSave} disabled={saving} className="w-full" size="lg">
+          {saving ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Salvando...
+            </>
+          ) : (
+            "Salvar Configurações"
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,161 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 45 10% 8%;
+    --foreground: 0 0% 100%;
+
+    --card: 45 8% 12%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 45 8% 12%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 45 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 45 8% 15%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 45 8% 15%;
+    --muted-foreground: 45 5% 60%;
+
+    --accent: 38 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 3 84% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 45 8% 20%;
+    --input: 45 8% 20%;
+    --ring: 45 100% 50%;
+
+    --radius: 0.5rem;
+
+    --chart-bg: 45 10% 6%;
+    --panel-bg: 45 10% 6%;
+    
+    --sidebar-background: 45 10% 8%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 45 8% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 45 8% 20%;
+    --sidebar-ring: 45 100% 50%;
+  }
+
+  .dark {
+    --background: 45 10% 8%;
+    --foreground: 0 0% 100%;
+
+    --card: 45 8% 12%;
+    --card-foreground: 0 0% 100%;
+
+    --popover: 45 8% 12%;
+    --popover-foreground: 0 0% 100%;
+
+    --primary: 45 100% 50%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 45 8% 15%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 45 8% 15%;
+    --muted-foreground: 45 5% 60%;
+
+    --accent: 38 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 3 84% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 45 8% 20%;
+    --input: 45 8% 20%;
+    --ring: 45 100% 50%;
+    
+    --chart-bg: 45 10% 6%;
+    --panel-bg: 45 10% 6%;
+    
+    --sidebar-background: 45 10% 8%;
+    --sidebar-foreground: 0 0% 100%;
+    --sidebar-primary: 45 100% 50%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 45 8% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 45 8% 20%;
+    --sidebar-ring: 45 100% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+html {
+  font-size: 14px;
+}
+
+@media (min-width: 1024px) {
+  .trading-layout {
+    zoom: 0.8;
+  }
+}
+
+body {
+  @apply bg-background text-foreground;
+}
+
+/* Prevent zoom on mobile devices - CRITICAL */
+html {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  touch-action: manipulation;
+}
+
+input, select, textarea, button {
+  font-size: 16px !important;
+  touch-action: manipulation;
+}
+
+/* Prevent double-tap zoom */
+* {
+  touch-action: manipulation;
+}
+
+/* Additional iOS Safari specific fixes */
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select {
+    font-size: 16px !important;
+  }
+}
+
+/* Trading page specific styles */
+.trading-layout {
+  overflow: hidden;
+  height: 100vh;
+}
+}

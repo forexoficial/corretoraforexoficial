@@ -1,0 +1,386 @@
+import { useEffect, useState, useRef } from "react";
+import { Timer, TrendingUp, TrendingDown, DollarSign, TrendingUpDown, Target } from "lucide-react";
+
+interface TradeMarkerProps {
+  trade: {
+    id: string;
+    trade_type: 'call' | 'put';
+    entry_price: number;
+    expires_at: string;
+    amount: number;
+    payout: number;
+    assets?: {
+      payout_percentage?: number;
+    };
+  };
+  onExpire: (tradeId: string) => void;
+  currentPrice?: number;
+}
+
+export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerProps) {
+  const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [isVisible, setIsVisible] = useState(false);
+  
+  // Refs to track previous states for sound triggers
+  const prevPnlStatusRef = useRef<boolean | null>(null);
+  const alert30PlayedRef = useRef(false);
+  const alert10PlayedRef = useRef(false);
+  
+  // Audio references
+  const alertSoundRef = useRef<HTMLAudioElement | null>(null);
+  const profitSoundRef = useRef<HTMLAudioElement | null>(null);
+  const lossSoundRef = useRef<HTMLAudioElement | null>(null);
+
+  useEffect(() => {
+    // Initialize audio objects
+    alertSoundRef.current = new Audio('/sounds/alert.mp3');
+    profitSoundRef.current = new Audio('/sounds/win.mp3');
+    lossSoundRef.current = new Audio('/sounds/loss.mp3');
+    
+    // Set volume to be subtle
+    if (alertSoundRef.current) alertSoundRef.current.volume = 0.3;
+    if (profitSoundRef.current) profitSoundRef.current.volume = 0.4;
+    if (lossSoundRef.current) lossSoundRef.current.volume = 0.4;
+    
+    return () => {
+      // Cleanup audio objects
+      alertSoundRef.current = null;
+      profitSoundRef.current = null;
+      lossSoundRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    // Trigger entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const calculateTimeRemaining = () => {
+      const now = new Date().getTime();
+      const expiresAt = new Date(trade.expires_at).getTime();
+      const remaining = Math.max(0, expiresAt - now);
+      setTimeRemaining(remaining);
+
+      if (remaining <= 0) {
+        onExpire(trade.id);
+      }
+    };
+
+    calculateTimeRemaining();
+    const interval = setInterval(calculateTimeRemaining, 1000);
+
+    return () => clearInterval(interval);
+  }, [trade.expires_at, trade.id, onExpire]);
+
+  const formatTime = (ms: number) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  const isCall = trade.trade_type === 'call';
+  const formattedPrice = trade.entry_price.toFixed(5);
+  
+  // Critical time threshold - last 30 seconds
+  const isCriticalTime = timeRemaining > 0 && timeRemaining <= 30000;
+  const isVeryUrgent = timeRemaining > 0 && timeRemaining <= 10000;
+
+  // Calculate P&L in real-time
+  const calculatePnL = () => {
+    if (!currentPrice || currentPrice === 0) return { value: 0, percentage: 0, isProfit: false };
+    
+    const priceDiff = currentPrice - trade.entry_price;
+    const percentageChange = (priceDiff / trade.entry_price) * 100;
+    
+    // For CALL: profit if price goes up, loss if price goes down
+    // For PUT: profit if price goes down, loss if price goes up
+    const isProfit = isCall ? priceDiff > 0 : priceDiff < 0;
+    const absolutePercentage = Math.abs(percentageChange);
+    
+    return {
+      value: priceDiff,
+      percentage: absolutePercentage,
+      isProfit
+    };
+  };
+
+  const pnl = calculatePnL();
+
+  // Sound effect: Play alert when reaching 30 seconds
+  useEffect(() => {
+    const seconds = Math.floor(timeRemaining / 1000);
+    
+    if (seconds === 30 && !alert30PlayedRef.current) {
+      alertSoundRef.current?.play().catch(() => {
+        // Ignore if autoplay is blocked
+      });
+      alert30PlayedRef.current = true;
+    }
+  }, [timeRemaining]);
+
+  // Sound effect: Play alert when reaching 10 seconds
+  useEffect(() => {
+    const seconds = Math.floor(timeRemaining / 1000);
+    
+    if (seconds === 10 && !alert10PlayedRef.current) {
+      alertSoundRef.current?.play().catch(() => {
+        // Ignore if autoplay is blocked
+      });
+      alert10PlayedRef.current = true;
+    }
+  }, [timeRemaining]);
+
+  // Sound effect: Play profit/loss sound when P&L status changes
+  useEffect(() => {
+    if (currentPrice > 0 && pnl.percentage > 0) {
+      // Only trigger if we have a previous state to compare
+      if (prevPnlStatusRef.current !== null && prevPnlStatusRef.current !== pnl.isProfit) {
+        if (pnl.isProfit) {
+          // Switched to profit
+          profitSoundRef.current?.play().catch(() => {
+            // Ignore if autoplay is blocked
+          });
+        } else {
+          // Switched to loss
+          lossSoundRef.current?.play().catch(() => {
+            // Ignore if autoplay is blocked
+          });
+        }
+      }
+      
+      // Update previous state
+      prevPnlStatusRef.current = pnl.isProfit;
+    }
+  }, [pnl.isProfit, pnl.percentage, currentPrice]);
+
+  // Calculate potential return based on payout percentage
+  const calculatePotentialReturn = () => {
+    // Get payout percentage from asset or use the trade's payout field
+    const payoutPercentage = trade.assets?.payout_percentage || (trade.payout ? (trade.payout / trade.amount) * 100 : 91);
+    
+    // Calculate potential profit
+    const potentialProfit = (trade.amount * payoutPercentage) / 100;
+    const totalReturn = trade.amount + potentialProfit;
+    
+    return {
+      profit: potentialProfit,
+      total: totalReturn,
+      percentage: payoutPercentage
+    };
+  };
+
+  const potentialReturn = calculatePotentialReturn();
+
+  return (
+    <div 
+      className={`absolute right-0 flex items-center gap-1 md:gap-2 px-1.5 md:px-3 py-1 md:py-1.5 rounded-l-lg transition-all duration-500 ease-out max-w-[95vw] md:max-w-none ${
+        isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'
+      }`}
+      style={{ 
+        pointerEvents: 'none',
+        zIndex: 1000,
+        background: isCriticalTime
+          ? 'linear-gradient(135deg, rgba(234, 179, 8, 0.15) 0%, rgba(234, 179, 8, 0.25) 100%)'
+          : isCall 
+            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0.25) 100%)'
+            : 'linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(239, 68, 68, 0.25) 100%)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        borderLeft: isCriticalTime
+          ? `4px solid #eab308`
+          : `4px solid ${isCall ? '#10b981' : '#ef4444'}`,
+        boxShadow: isCriticalTime
+          ? '0 8px 32px -8px rgba(234, 179, 8, 0.5), 0 0 0 1px rgba(234, 179, 8, 0.15), inset 0 0 20px rgba(234, 179, 8, 0.15)'
+          : isCall 
+            ? '0 8px 32px -8px rgba(16, 185, 129, 0.4), 0 0 0 1px rgba(16, 185, 129, 0.1), inset 0 0 20px rgba(16, 185, 129, 0.1)'
+            : '0 8px 32px -8px rgba(239, 68, 68, 0.4), 0 0 0 1px rgba(239, 68, 68, 0.1), inset 0 0 20px rgba(239, 68, 68, 0.1)',
+      }}
+    >
+      {/* Trade Type Indicator with Icon */}
+      <div 
+        className={`flex items-center gap-0.5 md:gap-1 px-1 md:px-2 py-0.5 md:py-1 rounded-md font-bold text-xs ${
+          isCall ? 'text-white' : 'text-white'
+        }`}
+        style={{
+          background: isCall 
+            ? 'linear-gradient(135deg, #10b981 0%, #059669 100%)'
+            : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+          boxShadow: isCall
+            ? '0 2px 8px rgba(16, 185, 129, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+            : '0 2px 8px rgba(239, 68, 68, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+        }}
+      >
+        {isCall ? (
+          <TrendingUp className="w-2.5 md:w-3 h-2.5 md:h-3" strokeWidth={2.5} />
+        ) : (
+          <TrendingDown className="w-2.5 md:w-3 h-2.5 md:h-3" strokeWidth={2.5} />
+        )}
+        <span className="text-[9px] md:text-[10px] tracking-wide hidden md:inline">
+          {isCall ? 'COMPRA' : 'VENDA'}
+        </span>
+      </div>
+
+      {/* Separator */}
+      <div 
+        className="h-5 md:h-6 w-px" 
+        style={{ 
+          background: isCall 
+            ? 'linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.3), transparent)'
+            : 'linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.3), transparent)'
+        }}
+      />
+      
+      {/* Timer Section with Critical Alert Animation */}
+      <div className={`flex flex-col items-start gap-0.5 ${isCriticalTime ? 'animate-pulse' : ''}`}>
+        <div 
+          className={`flex items-center gap-0.5 md:gap-1 px-1 md:px-1.5 py-0.5 rounded-md transition-all duration-300 ${
+            isCriticalTime ? 'bg-destructive/20' : ''
+          }`}
+          style={isCriticalTime ? {
+            animation: isVeryUrgent 
+              ? 'pulse 0.5s cubic-bezier(0.4, 0, 0.6, 1) infinite' 
+              : 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)'
+          } : {}}
+        >
+          <Timer 
+            className={`w-2.5 md:w-3 h-2.5 md:h-3 ${
+              isCriticalTime ? 'text-destructive' : 'text-foreground/70'
+            }`} 
+            strokeWidth={2.5}
+          />
+          <span 
+            className={`text-[10px] md:text-xs font-mono font-bold tracking-wide ${
+              isCriticalTime ? 'text-destructive' : 'text-foreground'
+            }`}
+          >
+            {formatTime(timeRemaining)}
+          </span>
+        </div>
+        <span className={`text-[8px] md:text-[9px] font-medium uppercase tracking-wide hidden md:block ${
+          isCriticalTime ? 'text-destructive' : 'text-muted-foreground'
+        }`}>
+          {isCriticalTime ? '⚠ EXPIRANDO' : 'Tempo restante'}
+        </span>
+      </div>
+
+      {/* Separator */}
+      <div 
+        className="h-5 md:h-6 w-px hidden md:block" 
+        style={{ 
+          background: isCall 
+            ? 'linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.3), transparent)'
+            : 'linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.3), transparent)'
+        }}
+      />
+
+      {/* Price Entry Section */}
+      <div className="hidden md:flex flex-col items-start gap-0.5">
+        <span className="text-xs font-mono font-bold text-foreground">
+          {formattedPrice}
+        </span>
+        <span className="text-[8px] text-muted-foreground font-medium uppercase tracking-wide">
+          Preço de entrada
+        </span>
+      </div>
+
+      {/* Separator */}
+      <div 
+        className="h-5 md:h-6 w-px" 
+        style={{ 
+          background: isCall 
+            ? 'linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.3), transparent)'
+            : 'linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.3), transparent)'
+        }}
+      />
+
+      {/* Amount Section */}
+      <div className="flex flex-col items-start gap-0.5">
+        <div className="flex items-center gap-0.5">
+          <DollarSign className="w-2.5 md:w-3 h-2.5 md:h-3 text-foreground/70" strokeWidth={2.5} />
+          <span className="text-[10px] md:text-xs font-bold text-foreground">
+            R$ {trade.amount.toFixed(2)}
+          </span>
+        </div>
+        <span className="text-[8px] md:text-[9px] text-muted-foreground font-medium uppercase tracking-wide hidden md:block">
+          Investimento
+        </span>
+      </div>
+
+      {/* P&L Section - Real-time Profit/Loss */}
+      {currentPrice > 0 && (
+        <>
+          {/* Separator */}
+          <div 
+            className="h-5 md:h-6 w-px" 
+            style={{ 
+              background: isCall 
+                ? 'linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.3), transparent)'
+                : 'linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.3), transparent)'
+            }}
+          />
+
+          <div 
+            className={`flex flex-col items-start gap-0.5 px-1 md:px-1.5 py-0.5 rounded-md transition-all duration-300 ${
+              pnl.isProfit ? 'bg-emerald-500/15' : 'bg-red-500/15'
+            }`}
+            style={{
+              border: `1px solid ${pnl.isProfit ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+            }}
+          >
+            <div className="flex items-center gap-0.5">
+              <TrendingUpDown 
+                className={`w-2.5 md:w-3 h-2.5 md:h-3 ${pnl.isProfit ? 'text-emerald-500' : 'text-red-500'}`} 
+                strokeWidth={2.5}
+              />
+              <span className={`text-[10px] md:text-xs font-bold font-mono ${
+                pnl.isProfit ? 'text-emerald-500' : 'text-red-500'
+              }`}>
+                {pnl.isProfit ? '+' : '-'}{pnl.percentage.toFixed(2)}%
+              </span>
+            </div>
+            <span className={`text-[8px] md:text-[9px] font-medium uppercase tracking-wide hidden md:block ${
+              pnl.isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
+            }`}>
+              {pnl.isProfit ? '📈 Lucro' : '📉 Prejuízo'}
+            </span>
+          </div>
+        </>
+      )}
+
+      {/* Separator */}
+      <div 
+        className="h-5 md:h-6 w-px" 
+        style={{ 
+          background: isCall 
+            ? 'linear-gradient(180deg, transparent, rgba(16, 185, 129, 0.3), transparent)'
+            : 'linear-gradient(180deg, transparent, rgba(239, 68, 68, 0.3), transparent)'
+        }}
+      />
+
+      {/* Potential Return Section */}
+      <div 
+        className="flex flex-col items-start gap-0.5 px-1 md:px-1.5 py-0.5 rounded-md bg-primary/10"
+        style={{
+          border: '1px solid rgba(99, 102, 241, 0.3)'
+        }}
+      >
+        <div className="flex items-center gap-0.5">
+          <Target 
+            className="w-2.5 md:w-3 h-2.5 md:h-3 text-primary" 
+            strokeWidth={2.5}
+          />
+          <span className="text-[10px] md:text-xs font-bold text-primary font-mono">
+            R$ {potentialReturn.total.toFixed(2)}
+          </span>
+        </div>
+        <span className="text-[8px] md:text-[9px] text-primary/80 font-medium uppercase tracking-wide hidden md:block">
+          🎯 Retorno {potentialReturn.percentage.toFixed(0)}%
+        </span>
+      </div>
+    </div>
+  );
+}
