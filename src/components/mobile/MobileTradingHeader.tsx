@@ -117,7 +117,7 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className="text-base font-bold leading-tight">
+            <div className={`text-base font-bold leading-tight ${!isDemoMode ? 'text-green-500' : ''}`}>
               R$ {currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
