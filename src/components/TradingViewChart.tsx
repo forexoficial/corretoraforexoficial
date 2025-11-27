@@ -56,6 +56,7 @@ export function TradingViewChart({
   const candleCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const [activeTrades, setActiveTrades] = useState<any[]>([]);
   const tradeLinesRef = useRef<Map<string, IPriceLine>>(new Map());
+  const notifiedTradesRef = useRef<Set<string>>(new Set());
   const [userId, setUserId] = useState<string | null>(null);
   const [completedTradeNotification, setCompletedTradeNotification] = useState<any>(null);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
@@ -1065,14 +1066,16 @@ export function TradingViewChart({
             old_status: oldTrade?.status,
           });
           
-          // Quando o trade muda de "open" para "won" ou "lost",
-          // o backend já processou o resultado e atualizou saldos.
-          if (
-            (updatedTrade.status === 'won' || updatedTrade.status === 'lost') &&
-            oldTrade?.status === 'open'
-          ) {
-            console.log('[Realtime UPDATE] 🎉 Trade FECHADO detectado via realtime, exibindo notificação');
-            fetchAndShowCompletedTrade(updatedTrade.id);
+          const isClosed = (updatedTrade.status === 'won' || updatedTrade.status === 'lost') && !!updatedTrade.closed_at;
+
+          if (isClosed) {
+            if (!notifiedTradesRef.current.has(updatedTrade.id)) {
+              console.log('[Realtime UPDATE] 🎉 Trade FECHADO detectado via realtime, exibindo notificação');
+              notifiedTradesRef.current.add(updatedTrade.id);
+              fetchAndShowCompletedTrade(updatedTrade.id);
+            } else {
+              console.log('[Realtime UPDATE] Trade já notificado anteriormente, ignorando:', updatedTrade.id);
+            }
           }
           
           if (updatedTrade.asset_id === assetId) {
@@ -1249,11 +1252,13 @@ export function TradingViewChart({
         </div>
       )}
 
-      {/* Trade Result Notification */}
-      <TradeNotification 
-        trade={completedTradeNotification}
-        onClose={() => setCompletedTradeNotification(null)}
-      />
+      {/* Trade Result Notification - desktop only */}
+      {!isMobile && (
+        <TradeNotification 
+          trade={completedTradeNotification}
+          onClose={() => setCompletedTradeNotification(null)}
+        />
+      )}
 
       {/* Zoom Controls */}
       <ChartZoomControls
