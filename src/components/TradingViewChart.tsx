@@ -1178,7 +1178,7 @@ export function TradingViewChart({
               style={{ 
                 position: 'absolute',
                 top: `${20 + (index * 60)}px`,
-                right: 0,
+                left: 0,
                 pointerEvents: 'auto'
               }}
             >
