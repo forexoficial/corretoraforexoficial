@@ -24,6 +24,17 @@ export const useChartData = (
   } = useChartContext();
 
   const loadCandles = useCallback(async () => {
+    console.log('[useChartData] loadCandles chamado', { 
+      candleSeriesExists: !!candleSeriesRef.current,
+      assetId,
+      timeframe 
+    });
+    
+    if (!candleSeriesRef.current) {
+      console.warn('[useChartData] candleSeriesRef não está pronto, aguardando...');
+      return null;
+    }
+    
     setIsLoading(true);
     try {
       const { data: candles, error } = await supabase
