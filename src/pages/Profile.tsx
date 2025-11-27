@@ -395,10 +395,16 @@ export default function Profile() {
 
             <div className="flex gap-2">
               {!isEditing ? (
-                <Button onClick={() => setIsEditing(true)} className="gap-2">
-                  <Edit2 className="h-4 w-4" />
-                  Editar Perfil
-                </Button>
+                <>
+                  <Button onClick={() => navigate("/")} variant="outline" className="gap-2">
+                    <TrendingUp className="h-4 w-4" />
+                    Voltar a Negociar
+                  </Button>
+                  <Button onClick={() => setIsEditing(true)} className="gap-2">
+                    <Edit2 className="h-4 w-4" />
+                    Editar Perfil
+                  </Button>
+                </>
               ) : (
                 <>
                   <Button onClick={handleSave} className="gap-2">
