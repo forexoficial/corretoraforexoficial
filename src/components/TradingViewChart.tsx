@@ -1177,7 +1177,7 @@ export function TradingViewChart({
               key={trade.id}
               style={{ 
                 position: 'absolute',
-                top: `${20 + (index * 60)}px`,
+                top: `${window.innerWidth >= 768 ? 120 + (index * 60) : 20 + (index * 60)}px`,
                 left: 0,
                 pointerEvents: 'auto'
               }}
