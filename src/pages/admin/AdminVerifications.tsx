@@ -35,6 +35,20 @@ export default function AdminVerifications() {
   const [rejectionReason, setRejectionReason] = useState("");
   const [processing, setProcessing] = useState(false);
 
+  const getSignedUrl = async (path: string) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from("verification-documents")
+        .createSignedUrl(path.split('/verification-documents/')[1], 3600); // 1 hour expiry
+      
+      if (error) throw error;
+      return data.signedUrl;
+    } catch (error) {
+      console.error("Error getting signed URL:", error);
+      return path; // Fallback to original path
+    }
+  };
+
   const fetchVerifications = async () => {
     const { data, error } = await supabase
       .from("verification_requests")
@@ -46,7 +60,7 @@ export default function AdminVerifications() {
       return;
     }
 
-    // Fetch profile data separately
+    // Fetch profile data and signed URLs
     const verificationsWithProfiles = await Promise.all(
       (data || []).map(async (verification) => {
         const { data: profileData } = await supabase
@@ -55,8 +69,20 @@ export default function AdminVerifications() {
           .eq("user_id", verification.user_id)
           .single();
 
+        // Get signed URLs for all images
+        const [documentFrontUrl, documentBackUrl, selfieUrl, businessDocUrl] = await Promise.all([
+          getSignedUrl(verification.document_front_url),
+          getSignedUrl(verification.document_back_url),
+          getSignedUrl(verification.selfie_url),
+          verification.business_document_url ? getSignedUrl(verification.business_document_url) : Promise.resolve(null)
+        ]);
+
         return {
           ...verification,
+          document_front_url: documentFrontUrl,
+          document_back_url: documentBackUrl,
+          selfie_url: selfieUrl,
+          business_document_url: businessDocUrl,
           profiles: profileData || { full_name: "Usuário", document: "" }
         };
       })
