@@ -115,6 +115,7 @@ export const useChartTrades = (
       
       // Show notification
       setCompletedTradeNotification({
+        tradeId: trade.id,
         status: trade.status,
         result: trade.result,
         amount: trade.amount,
