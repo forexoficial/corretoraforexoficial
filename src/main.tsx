@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { RealtimeProvider } from "./contexts/RealtimeContext";
 
 // Register service worker for PWA (in a safer way)
 if ('serviceWorker' in navigator) {
@@ -11,4 +12,8 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <RealtimeProvider>
+    <App />
+  </RealtimeProvider>
+);
