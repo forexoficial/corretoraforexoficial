@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { rateLimitMiddleware, getRateLimitHeaders } from '../_shared/rate-limiter.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -10,16 +9,6 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
-  }
-
-  // Rate limiting: 10 requests por minuto por usuário
-  const rateLimitResponse = rateLimitMiddleware(req, {
-    windowMs: 60 * 1000, // 1 minuto
-    maxRequests: 10
-  });
-
-  if (rateLimitResponse) {
-    return rateLimitResponse;
   }
 
   try {
@@ -73,10 +62,6 @@ serve(async (req) => {
 
       console.log(`Continuous processing completed: ${cycles} cycles, ${totalProcessed} trades, ${totalErrors} errors`)
 
-      // Adicionar headers de rate limit
-      const ip = req.headers.get('x-forwarded-for') || 'unknown';
-      const rateLimitHeaders = getRateLimitHeaders(ip, { windowMs: 60000, maxRequests: 10 });
-
       return new Response(
         JSON.stringify({
           success: true,
@@ -86,17 +71,13 @@ serve(async (req) => {
           errors: totalErrors,
           duration: Date.now() - startTime
         }),
-        { headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' } }
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
     // Single execution mode
     console.log('Starting to process expired trades (single execution)...')
     const result = await processExpiredTrades(supabase, specificUserId)
-
-    // Adicionar headers de rate limit
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitHeaders = getRateLimitHeaders(ip, { windowMs: 60000, maxRequests: 10 });
 
     return new Response(
       JSON.stringify({ 
@@ -105,7 +86,7 @@ serve(async (req) => {
         errors: result.errors,
         total: result.total
       }),
-      { headers: { ...corsHeaders, ...rateLimitHeaders, 'Content-Type': 'application/json' } }
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
