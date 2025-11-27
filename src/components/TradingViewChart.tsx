@@ -388,7 +388,7 @@ export function TradingViewChart({
         .select('*')
         .eq('asset_id', assetId)
         .eq('timeframe', timeframe)
-        .order('timestamp', { ascending: true })
+        .order('timestamp', { ascending: false })
         .limit(candleLimit);
 
       if (error) {
@@ -399,7 +399,12 @@ export function TradingViewChart({
       }
 
       if (candles && candles.length > 0 && candleSeriesRef.current) {
-        const chartData: CandlestickData<Time>[] = candles.map(c => {
+        // Garantir que os candles estejam em ordem cronológica crescente
+        const sortedCandles = [...candles].sort((a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        );
+
+        const chartData: CandlestickData<Time>[] = sortedCandles.map((c) => {
           // Timestamps já estão em UTC no banco, converter para Unix timestamp (segundos)
           const timestamp = new Date(c.timestamp).getTime() / 1000;
           return {
