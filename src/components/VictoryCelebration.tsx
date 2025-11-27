@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { Trophy, TrendingUp, Sparkles } from "lucide-react";
@@ -59,7 +60,7 @@ export function VictoryCelebration({ show, amount, profit, onComplete }: Victory
     };
   }, [show, onComplete]);
 
-  return (
+  const content = (
     <AnimatePresence>
       {show && (
         <motion.div
@@ -174,4 +175,6 @@ export function VictoryCelebration({ show, amount, profit, onComplete }: Victory
       )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
