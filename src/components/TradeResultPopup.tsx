@@ -21,31 +21,30 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   const { playSound } = useSoundEffects();
 
   useEffect(() => {
-    if (trade) {
-      console.log('[TradeResultPopup] Mostrando resultado:', trade.status);
-      setIsVisible(true);
-      
-      // Play sound immediately
-      const soundType = trade.status === 'won' ? 'trade-win' : 'trade-loss';
-      console.log('[TradeResultPopup] Tocando som:', soundType);
-      
-      // Try to play sound multiple times to ensure it works
-      setTimeout(() => playSound(soundType), 100);
-      setTimeout(() => playSound(soundType), 300);
-
-      // Auto close after 5 seconds
-      const timer = setTimeout(() => {
-        console.log('[TradeResultPopup] Auto-fechando após 5 segundos');
-        handleClose();
-      }, 5000);
-
-      return () => {
-        console.log('[TradeResultPopup] Limpando timer');
-        clearTimeout(timer);
-      };
-    } else {
+    if (!trade) {
       setIsVisible(false);
+      return;
     }
+
+    console.log('[TradeResultPopup] Mostrando resultado:', trade.status);
+    setIsVisible(true);
+    
+    const soundType = trade.status === 'won' ? 'trade-win' : 'trade-loss';
+    console.log('[TradeResultPopup] Tocando som único:', soundType);
+    
+    // Tocar o som uma única vez por operação
+    playSound(soundType);
+
+    // Fechar automaticamente após 5 segundos
+    const timer = setTimeout(() => {
+      console.log('[TradeResultPopup] Auto-fechando após 5 segundos');
+      handleClose();
+    }, 5000);
+
+    return () => {
+      console.log('[TradeResultPopup] Limpando timer');
+      clearTimeout(timer);
+    };
   }, [trade, playSound]);
 
   const handleClose = () => {

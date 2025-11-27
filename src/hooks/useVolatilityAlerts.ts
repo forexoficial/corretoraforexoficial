@@ -22,7 +22,7 @@ export function useVolatilityAlerts(currentAssetId: string | null) {
 
   // Initialize volatility alert sound
   useEffect(() => {
-    alertSound.current = new Audio('/sounds/volatility.mp3');
+    alertSound.current = new Audio('/sounds/volatility.MP3');
     alertSound.current.volume = 0.5;
   }, []);
 

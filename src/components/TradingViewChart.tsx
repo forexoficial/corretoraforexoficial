@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, IPriceLine, LineSeries, HistogramSeries } from "lightweight-charts";
 import { supabase } from "@/integrations/supabase/client";
 import { TradeMarker } from "./TradeMarker";
-import { TradeNotification } from "./TradeNotification";
+import { TradeResultPopup } from "./TradeResultPopup";
 import { WorldMapBackground } from "./WorldMapBackground";
 import { CandleTimeIndicator } from "./CandleTimeIndicator";
 import { ChartZoomControls } from "./ChartZoomControls";
@@ -1252,9 +1252,9 @@ export function TradingViewChart({
         </div>
       )}
 
-      {/* Trade Result Notification - desktop only */}
+      {/* Trade Result Popup - desktop only */}
       {!isMobile && (
-        <TradeNotification 
+        <TradeResultPopup 
           trade={completedTradeNotification}
           onClose={() => setCompletedTradeNotification(null)}
         />
