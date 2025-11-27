@@ -80,11 +80,11 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.8, y: 20 }}
             transition={{ type: "spring", duration: 0.5 }}
-            className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[9999] w-[90vw] max-w-md"
+            className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
           >
             <div
               className={cn(
-                "relative overflow-hidden rounded-3xl shadow-2xl border-4 p-8",
+                "relative overflow-hidden rounded-3xl shadow-2xl border-4 p-8 w-[90vw] max-w-md",
                 isWin
                   ? "bg-gradient-to-br from-green-500/20 via-green-600/30 to-green-700/20 border-green-500"
                   : "bg-gradient-to-br from-red-500/20 via-red-600/30 to-red-700/20 border-red-500",
