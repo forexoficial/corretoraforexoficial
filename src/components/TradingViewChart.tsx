@@ -919,7 +919,52 @@ export function TradingViewChart({
     });
   };
 
+  const fetchAndShowCompletedTrade = useCallback(async (tradeId: string) => {
+    try {
+      console.log('[CompletedTrade] Buscando trade concluído para notificação:', tradeId);
+
+      const { data: completedTrade, error } = await supabase
+        .from('trades')
+        .select(`
+          *,
+          assets (
+            name
+          )
+        `)
+        .eq('id', tradeId)
+        .single();
+
+      if (error) {
+        console.error('[CompletedTrade] Erro ao buscar trade concluído:', error);
+        return;
+      }
+
+      if (completedTrade && completedTrade.status !== 'open') {
+        console.log('[CompletedTrade] Trade concluído encontrado, exibindo notificação:', {
+          id: completedTrade.id,
+          status: completedTrade.status,
+          result: completedTrade.result,
+          amount: completedTrade.amount,
+          asset_name: completedTrade.assets?.name,
+        });
+
+        setCompletedTradeNotification({
+          id: completedTrade.id,
+          status: completedTrade.status,
+          result: completedTrade.result,
+          amount: completedTrade.amount,
+          asset_name: completedTrade.assets?.name,
+        });
+      } else {
+        console.log('[CompletedTrade] Trade ainda não foi fechado, status atual:', completedTrade?.status);
+      }
+    } catch (error) {
+      console.error('[CompletedTrade] Exceção ao buscar trade concluído:', error);
+    }
+  }, []);
+
   const handleTradeExpire = async (tradeId: string) => {
+    console.log('[HandleTradeExpire] Trade expirado no client, limpando UI:', tradeId);
     // Get trade details before removing
     const trade = activeTrades.find(t => t.id === tradeId);
     
@@ -933,29 +978,10 @@ export function TradingViewChart({
       tradeLinesRef.current.delete(tradeId);
     }
 
-    // Fetch completed trade info for notification
-    if (trade) {
-      const { data: completedTrade } = await supabase
-        .from('trades')
-        .select(`
-          *,
-          assets (
-            name
-          )
-        `)
-        .eq('id', tradeId)
-        .single();
-
-      if (completedTrade && completedTrade.status !== 'open') {
-        setCompletedTradeNotification({
-          id: completedTrade.id,
-          status: completedTrade.status,
-          result: completedTrade.result,
-          amount: completedTrade.amount,
-          asset_name: completedTrade.assets?.name,
-        });
-      }
-    }
+    // A notificação visual agora é disparada pelo evento de UPDATE em tempo real,
+    // garantindo que o backend já processou o resultado e atualizou saldos.
+    // Como fallback, se o trade ainda estiver "open" após alguns segundos,
+    // poderíamos opcionalmente chamar fetchAndShowCompletedTrade aqui.
   };
 
   // Subscribe to new trades
@@ -1029,16 +1055,30 @@ export function TradingViewChart({
           filter: `user_id=eq.${userId}`
         },
         (payload) => {
-          const updatedTrade = payload.new;
+          const updatedTrade = payload.new as any;
+          const oldTrade = payload.old as any;
+
           console.log('[Realtime UPDATE] Trade atualizado:', {
             id: updatedTrade.id,
             asset_id: updatedTrade.asset_id,
-            status: updatedTrade.status
+            status: updatedTrade.status,
+            old_status: oldTrade?.status,
           });
+          
+          // Quando o trade muda de "open" para "won" ou "lost",
+          // o backend já processou o resultado e atualizou saldos.
+          if (
+            (updatedTrade.status === 'won' || updatedTrade.status === 'lost') &&
+            oldTrade?.status === 'open'
+          ) {
+            console.log('[Realtime UPDATE] 🎉 Trade FECHADO detectado via realtime, exibindo notificação');
+            fetchAndShowCompletedTrade(updatedTrade.id);
+          }
           
           if (updatedTrade.asset_id === assetId) {
             setActiveTrades(prev => 
-              prev.map(t => t.id === updatedTrade.id ? updatedTrade : t)
+              prev
+                .map(t => (t.id === updatedTrade.id ? updatedTrade : t))
                 .filter(t => t.status === 'open')
             );
           }
