@@ -24,6 +24,7 @@ interface VerificationRequest {
   profiles: {
     full_name: string;
     document: string;
+    verification_status?: string | null;
   } | null;
 }
 
@@ -37,9 +38,10 @@ export default function AdminVerifications() {
 
   const getSignedUrl = async (path: string) => {
     try {
+      const relativePath = path.split('/verification-documents/')[1] || path;
       const { data, error } = await supabase.storage
         .from("verification-documents")
-        .createSignedUrl(path.split('/verification-documents/')[1], 3600); // 1 hour expiry
+        .createSignedUrl(relativePath, 3600); // 1 hour expiry
       
       if (error) throw error;
       return data.signedUrl;
@@ -60,14 +62,28 @@ export default function AdminVerifications() {
       return;
     }
 
-    // Fetch profile data and signed URLs
+    // Fetch profile data, fix legacy statuses and get signed URLs
     const verificationsWithProfiles = await Promise.all(
       (data || []).map(async (verification) => {
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name, document")
+          .select("full_name, document, verification_status")
           .eq("user_id", verification.user_id)
           .single();
+
+        // Corrigir perfis antigos: se verificação está aprovada mas o perfil não
+        if (
+          verification.status === "approved" &&
+          profileData &&
+          profileData.verification_status !== "approved"
+        ) {
+          await supabase
+            .from("profiles")
+            .update({ verification_status: "approved" })
+            .eq("user_id", verification.user_id);
+
+          profileData.verification_status = "approved";
+        }
 
         // Get signed URLs for all images
         const [documentFrontUrl, documentBackUrl, selfieUrl, businessDocUrl] = await Promise.all([
@@ -83,7 +99,7 @@ export default function AdminVerifications() {
           document_back_url: documentBackUrl,
           selfie_url: selfieUrl,
           business_document_url: businessDocUrl,
-          profiles: profileData || { full_name: "Usuário", document: "" }
+          profiles: profileData || { full_name: "Usuário", document: "", verification_status: null }
         };
       })
     );
