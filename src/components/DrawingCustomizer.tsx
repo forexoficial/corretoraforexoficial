@@ -41,7 +41,7 @@ export function DrawingCustomizer({ style, onChange }: DrawingCustomizerProps) {
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="h-10 w-10 rounded-lg bg-muted/60 hover:bg-muted transition-colors"
+          className="h-10 w-10 rounded-lg bg-card border border-border hover:bg-accent transition-colors"
           title="Personalizar Desenhos"
         >
           <Palette className="h-4 w-4" />
@@ -125,10 +125,10 @@ export function DrawingCustomizer({ style, onChange }: DrawingCustomizerProps) {
                   key={lineStyle.value}
                   onClick={() => onChange({ ...style, lineStyle: lineStyle.value })}
                   className={cn(
-                    "px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all",
+                    "px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all bg-card",
                     style.lineStyle === lineStyle.value
-                      ? "border-primary bg-primary/10 text-primary"
-                      : "border-border hover:border-primary/50"
+                      ? "border-primary bg-primary/10 dark:bg-primary/20 text-primary"
+                      : "border-border hover:border-primary/50 hover:bg-accent"
                   )}
                 >
                   <div className="space-y-1">
@@ -153,7 +153,7 @@ export function DrawingCustomizer({ style, onChange }: DrawingCustomizerProps) {
           </div>
         </div>
 
-        <div className="p-3 bg-muted/50 border-t">
+        <div className="p-3 bg-accent/50 border-t">
           <p className="text-xs text-muted-foreground">
             💡 As configurações serão aplicadas aos novos desenhos
           </p>
