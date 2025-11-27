@@ -44,41 +44,51 @@ export default function Withdrawal() {
   const quickAmounts = [150, 200, 300, 500];
 
   useEffect(() => {
-    if (!user) {
-      setBalanceLoading(false);
-      return;
-    }
-
     const loadBalance = async () => {
       try {
-        const { data: profile, error } = await supabase
+        const { data: { user: currentUser }, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("[Withdrawal] Error getting auth user:", userError);
+          setBalanceLoading(false);
+          return;
+        }
+        if (!currentUser) {
+          console.warn("[Withdrawal] No authenticated user found.");
+          setBalanceLoading(false);
+          return;
+        }
+
+        const { data: profile, error: profileError } = await supabase
           .from("profiles")
           .select("balance")
-          .eq("user_id", user.id)
+          .eq("user_id", currentUser.id)
           .maybeSingle();
 
-        if (error) {
-          console.error("Error fetching profile balance for withdrawal:", error);
-          toast.error("Não foi possível carregar seu saldo para saque.");
+        if (profileError) {
+          console.error("[Withdrawal] Error fetching profile balance:", profileError);
+          setBalanceLoading(false);
           return;
         }
 
         if (profile?.balance != null) {
-          setBalances((prev) => ({
+          const realBalance = Number(profile.balance) || 0;
+          console.log("[Withdrawal] Loaded real balance:", realBalance, "for user", currentUser.id);
+          setBalances(prev => ({
             ...prev,
-            real: Number(profile.balance),
+            real: realBalance,
           }));
+        } else {
+          console.warn("[Withdrawal] Profile found but balance is null or undefined for user", currentUser.id);
         }
       } catch (err) {
-        console.error("Unexpected error loading balance for withdrawal:", err);
-        toast.error("Erro ao carregar saldo para saque.");
+        console.error("[Withdrawal] Unexpected error loading balance:", err);
       } finally {
         setBalanceLoading(false);
       }
     };
 
     loadBalance();
-  }, [user]);
+  }, []);
 
   const handleWithdrawal = async (e: React.FormEvent) => {
     e.preventDefault();
