@@ -380,7 +380,7 @@ export function TradingViewChart({
         '10s': 60,   // ~10 minutos de histórico
         '30s': 60,   // ~30 minutos de histórico
         '1m': 60,    // ~1 hora de histórico
-        '5m': 48     // ~4 horas de histórico
+        '5m': 36     // ~3 horas de histórico (reduzido para melhor visualização)
       };
       const candleLimit = candleLimitMap[timeframe] || 60;
 
@@ -743,7 +743,7 @@ export function TradingViewChart({
       '10s': 40,  // Show last 40 candles (~6-7 minutes) - melhor visualização
       '30s': 35,  // Show last 35 candles (~17 minutes)
       '1m': 30,   // Show last 30 candles (~30 minutes)
-      '5m': 24    // Show last 24 candles (~2 hours)
+      '5m': 20    // Show last 20 candles (~1h 40min) - otimizado para visibilidade
     };
     return map[tf] || 30;
   };
