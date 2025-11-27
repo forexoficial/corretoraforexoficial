@@ -504,64 +504,82 @@ export function TradingViewChart({
     const periodStart = Date.now();
     setCurrentCandleTime(periodStart);
 
-    // Calculate animation interval based on timeframe (apenas timeframes curtos)
-    const getAnimationInterval = (timeframe: string): number => {
+    // Professional smooth animation system
+    const ANIMATION_FPS = 60; // 60 FPS for ultra-smooth movement
+    const FRAME_INTERVAL = 1000 / ANIMATION_FPS; // ~16ms per frame
+    
+    // Calculate volatility intervals for target price changes
+    const getTargetChangeInterval = (timeframe: string): number => {
       const intervals: Record<string, number> = {
-        '10s': 1000,  // Update every 1 second
-        '30s': 2000,  // Update every 2 seconds
-        '1m': 3000,   // Update every 3 seconds
-        '5m': 5000    // Update every 5 seconds
+        '10s': 800,   // New target every 0.8s
+        '30s': 1500,  // New target every 1.5s
+        '1m': 2000,   // New target every 2s
+        '5m': 3000    // New target every 3s
       };
-      return intervals[timeframe] || 3000;
+      return intervals[timeframe] || 2000;
     };
 
-    const animationInterval = getAnimationInterval(tf);
+    let targetPrice = Number(candle.close);
+    let currentPrice = Number(candle.close);
+    let lastTargetUpdate = Date.now();
+    const targetInterval = getTargetChangeInterval(tf);
 
-    // Animate price movement at calculated interval
+    // Smooth interpolation animation at 60 FPS
     smoothAnimationIntervalRef.current = setInterval(() => {
       if (!candleSeriesRef.current || !currentCandleRef.current) return;
 
       const current = currentCandleRef.current;
-      const open = Number(current.open);
-      const high = Number(current.high);
-      const low = Number(current.low);
+      const now = Date.now();
       
-      // Generate small random movement within candle range
-      const range = high - low;
-      const volatility = range * 0.3; // 30% of the range
-      const currentClose = Number(current.close);
+      // Update target price at regular intervals for realistic volatility
+      if (now - lastTargetUpdate >= targetInterval) {
+        const open = Number(current.open);
+        const high = Number(current.high);
+        const low = Number(current.low);
+        const range = high - low;
+        const volatility = range * 0.3; // 30% of the range
+        
+        // Generate new random target within boundaries
+        const randomChange = (Math.random() - 0.5) * volatility;
+        targetPrice = currentPrice + randomChange;
+        targetPrice = Math.max(low, Math.min(high, targetPrice));
+        
+        lastTargetUpdate = now;
+      }
       
-      // Random movement around current close
-      const randomChange = (Math.random() - 0.5) * volatility;
-      let newClose = currentClose + randomChange;
+      // Smooth interpolation towards target (easing function)
+      // Use exponential smoothing for natural deceleration
+      const smoothingFactor = 0.15; // Higher = faster movement, lower = smoother
+      const priceDiff = targetPrice - currentPrice;
+      currentPrice += priceDiff * smoothingFactor;
       
-      // Keep within candle boundaries
-      newClose = Math.max(low, Math.min(high, newClose));
+      // Update candle boundaries if needed
+      const newHigh = Math.max(Number(current.high), currentPrice);
+      const newLow = Math.min(Number(current.low), currentPrice);
       
       const timestamp = new Date(current.timestamp).getTime() / 1000;
       
       const updatedCandle: CandlestickData<Time> = {
         time: timestamp as Time,
-        open,
-        high: Math.max(high, newClose),
-        low: Math.min(low, newClose),
-        close: newClose,
+        open: Number(current.open),
+        high: newHigh,
+        low: newLow,
+        close: currentPrice,
       };
 
       // Update local reference
-      currentCandleRef.current.close = newClose;
-      currentCandleRef.current.high = Math.max(high, newClose);
-      currentCandleRef.current.low = Math.min(low, newClose);
+      currentCandleRef.current.close = currentPrice;
+      currentCandleRef.current.high = newHigh;
+      currentCandleRef.current.low = newLow;
       
       candleSeriesRef.current.update(updatedCandle);
       
-      // CRITICAL: Notify parent and update internal state with the exact price displayed on the Price Line
-      // This ensures the trade entry price and P&L are always synchronized with the visible price
-      setCurrentPrice(newClose);
+      // CRITICAL: Notify parent with smooth price updates for accurate P&L
+      setCurrentPrice(currentPrice);
       if (onCurrentPriceUpdate) {
-        onCurrentPriceUpdate(newClose);
+        onCurrentPriceUpdate(currentPrice);
       }
-    }, animationInterval);
+    }, FRAME_INTERVAL);
   };
 
   const handleCandleUpdate = (payload: any) => {
