@@ -243,14 +243,22 @@ export function TradingViewChart({
       ? getThemeColor(appearanceSettings.candle_border_down_color_light, appearanceSettings.candle_border_down_color_dark)
       : candleDownColor;
     
+    const wickUpColor = appearanceSettings 
+      ? getThemeColor(appearanceSettings.wick_up_color_light, appearanceSettings.wick_up_color_dark)
+      : candleUpColor;
+      
+    const wickDownColor = appearanceSettings 
+      ? getThemeColor(appearanceSettings.wick_down_color_light, appearanceSettings.wick_down_color_dark)
+      : candleDownColor;
+    
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: candleUpColor,
       downColor: candleDownColor,
       borderVisible: appearanceSettings?.candle_border_visible ?? false,
       borderUpColor: candleBorderUpColor,
       borderDownColor: candleBorderDownColor,
-      wickUpColor: candleUpColor,
-      wickDownColor: candleDownColor,
+      wickUpColor: wickUpColor,
+      wickDownColor: wickDownColor,
       priceLineVisible: priceLineConfig?.visible ?? true,
       priceLineColor: priceLineConfig?.color ?? '#ffffff',
       priceLineWidth: (priceLineConfig?.width ?? 1) as any,
