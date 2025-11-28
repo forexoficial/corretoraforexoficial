@@ -30,6 +30,7 @@ export default function Profile() {
   const [avatarDialogOpen, setAvatarDialogOpen] = useState(false);
   const [copiedId, setCopiedId] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const [isAffiliate, setIsAffiliate] = useState(false);
   const [stats, setStats] = useState({
     totalTrades: 0,
     successRate: 0,
@@ -52,6 +53,7 @@ export default function Profile() {
       loadProfile();
       loadRealStats();
       loadRecentActivity();
+      checkAffiliateStatus();
     }
   }, [user]);
 
@@ -157,6 +159,21 @@ export default function Profile() {
       setRecentActivity(activities);
     } catch (error: any) {
       console.error("Erro ao carregar atividade recente:", error);
+    }
+  };
+
+  const checkAffiliateStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("affiliates")
+        .select("id")
+        .eq("user_id", user?.id)
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsAffiliate(!!data);
+    } catch (error: any) {
+      console.error("Erro ao verificar status de afiliado:", error);
     }
   };
 
@@ -635,6 +652,31 @@ export default function Profile() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Affiliate Panel Button */}
+      {isAffiliate && (
+        <div className="container mx-auto px-4 pb-8">
+          <Card className="bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-bold mb-1">Painel de Afiliado</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Gerencie suas comissões, referidos e estatísticas de afiliado
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate('/affiliate/dashboard')}
+                  className="gap-2"
+                >
+                  <Award className="h-4 w-4" />
+                  Acessar Painel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Avatar Upload Dialog */}
       <AvatarUploadDialog
