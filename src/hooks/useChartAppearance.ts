@@ -41,6 +41,13 @@ interface ChartAppearanceSettings {
   candle_border_down_color_dark: string;
   candle_border_up_color_light: string;
   candle_border_down_color_light: string;
+  // Candle wicks
+  wick_up_color: string;
+  wick_down_color: string;
+  wick_up_color_dark: string;
+  wick_down_color_dark: string;
+  wick_up_color_light: string;
+  wick_down_color_light: string;
   // Map settings
   map_enabled: boolean;
   map_opacity: number;

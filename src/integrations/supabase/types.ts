@@ -284,6 +284,12 @@ export type Database = {
           updated_by: string | null
           watermark_text: string | null
           watermark_visible: boolean
+          wick_down_color: string | null
+          wick_down_color_dark: string | null
+          wick_down_color_light: string | null
+          wick_up_color: string | null
+          wick_up_color_dark: string | null
+          wick_up_color_light: string | null
         }
         Insert: {
           candle_border_down_color?: string | null
@@ -340,6 +346,12 @@ export type Database = {
           updated_by?: string | null
           watermark_text?: string | null
           watermark_visible?: boolean
+          wick_down_color?: string | null
+          wick_down_color_dark?: string | null
+          wick_down_color_light?: string | null
+          wick_up_color?: string | null
+          wick_up_color_dark?: string | null
+          wick_up_color_light?: string | null
         }
         Update: {
           candle_border_down_color?: string | null
@@ -396,6 +408,12 @@ export type Database = {
           updated_by?: string | null
           watermark_text?: string | null
           watermark_visible?: boolean
+          wick_down_color?: string | null
+          wick_down_color_dark?: string | null
+          wick_down_color_light?: string | null
+          wick_up_color?: string | null
+          wick_up_color_dark?: string | null
+          wick_up_color_light?: string | null
         }
         Relationships: []
       }

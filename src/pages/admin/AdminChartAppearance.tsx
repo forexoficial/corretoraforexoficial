@@ -50,6 +50,13 @@ interface ChartAppearanceSettings {
   candle_border_down_color_dark: string;
   candle_border_up_color_light: string;
   candle_border_down_color_light: string;
+  // Candle wicks
+  wick_up_color: string;
+  wick_down_color: string;
+  wick_up_color_dark: string;
+  wick_down_color_dark: string;
+  wick_up_color_light: string;
+  wick_down_color_light: string;
   map_enabled: boolean;
   map_opacity: number;
   map_primary_color: string;
@@ -106,6 +113,13 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   candle_border_down_color_dark: '#ef4444',
   candle_border_up_color_light: '#22c55e',
   candle_border_down_color_light: '#ef4444',
+  // Candle wicks defaults
+  wick_up_color: '#22c55e',
+  wick_down_color: '#ef4444',
+  wick_up_color_dark: '#22c55e',
+  wick_down_color_dark: '#ef4444',
+  wick_up_color_light: '#22c55e',
+  wick_down_color_light: '#ef4444',
   map_enabled: true,
   map_opacity: 0.08,
   map_primary_color: '#6366f1',
@@ -975,6 +989,114 @@ export default function AdminChartAppearance() {
                     type="text"
                     value={settings.candle_border_down_color_light}
                     onChange={(e) => setSettings({ ...settings, candle_border_down_color_light: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Candle Wicks */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Cores dos Pavios das Velas
+          </CardTitle>
+          <CardDescription>
+            Configure as cores dos pavios (linhas superiores e inferiores) das velas
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Cores dos pavios - Modo Escuro */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Cores dos Pavios (Modo Escuro)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="wick_up_color_dark">Pavio Vela de Alta</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="wick_up_color_dark"
+                    type="color"
+                    value={settings.wick_up_color_dark}
+                    onChange={(e) => setSettings({ ...settings, wick_up_color_dark: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.wick_up_color_dark}
+                    onChange={(e) => setSettings({ ...settings, wick_up_color_dark: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wick_down_color_dark">Pavio Vela de Baixa</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="wick_down_color_dark"
+                    type="color"
+                    value={settings.wick_down_color_dark}
+                    onChange={(e) => setSettings({ ...settings, wick_down_color_dark: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.wick_down_color_dark}
+                    onChange={(e) => setSettings({ ...settings, wick_down_color_dark: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Cores dos pavios - Modo Claro */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Cores dos Pavios (Modo Claro)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="wick_up_color_light">Pavio Vela de Alta</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="wick_up_color_light"
+                    type="color"
+                    value={settings.wick_up_color_light}
+                    onChange={(e) => setSettings({ ...settings, wick_up_color_light: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.wick_up_color_light}
+                    onChange={(e) => setSettings({ ...settings, wick_up_color_light: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="wick_down_color_light">Pavio Vela de Baixa</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="wick_down_color_light"
+                    type="color"
+                    value={settings.wick_down_color_light}
+                    onChange={(e) => setSettings({ ...settings, wick_down_color_light: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.wick_down_color_light}
+                    onChange={(e) => setSettings({ ...settings, wick_down_color_light: e.target.value })}
                     className="flex-1"
                   />
                 </div>
