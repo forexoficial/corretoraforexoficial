@@ -404,6 +404,11 @@ export default function Profile() {
                     <Edit2 className="h-4 w-4" />
                     Editar Perfil
                   </Button>
+                  {isMobile && (
+                    <Button onClick={handleLogoutClick} variant="destructive" size="icon">
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  )}
                 </>
               ) : (
                 <>
