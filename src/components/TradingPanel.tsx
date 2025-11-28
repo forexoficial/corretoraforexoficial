@@ -2,11 +2,14 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowUp, ArrowDown, Minus, Plus } from "lucide-react";
+import { ArrowUp, ArrowDown, Minus, Plus, Zap, History, Banknote } from "lucide-react";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useNavigate } from "react-router-dom";
+import { BoosterMenu } from "@/components/BoosterMenu";
+import { TradingHistory } from "@/components/TradingHistory";
 
 interface TradingPanelProps {
   selectedAsset: {
@@ -24,11 +27,14 @@ interface TradingPanelProps {
 export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, currentPrice }: TradingPanelProps) => {
   const { settings } = usePlatformSettings();
   const { playSound } = useSoundEffects();
+  const navigate = useNavigate();
   const [amount, setAmount] = useState<number>(10);
   const [duration, setDuration] = useState<number>(1);
   const [isEditingAmount, setIsEditingAmount] = useState(false);
   const [tempAmount, setTempAmount] = useState<string>("10.00");
   const inputRef = useRef<HTMLInputElement>(null);
+  const [showBoosterMenu, setShowBoosterMenu] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     if (isEditingAmount && inputRef.current) {
@@ -303,24 +309,68 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
 
       {/* Trade Buttons */}
       <div className="flex flex-col gap-2">
+        {/* Row 1: Buy and Sell */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            className="bg-[#22c55e] hover:bg-[#22c55e]/90 h-14 text-white font-bold text-base rounded-xl"
+            onClick={() => handleTrade('call')}
+            disableSound
+          >
+            C Mercado
+          </Button>
+          <Button
+            className="bg-[#ef4444] hover:bg-[#ef4444]/90 h-14 text-white font-bold text-base rounded-xl"
+            onClick={() => handleTrade('put')}
+            disableSound
+          >
+            V Mercado
+          </Button>
+        </div>
+
+        {/* Row 2: Booster and History */}
+        <div className="grid grid-cols-2 gap-2">
+          <Button
+            variant="secondary"
+            className="h-14 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
+            onClick={() => setShowBoosterMenu(true)}
+            disableSound
+          >
+            <Zap className="w-4 h-4 mr-2" />
+            Booster
+          </Button>
+          <Button
+            variant="secondary"
+            className="h-14 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
+            onClick={() => setShowHistory(true)}
+            disableSound
+          >
+            <History className="w-4 h-4 mr-2" />
+            Histórico
+          </Button>
+        </div>
+
+        {/* Row 3: Withdrawal */}
         <Button
-          className="bg-success hover:bg-success/90 h-12 w-full"
-          onClick={() => handleTrade('call')}
+          className="h-14 w-full font-bold text-base rounded-xl bg-[#fbbf24] hover:bg-[#fbbf24]/90 text-black"
+          onClick={() => navigate('/withdrawal')}
           disableSound
         >
-          <ArrowUp className="w-4 h-4 mr-2" />
-          Comprar
-        </Button>
-        <Button
-          variant="destructive"
-          className="h-12 w-full"
-          onClick={() => handleTrade('put')}
-          disableSound
-        >
-          <ArrowDown className="w-4 h-4 mr-2" />
-          Vender
+          <Banknote className="w-5 h-5 mr-2" />
+          Retirada
         </Button>
       </div>
+
+      {/* Booster Menu */}
+      <BoosterMenu 
+        open={showBoosterMenu}
+        onOpenChange={setShowBoosterMenu}
+      />
+
+      {/* Trading History */}
+      <TradingHistory 
+        open={showHistory}
+        onOpenChange={setShowHistory}
+      />
 
       {/* Clock */}
       <div className="text-center text-xs text-muted-foreground pt-3 border-t border-border">
