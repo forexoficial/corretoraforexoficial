@@ -131,14 +131,6 @@ export function MobileTradingControls({
       return;
     }
 
-    const balanceField = isDemoMode ? 'demo_balance' : 'balance';
-    const newBalance = currentBalance - amount;
-
-    await supabase
-      .from('profiles')
-      .update({ [balanceField]: newBalance })
-      .eq('user_id', user.id);
-
     // Play trade open sound
     playSound('trade-open');
 
