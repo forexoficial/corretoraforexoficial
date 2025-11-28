@@ -15,6 +15,7 @@ import Withdrawal from "./pages/Withdrawal";
 import Transactions from "./pages/Transactions";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
+import Signup from "./pages/Signup";
 import NotFound from "./pages/NotFound";
 import VerifyIdentity from "./pages/VerifyIdentity";
 import Install from "./pages/Install";
@@ -59,6 +60,7 @@ const App = () => (
               <InstallPrompt />
             <Routes>
               <Route path="/auth" element={<Auth />} />
+              <Route path="/signup" element={<Signup />} />
               <Route path="/install" element={<Install />} />
             <Route
               path="/"

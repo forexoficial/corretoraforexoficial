@@ -451,6 +451,77 @@ Cadastre-se usando meu link exclusivo: ${affiliateLink}
         </CardContent>
       </Card>
 
+      {/* Signup Link Section - Higher Conversion */}
+      <Card className="border-primary/30 bg-gradient-to-br from-primary/5 to-background">
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <div className="p-2 rounded-lg bg-primary/20">
+              <Share2 className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <CardTitle className="text-base sm:text-lg">Link de Cadastro Direto</CardTitle>
+              <CardDescription className="text-xs mt-1">
+                ⚡ Página exclusiva de cadastro - Taxa de conversão otimizada
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="p-3 sm:p-4 bg-background/50 rounded-lg border border-primary/20">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div className="flex-1">
+                  <p className="text-xs sm:text-sm font-semibold text-primary mb-1">
+                    🎯 Recomendado para campanhas de aquisição
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Este link leva direto para a página de cadastro, sem distrações. Perfeito para redes sociais, anúncios e campanhas focadas em conversão.
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1 p-2 sm:p-3 bg-muted rounded-md font-mono text-xs sm:text-sm break-all">
+                  {`${window.location.origin}/signup?ref=${affiliateCode}`}
+                </div>
+                <Button
+                  onClick={() => copyToClipboard(`${window.location.origin}/signup?ref=${affiliateCode}`, "Link Signup")}
+                  variant="default"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  {copied === "Link Signup" ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Copiado</span>
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="w-4 h-4 sm:mr-2" />
+                      <span className="hidden sm:inline">Copiar Link</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="p-3 bg-background/50 rounded-lg border border-border">
+                <p className="font-semibold mb-1">✓ Foco em Conversão</p>
+                <p className="text-muted-foreground">Página dedicada sem alternativas de navegação</p>
+              </div>
+              <div className="p-3 bg-background/50 rounded-lg border border-border">
+                <p className="font-semibold mb-1">✓ Rastreamento Completo</p>
+                <p className="text-muted-foreground">Identifica automaticamente seus referidos</p>
+              </div>
+              <div className="p-3 bg-background/50 rounded-lg border border-border">
+                <p className="font-semibold mb-1">✓ Mobile Otimizado</p>
+                <p className="text-muted-foreground">Design responsivo para todos os dispositivos</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-base sm:text-lg">Materiais Promocionais</CardTitle>
