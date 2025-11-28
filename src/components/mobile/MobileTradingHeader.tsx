@@ -60,7 +60,7 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
   };
 
   return (
-    <div className="bg-background/95 backdrop-blur-sm border-b border-border px-3 py-2.5" style={{ paddingTop: 'max(0.625rem, env(safe-area-inset-top))' }}>
+    <div className="bg-background/95 backdrop-blur-sm border-b border-border px-3 py-2.5" style={{ paddingTop: 'max(0.625rem, min(env(safe-area-inset-top), 8px))' }}>
       <div className="flex items-center justify-between gap-2">
         {/* Left Section: Menu + Logo */}
         <div className="flex items-center gap-2">
