@@ -235,10 +235,20 @@ export function TradingViewChart({
     });
 
     // Use the v5 API for adding candlestick series with theme-specific colors
+    const candleBorderUpColor = appearanceSettings 
+      ? getThemeColor(appearanceSettings.candle_border_up_color_light, appearanceSettings.candle_border_up_color_dark)
+      : candleUpColor;
+      
+    const candleBorderDownColor = appearanceSettings 
+      ? getThemeColor(appearanceSettings.candle_border_down_color_light, appearanceSettings.candle_border_down_color_dark)
+      : candleDownColor;
+    
     const candleSeries = chart.addSeries(CandlestickSeries, {
       upColor: candleUpColor,
       downColor: candleDownColor,
-      borderVisible: false,
+      borderVisible: appearanceSettings?.candle_border_visible ?? false,
+      borderUpColor: candleBorderUpColor,
+      borderDownColor: candleBorderDownColor,
       wickUpColor: candleUpColor,
       wickDownColor: candleDownColor,
       priceLineVisible: priceLineConfig?.visible ?? true,

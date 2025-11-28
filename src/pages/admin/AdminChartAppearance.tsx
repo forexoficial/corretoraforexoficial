@@ -41,6 +41,15 @@ interface ChartAppearanceSettings {
   price_scale_border_color_light: string;
   time_scale_border_color_light: string;
   crosshair_color_light: string;
+  // Candle borders
+  candle_border_visible: boolean;
+  candle_border_up_color: string;
+  candle_border_down_color: string;
+  candle_border_width: number;
+  candle_border_up_color_dark: string;
+  candle_border_down_color_dark: string;
+  candle_border_up_color_light: string;
+  candle_border_down_color_light: string;
   map_enabled: boolean;
   map_opacity: number;
   map_primary_color: string;
@@ -88,6 +97,15 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   price_scale_border_color_light: '#d1d5db',
   time_scale_border_color_light: '#d1d5db',
   crosshair_color_light: '#6b7280',
+  // Candle borders defaults
+  candle_border_visible: false,
+  candle_border_up_color: '#22c55e',
+  candle_border_down_color: '#ef4444',
+  candle_border_width: 1,
+  candle_border_up_color_dark: '#22c55e',
+  candle_border_down_color_dark: '#ef4444',
+  candle_border_up_color_light: '#22c55e',
+  candle_border_down_color_light: '#ef4444',
   map_enabled: true,
   map_opacity: 0.08,
   map_primary_color: '#6366f1',
@@ -816,6 +834,150 @@ export default function AdminChartAppearance() {
                   onChange={(e) => setSettings({ ...settings, candle_down_color: e.target.value })}
                   className="flex-1"
                 />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Candle Borders */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Contorno das Velas
+          </CardTitle>
+          <CardDescription>
+            Configure o contorno (bordas) das velas do gráfico
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Toggle para ativar/desativar contorno */}
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="candle_border_visible">Ativar Contorno das Velas</Label>
+              <p className="text-xs text-muted-foreground">
+                Exibe uma borda ao redor dos candles para melhor visualização
+              </p>
+            </div>
+            <Switch
+              id="candle_border_visible"
+              checked={settings.candle_border_visible}
+              onCheckedChange={(checked) => setSettings({ ...settings, candle_border_visible: checked })}
+            />
+          </div>
+
+          <Separator />
+
+          {/* Espessura do contorno */}
+          <div className="space-y-2">
+            <Label htmlFor="candle_border_width">Espessura do Contorno (1-5 pixels)</Label>
+            <div className="flex items-center gap-4">
+              <input
+                id="candle_border_width"
+                type="range"
+                min="1"
+                max="5"
+                value={settings.candle_border_width}
+                onChange={(e) => setSettings({ ...settings, candle_border_width: parseInt(e.target.value) })}
+                className="flex-1"
+              />
+              <span className="text-sm font-mono w-12 text-center">{settings.candle_border_width}px</span>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Cores do contorno - Modo Escuro */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Cores do Contorno (Modo Escuro)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="candle_border_up_color_dark">Contorno Vela de Alta</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="candle_border_up_color_dark"
+                    type="color"
+                    value={settings.candle_border_up_color_dark}
+                    onChange={(e) => setSettings({ ...settings, candle_border_up_color_dark: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.candle_border_up_color_dark}
+                    onChange={(e) => setSettings({ ...settings, candle_border_up_color_dark: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="candle_border_down_color_dark">Contorno Vela de Baixa</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="candle_border_down_color_dark"
+                    type="color"
+                    value={settings.candle_border_down_color_dark}
+                    onChange={(e) => setSettings({ ...settings, candle_border_down_color_dark: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.candle_border_down_color_dark}
+                    onChange={(e) => setSettings({ ...settings, candle_border_down_color_dark: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Cores do contorno - Modo Claro */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              Cores do Contorno (Modo Claro)
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="candle_border_up_color_light">Contorno Vela de Alta</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="candle_border_up_color_light"
+                    type="color"
+                    value={settings.candle_border_up_color_light}
+                    onChange={(e) => setSettings({ ...settings, candle_border_up_color_light: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.candle_border_up_color_light}
+                    onChange={(e) => setSettings({ ...settings, candle_border_up_color_light: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="candle_border_down_color_light">Contorno Vela de Baixa</Label>
+                <div className="flex gap-2">
+                  <Input
+                    id="candle_border_down_color_light"
+                    type="color"
+                    value={settings.candle_border_down_color_light}
+                    onChange={(e) => setSettings({ ...settings, candle_border_down_color_light: e.target.value })}
+                    className="w-20 h-10"
+                  />
+                  <Input
+                    type="text"
+                    value={settings.candle_border_down_color_light}
+                    onChange={(e) => setSettings({ ...settings, candle_border_down_color_light: e.target.value })}
+                    className="flex-1"
+                  />
+                </div>
               </div>
             </div>
           </div>

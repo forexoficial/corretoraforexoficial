@@ -230,6 +230,14 @@ export type Database = {
       }
       chart_appearance_settings: {
         Row: {
+          candle_border_down_color: string | null
+          candle_border_down_color_dark: string | null
+          candle_border_down_color_light: string | null
+          candle_border_up_color: string | null
+          candle_border_up_color_dark: string | null
+          candle_border_up_color_light: string | null
+          candle_border_visible: boolean | null
+          candle_border_width: number | null
           candle_down_color: string
           candle_down_color_dark: string | null
           candle_down_color_light: string | null
@@ -278,6 +286,14 @@ export type Database = {
           watermark_visible: boolean
         }
         Insert: {
+          candle_border_down_color?: string | null
+          candle_border_down_color_dark?: string | null
+          candle_border_down_color_light?: string | null
+          candle_border_up_color?: string | null
+          candle_border_up_color_dark?: string | null
+          candle_border_up_color_light?: string | null
+          candle_border_visible?: boolean | null
+          candle_border_width?: number | null
           candle_down_color?: string
           candle_down_color_dark?: string | null
           candle_down_color_light?: string | null
@@ -326,6 +342,14 @@ export type Database = {
           watermark_visible?: boolean
         }
         Update: {
+          candle_border_down_color?: string | null
+          candle_border_down_color_dark?: string | null
+          candle_border_down_color_light?: string | null
+          candle_border_up_color?: string | null
+          candle_border_up_color_dark?: string | null
+          candle_border_up_color_light?: string | null
+          candle_border_visible?: boolean | null
+          candle_border_width?: number | null
           candle_down_color?: string
           candle_down_color_dark?: string | null
           candle_down_color_light?: string | null
