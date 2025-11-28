@@ -32,6 +32,15 @@ interface ChartAppearanceSettings {
   price_scale_border_color_light: string;
   time_scale_border_color_light: string;
   crosshair_color_light: string;
+  // Candle borders
+  candle_border_visible: boolean;
+  candle_border_up_color: string;
+  candle_border_down_color: string;
+  candle_border_width: number;
+  candle_border_up_color_dark: string;
+  candle_border_down_color_dark: string;
+  candle_border_up_color_light: string;
+  candle_border_down_color_light: string;
   // Map settings
   map_enabled: boolean;
   map_opacity: number;
