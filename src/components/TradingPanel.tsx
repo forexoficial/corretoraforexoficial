@@ -10,6 +10,7 @@ import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { useNavigate } from "react-router-dom";
 import { BoosterMenu } from "@/components/BoosterMenu";
 import { TradingHistory } from "@/components/TradingHistory";
+import { useOpenTrades } from "@/hooks/useOpenTrades";
 
 interface TradingPanelProps {
   selectedAsset: {
@@ -35,6 +36,15 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
   const inputRef = useRef<HTMLInputElement>(null);
   const [showBoosterMenu, setShowBoosterMenu] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  
+  const [userId, setUserId] = useState<string>();
+  const { hasOpenTrade } = useOpenTrades(userId);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
 
   useEffect(() => {
     if (isEditingAmount && inputRef.current) {
@@ -102,6 +112,12 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
     
     if (!user) {
       toast.error("Você precisa estar logado para fazer operações");
+      return;
+    }
+
+    // Verificar se já tem operação aberta
+    if (hasOpenTrade) {
+      toast.error("Você já tem uma operação em aberto. Aguarde o fechamento para abrir outra.");
       return;
     }
 
@@ -310,6 +326,11 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
       {/* Trade Buttons */}
       <div className="flex flex-col gap-2">
         {/* Row 1: Buy and Sell */}
+        {hasOpenTrade && (
+          <div className="bg-warning/10 border border-warning/30 rounded-lg p-2 text-xs text-warning text-center">
+            Você já tem uma operação aberta
+          </div>
+        )}
         <div className="grid grid-cols-2 gap-2">
           <Button
             className="h-14 text-white font-bold text-base rounded-xl relative overflow-hidden
@@ -320,8 +341,10 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
                        active:shadow-[0_0px_0_0_#15803d,0_2px_8px_-2px_rgba(34,197,94,0.4)]
                        border-t-2 border-[#4ade80] 
                        transition-all duration-150 active:translate-y-1
+                       disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0
                        before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
             onClick={() => handleTrade('call')}
+            disabled={hasOpenTrade}
             disableSound
           >
             <span className="relative z-10">C Mercado</span>
@@ -335,8 +358,10 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
                        active:shadow-[0_0px_0_0_#b91c1c,0_2px_8px_-2px_rgba(239,68,68,0.4)]
                        border-t-2 border-[#f87171]
                        transition-all duration-150 active:translate-y-1
+                       disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0
                        before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
             onClick={() => handleTrade('put')}
+            disabled={hasOpenTrade}
             disableSound
           >
             <span className="relative z-10">V Mercado</span>
