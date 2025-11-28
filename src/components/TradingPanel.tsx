@@ -335,7 +335,6 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
             onClick={() => setShowBoosterMenu(true)}
             disableSound
           >
-            <Zap className="w-4 h-4 mr-2" />
             Booster
           </Button>
           <Button
@@ -344,7 +343,6 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
             onClick={() => setShowHistory(true)}
             disableSound
           >
-            <History className="w-4 h-4 mr-2" />
             Histórico
           </Button>
         </div>
