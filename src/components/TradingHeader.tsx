@@ -220,8 +220,8 @@ export const TradingHeader = ({
           </DropdownMenu>
 
           <Button 
-            variant="default" 
-            className="bg-warning hover:bg-warning/90 text-warning-foreground"
+            variant="outline" 
+            className="bg-background border-border hover:bg-accent/5 text-foreground font-medium"
             onClick={() => navigate('/deposit')}
           >
             <Plus className="w-4 h-4 mr-2" />
