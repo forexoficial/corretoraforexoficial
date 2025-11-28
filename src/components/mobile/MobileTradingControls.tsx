@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, Minus, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
+import { useOpenTrades } from "@/hooks/useOpenTrades";
 
 interface MobileTradingControlsProps {
   selectedAsset: {
@@ -27,6 +28,15 @@ export function MobileTradingControls({
 }: MobileTradingControlsProps) {
   const { settings } = usePlatformSettings();
   const { playSound } = useSoundEffects();
+  
+  const [userId, setUserId] = useState<string>();
+  const { hasOpenTrade } = useOpenTrades(userId);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) setUserId(user.id);
+    });
+  }, []);
   
   // Garantir que na primeira vez em mobile, o padrão seja 1 minuto
   const getInitialDuration = () => {
@@ -71,6 +81,12 @@ export function MobileTradingControls({
     
     if (!user) {
       toast.error("Você precisa estar logado");
+      return;
+    }
+
+    // Verificar se já tem operação aberta
+    if (hasOpenTrade) {
+      toast.error("Você já tem uma operação em aberto. Aguarde o fechamento para abrir outra.");
       return;
     }
 
@@ -206,19 +222,30 @@ export function MobileTradingControls({
         </div>
       </div>
 
+      {/* Warning Message */}
+      {hasOpenTrade && (
+        <div className="px-3 pb-2">
+          <div className="bg-warning/10 border border-warning/30 rounded-lg p-2 text-xs text-warning text-center">
+            Você já tem uma operação aberta
+          </div>
+        </div>
+      )}
+
       {/* Trade Buttons */}
       <div className="grid grid-cols-2 gap-3 p-3 pt-0">
         <Button
-          className="bg-success hover:bg-success/90 h-14 text-lg font-bold rounded-xl"
+          className="bg-success hover:bg-success/90 h-14 text-lg font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => handleTrade('call')}
+          disabled={hasOpenTrade}
           disableSound
         >
           <ArrowUp className="w-6 h-6" />
         </Button>
         <Button
           variant="destructive"
-          className="h-14 text-lg font-bold rounded-xl"
+          className="h-14 text-lg font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => handleTrade('put')}
+          disabled={hasOpenTrade}
           disableSound
         >
           <ArrowDown className="w-6 h-6" />
