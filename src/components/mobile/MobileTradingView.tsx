@@ -34,6 +34,7 @@ export function MobileTradingView({
     status: 'won' | 'lost';
     result: number;
     amount: number;
+    payout: number;
     asset_name?: string;
   } | null>(null);
   const processedTradesRef = useRef<Set<string>>(new Set());
@@ -127,6 +128,7 @@ export function MobileTradingView({
               status: trade.status,
               result: trade.result,
               amount: trade.amount,
+              payout: trade.payout,
               asset_name: asset?.name
             });
           }

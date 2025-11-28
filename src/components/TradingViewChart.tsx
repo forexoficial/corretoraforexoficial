@@ -1004,6 +1004,7 @@ export function TradingViewChart({
           status: completedTrade.status,
           result: completedTrade.result,
           amount: completedTrade.amount,
+          payout: completedTrade.payout,
           asset_name: completedTrade.assets?.name,
         });
         

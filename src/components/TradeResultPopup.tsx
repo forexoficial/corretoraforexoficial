@@ -11,6 +11,7 @@ interface TradeResultPopupProps {
     status: 'won' | 'lost';
     result: number;
     amount: number;
+    payout: number;
     asset_name?: string;
   } | null;
   onClose: () => void;
@@ -80,7 +81,9 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   console.log('[TradeResultPopup] 🎬 Renderizando popup com isVisible:', isVisible);
 
   const isWin = trade.status === 'won';
-  const percentage = ((Math.abs(trade.result) / trade.amount) * 100).toFixed(1);
+  // Mostrar apenas o payout fixo (não calcular porcentagem dinamicamente)
+  const displayAmount = isWin ? trade.payout : trade.amount;
+  const percentage = ((trade.payout / trade.amount) * 100).toFixed(1);
 
   const content = (
     <AnimatePresence>
@@ -195,7 +198,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
                   "text-5xl font-black mb-2",
                   isWin ? "text-green-500" : "text-red-500"
                 )}>
-                  {isWin ? '+' : ''} R$ {Math.abs(trade.result).toFixed(2)}
+                  {isWin ? '+' : '-'} R$ {displayAmount.toFixed(2)}
                 </div>
                 <div className={cn(
                   "text-2xl font-semibold",
