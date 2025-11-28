@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Trade {
   id: string;
@@ -35,6 +37,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (open) {
@@ -139,7 +142,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
             </SelectContent>
           </Select>
 
-          <div className="space-y-2 max-h-[calc(100vh-180px)] overflow-y-auto">
+          <div className={`space-y-2 overflow-y-auto ${isMobile ? 'max-h-[calc(100vh-280px)]' : 'max-h-[calc(100vh-180px)]'}`}>
             {loading ? (
               <LoadingSpinner size="sm" className="py-8" />
             ) : trades.length === 0 ? (
@@ -199,6 +202,18 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
               ))
             )}
           </div>
+
+          {isMobile && (
+            <div className="pt-4 border-t border-border">
+              <Button 
+                onClick={() => onOpenChange(false)}
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                size="lg"
+              >
+                Voltar a Negociar
+              </Button>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
