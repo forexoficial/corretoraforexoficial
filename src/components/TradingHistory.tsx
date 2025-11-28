@@ -94,21 +94,24 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
     return format(new Date(date), "d MMM", { locale: ptBR });
   };
 
-  const formatResult = (result: number | null, amount: number, entryPrice: number | null, exitPrice: number | null) => {
-    if (result === null) return "Pendente";
+  const formatResult = (trade: Trade) => {
+    if (trade.result === null) return "Pendente";
     
-    const isWin = result > 0;
-    const percentage = ((result / amount) * 100).toFixed(0);
-    const sign = isWin ? "+" : "";
+    const isWin = trade.result > 0;
+    // Para vitórias: mostrar payout fixo
+    // Para derrotas: mostrar amount perdido
+    const displayAmount = isWin ? (trade.result - trade.amount) : trade.amount;
+    const percentage = ((displayAmount / trade.amount) * 100).toFixed(0);
+    const sign = isWin ? "+" : "-";
     
     // Show price movement if available
     let priceInfo = '';
-    if (entryPrice && exitPrice) {
-      const priceDiff = ((exitPrice - entryPrice) / entryPrice * 100).toFixed(2);
-      priceInfo = ` | ${entryPrice.toFixed(2)} → ${exitPrice.toFixed(2)} (${priceDiff > '0' ? '+' : ''}${priceDiff}%)`;
+    if (trade.entry_price && trade.exit_price) {
+      const priceDiff = ((trade.exit_price - trade.entry_price) / trade.entry_price * 100).toFixed(2);
+      priceInfo = ` | ${trade.entry_price.toFixed(2)} → ${trade.exit_price.toFixed(2)} (${priceDiff > '0' ? '+' : ''}${priceDiff}%)`;
     }
     
-    return `${sign}R$ ${Math.abs(result).toFixed(2)} (${sign}${percentage}%)${priceInfo}`;
+    return `${sign}R$ ${displayAmount.toFixed(2)} (${sign}${percentage}%)${priceInfo}`;
   };
 
   const getResultColor = (result: number | null) => {
@@ -189,7 +192,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
                       {trade.duration_minutes} min
                     </span>
                     <span className={`font-semibold text-xs ${getResultColor(trade.result)}`}>
-                      {formatResult(trade.result, trade.amount, trade.entry_price, trade.exit_price)}
+                      {formatResult(trade)}
                     </span>
                   </div>
                 </div>
