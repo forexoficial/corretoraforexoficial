@@ -312,18 +312,34 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
         {/* Row 1: Buy and Sell */}
         <div className="grid grid-cols-2 gap-2">
           <Button
-            className="bg-[#22c55e] hover:bg-[#22c55e]/90 h-14 text-white font-bold text-base rounded-xl"
+            className="h-14 text-white font-bold text-base rounded-xl relative overflow-hidden
+                       bg-gradient-to-b from-[#22c55e] via-[#16a34a] to-[#15803d]
+                       hover:from-[#16a34a] hover:via-[#15803d] hover:to-[#166534]
+                       shadow-[0_4px_0_0_#15803d,0_8px_12px_-2px_rgba(34,197,94,0.4)]
+                       hover:shadow-[0_2px_0_0_#15803d,0_6px_12px_-2px_rgba(34,197,94,0.6)]
+                       active:shadow-[0_0px_0_0_#15803d,0_2px_8px_-2px_rgba(34,197,94,0.4)]
+                       border-t-2 border-[#4ade80] 
+                       transition-all duration-150 active:translate-y-1
+                       before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
             onClick={() => handleTrade('call')}
             disableSound
           >
-            C Mercado
+            <span className="relative z-10">C Mercado</span>
           </Button>
           <Button
-            className="bg-[#ef4444] hover:bg-[#ef4444]/90 h-14 text-white font-bold text-base rounded-xl"
+            className="h-14 text-white font-bold text-base rounded-xl relative overflow-hidden
+                       bg-gradient-to-b from-[#ef4444] via-[#dc2626] to-[#b91c1c]
+                       hover:from-[#dc2626] hover:via-[#b91c1c] hover:to-[#991b1b]
+                       shadow-[0_4px_0_0_#b91c1c,0_8px_12px_-2px_rgba(239,68,68,0.4)]
+                       hover:shadow-[0_2px_0_0_#b91c1c,0_6px_12px_-2px_rgba(239,68,68,0.6)]
+                       active:shadow-[0_0px_0_0_#b91c1c,0_2px_8px_-2px_rgba(239,68,68,0.4)]
+                       border-t-2 border-[#f87171]
+                       transition-all duration-150 active:translate-y-1
+                       before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
             onClick={() => handleTrade('put')}
             disableSound
           >
-            V Mercado
+            <span className="relative z-10">V Mercado</span>
           </Button>
         </div>
 
@@ -331,30 +347,57 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="secondary"
-            className="h-10 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
+            className="h-10 font-bold text-sm rounded-xl relative overflow-hidden
+                       bg-gradient-to-b from-[#a8a29e] via-[#78716c] to-[#57534e]
+                       hover:from-[#78716c] hover:via-[#57534e] hover:to-[#44403c]
+                       text-white
+                       shadow-[0_3px_0_0_#57534e,0_6px_10px_-2px_rgba(120,113,108,0.4)]
+                       hover:shadow-[0_1px_0_0_#57534e,0_4px_10px_-2px_rgba(120,113,108,0.6)]
+                       active:shadow-[0_0px_0_0_#57534e,0_2px_6px_-2px_rgba(120,113,108,0.4)]
+                       border-t-2 border-[#d6d3d1]
+                       transition-all duration-150 active:translate-y-1
+                       before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
             onClick={() => setShowBoosterMenu(true)}
             disableSound
           >
-            Booster
+            <span className="relative z-10">Booster</span>
           </Button>
           <Button
             variant="secondary"
-            className="h-10 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
+            className="h-10 font-bold text-sm rounded-xl relative overflow-hidden
+                       bg-gradient-to-b from-[#a8a29e] via-[#78716c] to-[#57534e]
+                       hover:from-[#78716c] hover:via-[#57534e] hover:to-[#44403c]
+                       text-white
+                       shadow-[0_3px_0_0_#57534e,0_6px_10px_-2px_rgba(120,113,108,0.4)]
+                       hover:shadow-[0_1px_0_0_#57534e,0_4px_10px_-2px_rgba(120,113,108,0.6)]
+                       active:shadow-[0_0px_0_0_#57534e,0_2px_6px_-2px_rgba(120,113,108,0.4)]
+                       border-t-2 border-[#d6d3d1]
+                       transition-all duration-150 active:translate-y-1
+                       before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/20 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
             onClick={() => setShowHistory(true)}
             disableSound
           >
-            Histórico
+            <span className="relative z-10">Histórico</span>
           </Button>
         </div>
 
         {/* Row 3: Withdrawal */}
         <Button
-          className="h-10 w-full font-bold text-base rounded-xl bg-[#fbbf24] hover:bg-[#fbbf24]/90 text-black"
+          className="h-10 w-full font-bold text-sm rounded-xl relative overflow-hidden
+                     bg-gradient-to-b from-[#fbbf24] via-[#f59e0b] to-[#d97706]
+                     hover:from-[#f59e0b] hover:via-[#d97706] hover:to-[#b45309]
+                     text-black
+                     shadow-[0_3px_0_0_#d97706,0_6px_10px_-2px_rgba(251,191,36,0.4)]
+                     hover:shadow-[0_1px_0_0_#d97706,0_4px_10px_-2px_rgba(251,191,36,0.6)]
+                     active:shadow-[0_0px_0_0_#d97706,0_2px_6px_-2px_rgba(251,191,36,0.4)]
+                     border-t-2 border-[#fde047]
+                     transition-all duration-150 active:translate-y-1
+                     before:absolute before:inset-0 before:bg-gradient-to-b before:from-white/30 before:to-transparent before:opacity-0 hover:before:opacity-100 before:transition-opacity"
           onClick={() => navigate('/withdrawal')}
           disableSound
         >
-          <Banknote className="w-5 h-5 mr-2" />
-          Retirada
+          <Banknote className="w-4 h-4 mr-2 relative z-10" />
+          <span className="relative z-10">Retirada</span>
         </Button>
       </div>
 
