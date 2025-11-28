@@ -331,7 +331,7 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="secondary"
-            className="h-14 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
+            className="h-10 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
             onClick={() => setShowBoosterMenu(true)}
             disableSound
           >
@@ -340,7 +340,7 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
           </Button>
           <Button
             variant="secondary"
-            className="h-14 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
+            className="h-10 font-bold text-base rounded-xl bg-[#9ca3af] hover:bg-[#9ca3af]/90 text-white"
             onClick={() => setShowHistory(true)}
             disableSound
           >
@@ -351,7 +351,7 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
 
         {/* Row 3: Withdrawal */}
         <Button
-          className="h-14 w-full font-bold text-base rounded-xl bg-[#fbbf24] hover:bg-[#fbbf24]/90 text-black"
+          className="h-10 w-full font-bold text-base rounded-xl bg-[#fbbf24] hover:bg-[#fbbf24]/90 text-black"
           onClick={() => navigate('/withdrawal')}
           disableSound
         >
