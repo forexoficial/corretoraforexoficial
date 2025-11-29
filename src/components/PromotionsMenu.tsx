@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Gift, Calendar, Tag } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface PromotionsMenuProps {
   open: boolean;
@@ -9,6 +10,7 @@ interface PromotionsMenuProps {
 }
 
 export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("available");
 
   // Mock data - substituir por dados reais do banco futuramente
@@ -19,7 +21,7 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card">
         <SheetHeader className="border-b border-border p-4 pb-3">
-          <SheetTitle className="text-base font-semibold">Promoções</SheetTitle>
+          <SheetTitle className="text-base font-semibold">{t("promotions")}</SheetTitle>
         </SheetHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -28,13 +30,13 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
               value="available" 
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary font-semibold uppercase text-xs"
             >
-              Disponível
+              {t("available")}
             </TabsTrigger>
             <TabsTrigger 
               value="history" 
               className="rounded-none data-[state=active]:border-b-2 data-[state=active]:border-primary data-[state=active]:text-primary font-semibold uppercase text-xs"
             >
-              Histórico
+              {t("history")}
             </TabsTrigger>
           </TabsList>
 
@@ -43,7 +45,7 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                 <Gift className="h-12 w-12 text-muted-foreground/50 mb-4" />
                 <p className="text-sm text-muted-foreground">
-                  Você não tem promoção<br />disponível por enquanto
+                  {t("no_promotions_available")}
                 </p>
               </div>
             ) : (
@@ -62,7 +64,7 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
                         <p className="text-xs text-muted-foreground mb-2">{promo.description}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          <span>Válido até {promo.expiresAt}</span>
+                          <span>{t("valid_until")} {promo.expiresAt}</span>
                         </div>
                       </div>
                     </div>
@@ -77,7 +79,7 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
               <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
                 <Gift className="h-12 w-12 text-muted-foreground/50 mb-4" />
                 <p className="text-sm text-muted-foreground">
-                  Você não tem promoções<br />utilizadas ainda
+                  {t("no_promotions_used")}
                 </p>
               </div>
             ) : (
@@ -96,7 +98,7 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
                         <p className="text-xs text-muted-foreground mb-2">{promo.description}</p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Calendar className="h-3 w-3" />
-                          <span>Utilizado em {promo.usedAt}</span>
+                          <span>{t("used_on")} {promo.usedAt}</span>
                         </div>
                       </div>
                     </div>
