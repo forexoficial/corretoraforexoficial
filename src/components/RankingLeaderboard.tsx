@@ -44,7 +44,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
       setTopUsers(data || []);
     } catch (error) {
       console.error("Erro ao carregar ranking:", error);
-      toast.error("Erro ao carregar ranking");
+      toast.error(t("toast_error_loading_ranking"));
     } finally {
       setLoading(false);
     }

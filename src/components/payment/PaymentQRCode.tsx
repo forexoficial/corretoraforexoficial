@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { ArrowLeft, Copy, Clock, CheckCircle2, Check } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface PaymentQRCodeProps {
   qrCode: string;
@@ -23,6 +24,7 @@ export default function PaymentQRCode({
   expiresAt,
   onBack 
 }: PaymentQRCodeProps) {
+  const { t } = useTranslation();
   const [isCopying, setIsCopying] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -34,7 +36,7 @@ export default function PaymentQRCode({
     setTimeout(() => {
       setIsCopying(false);
       setCopied(true);
-      toast.success("Copiado com Sucesso!", {
+      toast.success(t("toast_copied_success"), {
         description: "O código PIX foi copiado para sua área de transferência",
         duration: 3000,
       });

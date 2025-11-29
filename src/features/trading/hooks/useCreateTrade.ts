@@ -3,6 +3,7 @@ import { toast } from 'sonner';
 import { TradeService } from '../services/tradeService';
 import { useSoundEffects } from '@/hooks/useSoundEffects';
 import type { Asset } from '../types/trade.types';
+import { useTranslation } from '@/hooks/useTranslation';
 
 interface UseCreateTradeProps {
   selectedAsset: Asset;
@@ -19,6 +20,7 @@ export const useCreateTrade = ({
   currentBalance,
   hasOpenTrade,
 }: UseCreateTradeProps) => {
+  const { t } = useTranslation();
   const [isCreating, setIsCreating] = useState(false);
   const { playSound } = useSoundEffects();
 
@@ -29,19 +31,19 @@ export const useCreateTrade = ({
   ): Promise<boolean> => {
     // Validações
     if (hasOpenTrade) {
-      toast.error("Você já tem uma operação em aberto. Aguarde o fechamento para abrir outra.");
+      toast.error(t("toast_has_open_trade"));
       return false;
     }
 
     if (amount > currentBalance) {
       toast.error(
-        `Saldo insuficiente. Seu saldo ${isDemoMode ? 'demo' : 'real'}: R$ ${currentBalance.toFixed(2)}`
+        `${t("toast_insufficient_balance")}. ${isDemoMode ? 'Demo' : 'Real'}: R$ ${currentBalance.toFixed(2)}`
       );
       return false;
     }
 
     if (!currentPrice || currentPrice <= 0) {
-      toast.error("Preço de entrada inválido. Aguarde a atualização do gráfico.");
+      toast.error(t("toast_invalid_entry_price"));
       return false;
     }
 
@@ -65,20 +67,20 @@ export const useCreateTrade = ({
 
       if (error) {
         console.error("[useCreateTrade] Erro ao criar trade:", error);
-        toast.error("Erro ao criar operação: " + error.message);
+        toast.error(t("toast_trade_creation_error") + ": " + error.message);
         return false;
       }
 
       // Som e notificação de sucesso
       playSound('trade-open');
-      toast.success(`Operação ${type === 'call' ? 'Comprar' : 'Vender'} criada com sucesso!`);
+      toast.success(`${t(type === 'call' ? 'toast_buy' : 'toast_sell')} - ${t("toast_trade_created_success")}`);
 
       console.log(`[useCreateTrade] Trade criada - ID: ${data?.id}, Modo: ${isDemoMode ? 'DEMO' : 'REAL'}`);
       
       return true;
     } catch (error) {
       console.error("[useCreateTrade] Erro inesperado:", error);
-      toast.error("Erro ao criar operação");
+      toast.error(t("toast_trade_creation_error"));
       return false;
     } finally {
       setIsCreating(false);
