@@ -138,5 +138,12 @@
   "no_trades_found": "No trades found",
   "recent_trades": "Recent Trades",
   "no_recent_trades": "No recent trades",
-  "pending": "Pending"
+  "pending": "Pending",
+  "ranking": "Ranking",
+  "help": "Help",
+  "promotion": "Promotion",
+  "analytics": "Analytics",
+  "legal": "Legal",
+  "analytics_dashboard": "Analytics Dashboard",
+  "monitor_performance": "Monitor your real-time performance"
 }
