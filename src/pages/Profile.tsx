@@ -475,15 +475,15 @@ export default function Profile() {
       <div className="container mx-auto px-4 pb-8">
         <Tabs defaultValue="activity" className="w-full">
           <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="activity">Atividades</TabsTrigger>
-            <TabsTrigger value="achievements">Conquistas</TabsTrigger>
-            <TabsTrigger value="settings">Configurações</TabsTrigger>
+            <TabsTrigger value="activity">{t('activities_tab')}</TabsTrigger>
+            <TabsTrigger value="achievements">{t('achievements_tab')}</TabsTrigger>
+            <TabsTrigger value="settings">{t('settings_tab')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="activity">
             <Card>
               <CardHeader>
-                <CardTitle>Atividade Recente</CardTitle>
+                <CardTitle>{t('recent_activity')}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
@@ -502,10 +502,10 @@ export default function Profile() {
                               }
                             >
                               {activity.type === "trade"
-                                ? "Trade"
+                                ? t('trade_activity')
                                 : activity.type === "deposit"
-                                ? "Depósito"
-                                : "Saque"}
+                                ? t('deposit_activity')
+                                : t('withdrawal_activity')}
                             </Badge>
                             <span className="font-medium">{activity.asset}</span>
                           </div>
@@ -555,7 +555,7 @@ export default function Profile() {
                         <p className="text-sm text-muted-foreground">{achievement.description}</p>
                         {achievement.unlocked && (
                           <Badge className="mt-2" variant="secondary">
-                            Desbloqueado
+                            {t('unlocked')}
                           </Badge>
                         )}
                       </div>
@@ -569,7 +569,7 @@ export default function Profile() {
           <TabsContent value="settings">
             <Card>
               <CardHeader>
-                <CardTitle>Configurações da Conta</CardTitle>
+                <CardTitle>{t('account_settings')}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
@@ -583,7 +583,7 @@ export default function Profile() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="phone">Telefone</Label>
+                    <Label htmlFor="phone">{t('phone_label')}</Label>
                     <Input
                       id="phone"
                       type="tel"
@@ -592,7 +592,7 @@ export default function Profile() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="location">Localização</Label>
+                    <Label htmlFor="location">{t('location_label')}</Label>
                     <Input
                       id="location"
                       value={profileData.location}
@@ -600,15 +600,15 @@ export default function Profile() {
                     />
                   </div>
                   <div>
-                    <Label>Status de Verificação</Label>
+                    <Label>{t('verification_status')}</Label>
                     <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg">
                       <Shield className="h-5 w-5 text-primary" />
                       <div className="flex-1">
                         <p className="font-medium capitalize">
-                          {profile?.verification_status === "approved" && "✅ Verificado"}
-                          {profile?.verification_status === "under_review" && "⏳ Em análise"}
-                          {profile?.verification_status === "rejected" && "❌ Rejeitado"}
-                          {profile?.verification_status === "pending" && "⚠️ Pendente"}
+                          {profile?.verification_status === "approved" && t('verified_status')}
+                          {profile?.verification_status === "under_review" && t('under_review_status')}
+                          {profile?.verification_status === "rejected" && t('rejected_status')}
+                          {profile?.verification_status === "pending" && t('pending_status')}
                         </p>
                       </div>
                       {profile?.verification_status === "pending" && (
@@ -617,7 +617,7 @@ export default function Profile() {
                           size="sm"
                           onClick={() => navigate("/verify-identity")}
                         >
-                          Verificar Identidade
+                          {t('verify_identity_button')}
                         </Button>
                       )}
                     </div>
@@ -627,28 +627,28 @@ export default function Profile() {
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Segurança</h3>
+                  <h3 className="font-semibold">{t('security_section')}</h3>
                   <Button variant="outline" className="w-full justify-start">
-                    Alterar Senha
+                    {t('change_password')}
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    Autenticação de Dois Fatores
+                    {t('two_factor_auth')}
                   </Button>
                 </div>
 
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Preferências</h3>
+                  <h3 className="font-semibold">{t('preferences_section')}</h3>
                   <Button variant="outline" className="w-full justify-start">
-                    Notificações
+                    {t('notifications_button')}
                   </Button>
                   <Button variant="outline" className="w-full justify-start">
-                    Privacidade
+                    {t('privacy_button')}
                   </Button>
                 </div>
 
-                <Button className="w-full mt-6">Salvar Alterações</Button>
+                <Button className="w-full mt-6">{t('save_changes')}</Button>
               </CardContent>
             </Card>
           </TabsContent>
@@ -662,9 +662,9 @@ export default function Profile() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <h3 className="text-lg font-bold mb-1">Painel de Afiliado</h3>
+                  <h3 className="text-lg font-bold mb-1">{t('affiliate_panel_title')}</h3>
                   <p className="text-sm text-muted-foreground">
-                    Gerencie suas comissões, referidos e estatísticas de afiliado
+                    {t('affiliate_panel_desc')}
                   </p>
                 </div>
                 <Button 
@@ -672,7 +672,7 @@ export default function Profile() {
                   className="gap-2"
                 >
                   <Award className="h-4 w-4" />
-                  Acessar Painel
+                  {t('access_panel')}
                 </Button>
               </div>
             </CardContent>
