@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Trophy, Medal } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface RankingUser {
   id: string;
@@ -22,6 +23,7 @@ interface RankingLeaderboardProps {
 export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardProps) => {
   const [topUsers, setTopUsers] = useState<RankingUser[]>([]);
   const [loading, setLoading] = useState(false);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (open) {
@@ -84,7 +86,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
         <SheetHeader className="border-b border-border p-4 pb-3">
           <div className="flex items-center gap-2">
             <Medal className="h-5 w-5 text-primary" />
-            <SheetTitle className="text-base font-semibold">Líderes da semana</SheetTitle>
+            <SheetTitle className="text-base font-semibold">{t("week_leaders")}</SheetTitle>
           </div>
         </SheetHeader>
 
@@ -93,7 +95,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
             <LoadingSpinner size="sm" className="py-8" />
           ) : topUsers.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground text-sm">
-              Nenhum trader no ranking
+              {t("no_traders_ranking")}
             </div>
           ) : (
             <div className="space-y-2 max-h-[calc(100vh-140px)] overflow-y-auto">
@@ -131,7 +133,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <div className="w-2 h-2 rounded-full bg-success"></div>
-                        <span className="text-xs text-muted-foreground">Online</span>
+                        <span className="text-xs text-muted-foreground">{t("online")}</span>
                       </div>
                     </div>
 
