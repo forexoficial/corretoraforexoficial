@@ -26,6 +26,7 @@ import { MobileTradingView } from "@/components/mobile/MobileTradingView";
 import { usePersistentPlatformState } from "@/hooks/usePersistentPlatformState";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { PriceLineSettings, PriceLineConfig } from "@/components/PriceLineSettings";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Asset {
   id: string;
@@ -36,6 +37,7 @@ interface Asset {
 }
 
 const Index = () => {
+  const { t } = useTranslation();
   const { settings, loading: settingsLoading } = usePlatformSettings();
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
@@ -285,10 +287,10 @@ const Index = () => {
   };
 
   const chartTypeOptions = [
-    { value: 'line', label: 'Linha', icon: TrendingUp },
-    { value: 'candle', label: 'Velas', icon: CandlestickChart },
-    { value: 'area', label: 'Área', icon: AreaChart },
-    { value: 'bar', label: 'Barras', icon: BarChart3 },
+    { value: 'line', label: t("line"), icon: TrendingUp },
+    { value: 'candle', label: t("candles"), icon: CandlestickChart },
+    { value: 'area', label: t("area"), icon: AreaChart },
+    { value: 'bar', label: t("bars"), icon: BarChart3 },
   ];
 
   const handleChartTypeSelect = (value: string) => {
@@ -465,7 +467,7 @@ const Index = () => {
     <Dialog open={isTimeframeDialogOpen} onOpenChange={setIsTimeframeDialogOpen}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Selecionar Timeframe</DialogTitle>
+          <DialogTitle>{t("select_timeframe")}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 pt-4">
           {timeframeOptions.map((option) => (
@@ -491,7 +493,7 @@ const Index = () => {
     <Dialog open={isChartTypeDialogOpen} onOpenChange={setIsChartTypeDialogOpen}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Tipo de Gráfico</DialogTitle>
+          <DialogTitle>{t("chart_type")}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-2 gap-3 pt-4">
           {chartTypeOptions.map((option) => {
