@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface LoginFormProps {
   onSubmit: (email: string, password: string) => void;
@@ -11,6 +12,7 @@ interface LoginFormProps {
 export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { t } = useTranslation();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -20,7 +22,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <Label htmlFor="email">Email</Label>
+        <Label htmlFor="email">{t("email", "Email")}</Label>
         <Input
           id="email"
           type="email"
@@ -31,7 +33,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
         />
       </div>
       <div>
-        <Label htmlFor="password">Senha</Label>
+        <Label htmlFor="password">{t("password", "Senha")}</Label>
         <Input
           id="password"
           type="password"
@@ -42,7 +44,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
         />
       </div>
       <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? "Entrando..." : "Entrar"}
+        {isLoading ? t("loading", "Entrando...") : t("login", "Entrar")}
       </Button>
     </form>
   );
