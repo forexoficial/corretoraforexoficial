@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -29,6 +30,7 @@ interface Transaction {
 }
 
 export default function Transactions() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,10 +80,10 @@ export default function Transactions() {
     };
 
     const labels: Record<string, string> = {
-      completed: "Concluído",
-      pending: "Pendente",
-      failed: "Falhou",
-      cancelled: "Cancelado",
+      completed: t("completed", "Concluído"),
+      pending: t("pending", "Pendente"),
+      failed: t("failed", "Falhou"),
+      cancelled: t("cancel", "Cancelado"),
     };
 
     return (
@@ -117,27 +119,27 @@ export default function Transactions() {
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
                 onClick={() => navigate("/deposit")}
               >
-                Depósito
+                {t("deposit", "Depósito")}
               </TabsTrigger>
               <TabsTrigger
                 value="withdrawal"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
                 onClick={() => navigate("/withdrawal")}
               >
-                Retirada
+                {t("withdrawal", "Retirada")}
               </TabsTrigger>
               <TabsTrigger
                 value="transactions"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
               >
-                Transações
+                {t("transactions", "Transações")}
               </TabsTrigger>
               <TabsTrigger
                 value="profile"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
                 onClick={() => navigate("/profile")}
               >
-                Perfil
+                {t("profile", "Perfil")}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -149,14 +151,14 @@ export default function Transactions() {
         <div className="bg-card rounded-lg border border-border">
           {/* Filters */}
           <div className="p-6 border-b border-border">
-            <h2 className="text-2xl font-bold mb-4">Transações</h2>
+            <h2 className="text-2xl font-bold mb-4">{t("transactions", "Transações")}</h2>
             <div className="flex gap-2">
               <Button
                 variant={filter === "all" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setFilter("all")}
               >
-                Todas
+                {t("all", "Todas")}
               </Button>
               <Button
                 variant={filter === "deposit" ? "default" : "outline"}
@@ -165,7 +167,7 @@ export default function Transactions() {
                 className="gap-2"
               >
                 <ArrowDown className="w-4 h-4" />
-                Depósitos
+                {t("deposits", "Depósitos")}
               </Button>
               <Button
                 variant={filter === "withdrawal" ? "default" : "outline"}
@@ -174,7 +176,7 @@ export default function Transactions() {
                 className="gap-2"
               >
                 <ArrowUp className="w-4 h-4" />
-                Retiradas
+                {t("withdrawals", "Retiradas")}
               </Button>
             </div>
           </div>
@@ -183,19 +185,19 @@ export default function Transactions() {
           <div className="overflow-x-auto">
             {loading ? (
               <div className="p-8 text-center text-muted-foreground">
-                Carregando transações...
+                {t("loading_transactions", "Carregando transações...")}
               </div>
             ) : filteredTransactions.length === 0 ? (
               <div className="p-8 text-center">
                 <p className="text-muted-foreground mb-4">
-                  Nenhuma transação encontrada
+                  {t("no_transactions_found", "Nenhuma transação encontrada")}
                 </p>
                 <div className="flex gap-2 justify-center">
                   <Button onClick={() => navigate("/deposit")} variant="default">
-                    Fazer Depósito
+                    {t("make_deposit", "Fazer Depósito")}
                   </Button>
                   <Button onClick={() => navigate("/withdrawal")} variant="outline">
-                    Fazer Retirada
+                    {t("make_withdrawal", "Fazer Retirada")}
                   </Button>
                 </div>
               </div>
@@ -203,12 +205,12 @@ export default function Transactions() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Tipo</TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Método</TableHead>
-                    <TableHead>Referência</TableHead>
+                    <TableHead>{t("type_column", "Tipo")}</TableHead>
+                    <TableHead>{t("date_column", "Data")}</TableHead>
+                    <TableHead className="text-right">{t("value_column", "Valor")}</TableHead>
+                    <TableHead>{t("status_column", "Status")}</TableHead>
+                    <TableHead>{t("method_column", "Método")}</TableHead>
+                    <TableHead>{t("reference_column", "Referência")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -218,7 +220,7 @@ export default function Transactions() {
                         <div className="flex items-center gap-2">
                           {getTypeIcon(transaction.type)}
                           <span className="capitalize">
-                            {transaction.type === "deposit" ? "Depósito" : "Retirada"}
+                            {transaction.type === "deposit" ? t("deposit", "Depósito") : t("withdrawal", "Retirada")}
                           </span>
                         </div>
                       </TableCell>
@@ -262,7 +264,7 @@ export default function Transactions() {
             className="gap-2"
           >
             <ArrowLeft className="w-4 h-4" />
-            Voltar para Trading
+            {t("back_to_trading", "Voltar para Trading")}
           </Button>
         </div>
       </div>
