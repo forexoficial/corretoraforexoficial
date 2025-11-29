@@ -4,6 +4,7 @@ import { Trophy, TrendingDown, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TradeResultPopupProps {
   trade: {
@@ -20,6 +21,7 @@ interface TradeResultPopupProps {
 export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   const [isVisible, setIsVisible] = useState(false);
   const { playSound } = useSoundEffects();
+  const { t } = useTranslation();
 
   useEffect(() => {
     console.log('[TradeResultPopup] 🎯 Props recebidas:', {
@@ -119,7 +121,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
               <button
                 onClick={handleClose}
                 className="absolute top-4 right-4 p-3 rounded-full bg-background/80 hover:bg-background transition-all z-10 shadow-lg hover:scale-110"
-                aria-label="Fechar"
+                aria-label={t('close')}
               >
                 <X className="h-6 w-6 text-foreground" />
               </button>
@@ -184,7 +186,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
                   isWin ? "text-green-400" : "text-red-400"
                 )}
               >
-                {isWin ? "🎉 VITÓRIA!" : "❌ DERROTA"}
+                {isWin ? `🎉 ${t('victory')}` : `❌ ${t('defeat')}`}
               </motion.h2>
 
               {/* Result Amount */}
@@ -217,21 +219,21 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
               >
                 {trade.asset_name && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Ativo:</span>
+                    <span className="text-muted-foreground">{t('asset_label')}</span>
                     <span className="font-semibold text-foreground">{trade.asset_name}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Investimento:</span>
+                  <span className="text-muted-foreground">{t('investment_label')}</span>
                   <span className="font-semibold text-foreground">R$ {trade.amount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Resultado:</span>
+                  <span className="text-muted-foreground">{t('result_label')}</span>
                   <span className={cn(
                     "font-bold",
                     isWin ? "text-green-500" : "text-red-500"
                   )}>
-                    {isWin ? 'GANHOU' : 'PERDEU'}
+                    {isWin ? t('won_label') : t('lost_label')}
                   </span>
                 </div>
               </motion.div>
