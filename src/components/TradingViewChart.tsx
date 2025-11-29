@@ -13,6 +13,7 @@ import type { IndicatorSettings } from "./IndicatorsPanel";
 import { useChartDrawing, DrawingTool } from "@/hooks/useChartDrawing";
 import type { PriceLineConfig } from "./PriceLineSettings";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TradingViewChartProps {
   assetId: string;
@@ -63,6 +64,7 @@ export function TradingViewChart({
   const { settings: appearanceSettings } = useChartAppearance();
   const { theme } = useTheme();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   
   // Drawing tools
   const drawing = useChartDrawing(chartRef, candleSeriesRef, assetId, timeframe);
@@ -937,7 +939,7 @@ export function TradingViewChart({
     
     // Professional label with icon and formatted price
     const tradeLabel = showLabel 
-      ? `${isCall ? '▲' : '▼'} ${isCall ? 'COMPRA' : 'VENDA'} @ ${formattedPrice}`
+      ? `${isCall ? '▲' : '▼'} ${isCall ? t("entry_line_buy") : t("entry_line_sell")} @ ${formattedPrice}`
       : '';
     
     const line = candleSeriesRef.current.createPriceLine({
