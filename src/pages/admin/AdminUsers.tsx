@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Loader2, Search, Shield, Ban, Pencil } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +32,7 @@ interface User {
 }
 
 export default function AdminUsers() {
+  const { t } = useTranslation();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -64,12 +66,12 @@ export default function AdminUsers() {
       .eq("id", user.id);
 
     if (error) {
-      toast.error("Erro ao alterar role");
+      toast.error(t("admin_error_change_role"));
       return;
     }
 
     toast.success(
-      user.is_admin ? "Admin removido com sucesso!" : "Admin promovido com sucesso!"
+      user.is_admin ? t("admin_admin_removed") : t("admin_admin_promoted")
     );
     fetchUsers();
   };
@@ -81,14 +83,14 @@ export default function AdminUsers() {
       .eq("id", user.id);
 
     if (error) {
-      toast.error("Erro ao alterar bloqueio");
+      toast.error(t("admin_error_change_block"));
       return;
     }
 
     toast.success(
       user.is_blocked
-        ? "Usuário desbloqueado com sucesso!"
-        : "Usuário bloqueado com sucesso!"
+        ? t("admin_user_unblocked")
+        : t("admin_user_blocked")
     );
     fetchUsers();
   };
@@ -108,11 +110,11 @@ export default function AdminUsers() {
       .eq("id", editingUser.id);
 
     if (error) {
-      toast.error("Erro ao atualizar saldo");
+      toast.error(t("admin_error_update_balance"));
       return;
     }
 
-    toast.success("Saldo atualizado com sucesso!");
+    toast.success(t("admin_balance_updated"));
     setEditDialogOpen(false);
     fetchUsers();
   };
@@ -130,14 +132,14 @@ export default function AdminUsers() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Usuários</h1>
-        <p className="text-muted-foreground">Gerencie todos os usuários da plataforma</p>
+        <h1 className="text-4xl font-bold mb-2">{t("admin_users_title")}</h1>
+        <p className="text-muted-foreground">{t("admin_users_desc")}</p>
       </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar por nome ou documento..."
+          placeholder={t("admin_search_placeholder")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="pl-10"
@@ -166,7 +168,7 @@ export default function AdminUsers() {
                   {user.is_blocked && (
                     <Badge variant="destructive">
                       <Ban className="h-3 w-3 mr-1" />
-                      Bloqueado
+                      {t("admin_blocked")}
                     </Badge>
                   )}
                 </div>
@@ -188,10 +190,10 @@ export default function AdminUsers() {
                       : "destructive"
                   }
                 >
-                  {user.verification_status === "approved" && "Verificado"}
-                  {user.verification_status === "under_review" && "Em análise"}
-                  {user.verification_status === "rejected" && "Rejeitado"}
-                  {user.verification_status === "pending" && "Pendente"}
+                  {user.verification_status === "approved" && t("admin_verified")}
+                  {user.verification_status === "under_review" && t("admin_under_review")}
+                  {user.verification_status === "rejected" && t("admin_rejected")}
+                  {user.verification_status === "pending" && t("pending")}
                 </Badge>
                 <div className="flex gap-2 mt-2">
                   <Button
@@ -200,7 +202,7 @@ export default function AdminUsers() {
                     onClick={() => handleEditBalance(user)}
                   >
                     <Pencil className="h-3 w-3 mr-1" />
-                    Saldo
+                    {t("admin_balance_label")}
                   </Button>
                   <Button
                     variant={user.is_admin ? "destructive" : "default"}
@@ -208,7 +210,7 @@ export default function AdminUsers() {
                     onClick={() => toggleAdmin(user)}
                   >
                     <Shield className="h-3 w-3 mr-1" />
-                    {user.is_admin ? "Remover" : "Admin"}
+                    {user.is_admin ? t("admin_remove_admin") : t("admin_make_admin")}
                   </Button>
                   <Button
                     variant={user.is_blocked ? "default" : "destructive"}
@@ -216,7 +218,7 @@ export default function AdminUsers() {
                     onClick={() => toggleBlock(user)}
                   >
                     <Ban className="h-3 w-3 mr-1" />
-                    {user.is_blocked ? "Desbloquear" : "Bloquear"}
+                    {user.is_blocked ? t("admin_unblock") : t("admin_block")}
                   </Button>
                 </div>
               </div>
@@ -228,15 +230,15 @@ export default function AdminUsers() {
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Editar Saldo</DialogTitle>
+            <DialogTitle>{t("admin_edit_balance")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Usuário</Label>
+              <Label>{t("admin_user_label")}</Label>
               <Input value={editingUser?.full_name || ""} disabled />
             </div>
             <div className="space-y-2">
-              <Label>Novo Saldo (R$)</Label>
+              <Label>{t("admin_new_balance")}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -245,7 +247,7 @@ export default function AdminUsers() {
               />
             </div>
             <Button onClick={saveBalance} className="w-full">
-              Salvar
+              {t("save")}
             </Button>
           </div>
         </DialogContent>

@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Loader2, Upload, Palette, Sun, Moon } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Settings {
   [key: string]: string;
@@ -17,6 +18,7 @@ interface Settings {
 
 export default function AdminSettings() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [settings, setSettings] = useState<Settings>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -82,7 +84,7 @@ export default function AdminSettings() {
       .select("key, value");
 
     if (error) {
-      toast.error("Erro ao carregar configurações");
+      toast.error(t("admin_error_load_settings"));
       return;
     }
 
@@ -106,12 +108,12 @@ export default function AdminSettings() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast.error("Por favor, selecione uma imagem");
+      toast.error(t("admin_select_image"));
       return;
     }
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error("A imagem deve ter no máximo 2MB");
+      toast.error(t("admin_image_max_size"));
       return;
     }
 
@@ -135,7 +137,7 @@ export default function AdminSettings() {
   const handleSaveLogo = async (type: 'light' | 'dark') => {
     const file = type === 'light' ? logoLightFile : logoDarkFile;
     if (!file) {
-      toast.error("Selecione uma logo primeiro");
+      toast.error(t("admin_select_logo_first"));
       return;
     }
 
@@ -172,10 +174,10 @@ export default function AdminSettings() {
       } else {
         setLogoDarkFile(null);
       }
-      toast.success(`Logo para tema ${type === 'light' ? 'claro' : 'escuro'} atualizada!`);
+      toast.success(`${t("admin_logo_updated")} (${type === 'light' ? t("admin_light_theme") : t("admin_dark_theme")})`);
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Erro ao fazer upload da logo");
+      toast.error(t("admin_error_upload_logo"));
     } finally {
       setUploading(false);
     }
@@ -197,14 +199,14 @@ export default function AdminSettings() {
       const hasError = results.some((result) => result.error);
 
       if (hasError) {
-        toast.error("Erro ao salvar configurações");
+        toast.error(t("admin_error_save_settings"));
       } else {
-        toast.success("Configurações salvas! As mudanças serão aplicadas em tempo real.");
+        toast.success(t("admin_settings_saved"));
         await fetchSettings();
       }
     } catch (error) {
       console.error("Save error:", error);
-      toast.error("Erro ao salvar configurações");
+      toast.error(t("admin_error_save_settings"));
     } finally {
       setSaving(false);
     }
@@ -319,8 +321,8 @@ export default function AdminSettings() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Configurações</h1>
-        <p className="text-muted-foreground">Configure as definições da plataforma</p>
+        <h1 className="text-4xl font-bold mb-2">{t("admin_settings_title")}</h1>
+        <p className="text-muted-foreground">{t("admin_settings_desc")}</p>
       </div>
 
       <div className="grid gap-6">
@@ -328,20 +330,20 @@ export default function AdminSettings() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Palette className="h-5 w-5" />
-              Personalização da Plataforma
+              {t("admin_platform_customization")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <Tabs defaultValue="logos" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="logos">Logos</TabsTrigger>
+                <TabsTrigger value="logos">{t("admin_logos_tab")}</TabsTrigger>
                 <TabsTrigger value="light">
                   <Sun className="h-4 w-4 mr-2" />
-                  Tema Claro
+                  {t("admin_light_theme")}
                 </TabsTrigger>
                 <TabsTrigger value="dark">
                   <Moon className="h-4 w-4 mr-2" />
-                  Tema Escuro
+                  {t("admin_dark_theme")}
                 </TabsTrigger>
               </TabsList>
 
@@ -349,9 +351,9 @@ export default function AdminSettings() {
                 <div className="space-y-6">
                   {/* Logo Size Control */}
                   <div className="p-4 border rounded-lg bg-muted/20">
-                    <Label className="text-base font-semibold">Tamanho da Logo</Label>
+                    <Label className="text-base font-semibold">{t("admin_logo_size")}</Label>
                     <p className="text-xs text-muted-foreground mb-4">
-                      Ajuste o tamanho da logo exibida em toda a plataforma
+                      {t("admin_logo_size_desc")}
                     </p>
                     <div className="space-y-4">
                       <div className="flex items-center gap-4">
@@ -395,9 +397,9 @@ export default function AdminSettings() {
                   <Separator />
 
                   <div>
-                    <Label>Logo para Tema Claro (escura)</Label>
+                    <Label>{t("admin_logo_light")}</Label>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Esta logo será exibida no tema claro (use logo escura)
+                      {t("admin_logo_light_desc")}
                     </p>
                     <div className="flex items-center gap-4">
                       {logoLightPreview && (
@@ -417,7 +419,7 @@ export default function AdminSettings() {
                           className="cursor-pointer"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          PNG, JPG ou WEBP (máx. 2MB)
+                          {t("admin_file_format")}
                         </p>
                       </div>
                     </div>
@@ -430,12 +432,12 @@ export default function AdminSettings() {
                         {uploadingLogoLight ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Fazendo upload...
+                            {t("admin_uploading")}
                           </>
                         ) : (
                           <>
                             <Upload className="h-4 w-4 mr-2" />
-                            Salvar Logo Claro
+                            {t("admin_save_logo_light")}
                           </>
                         )}
                       </Button>
@@ -445,9 +447,9 @@ export default function AdminSettings() {
                   <Separator />
 
                   <div>
-                    <Label>Logo para Tema Escuro (clara)</Label>
+                    <Label>{t("admin_logo_dark")}</Label>
                     <p className="text-xs text-muted-foreground mb-3">
-                      Esta logo será exibida no tema escuro (use logo clara)
+                      {t("admin_logo_dark_desc")}
                     </p>
                     <div className="flex items-center gap-4">
                       {logoDarkPreview && (
@@ -467,7 +469,7 @@ export default function AdminSettings() {
                           className="cursor-pointer"
                         />
                         <p className="text-xs text-muted-foreground mt-1">
-                          PNG, JPG ou WEBP (máx. 2MB)
+                          {t("admin_file_format")}
                         </p>
                       </div>
                     </div>
@@ -480,12 +482,12 @@ export default function AdminSettings() {
                         {uploadingLogoDark ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Fazendo upload...
+                            {t("admin_uploading")}
                           </>
                         ) : (
                           <>
                             <Upload className="h-4 w-4 mr-2" />
-                            Salvar Logo Escuro
+                            {t("admin_save_logo_dark")}
                           </>
                         )}
                       </Button>
@@ -496,30 +498,30 @@ export default function AdminSettings() {
 
               <TabsContent value="light" className="space-y-4 mt-6">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Configure as cores para o tema claro (Light). Formato HSL.
+                  {t("admin_light_theme_desc")}
                 </p>
-                <ColorInput label="Fundo" settingKey="light_background" />
-                <ColorInput label="Texto" settingKey="light_foreground" />
-                <ColorInput label="Card" settingKey="light_card" />
-                <ColorInput label="Primária" settingKey="light_primary" />
-                <ColorInput label="Secundária" settingKey="light_secondary" />
-                <ColorInput label="Destaque" settingKey="light_accent" />
-                <ColorInput label="Muted" settingKey="light_muted" />
-                <ColorInput label="Borda" settingKey="light_border" />
+                <ColorInput label={t("admin_background")} settingKey="light_background" />
+                <ColorInput label={t("admin_text")} settingKey="light_foreground" />
+                <ColorInput label={t("admin_card")} settingKey="light_card" />
+                <ColorInput label={t("admin_primary")} settingKey="light_primary" />
+                <ColorInput label={t("admin_secondary")} settingKey="light_secondary" />
+                <ColorInput label={t("admin_accent")} settingKey="light_accent" />
+                <ColorInput label={t("admin_muted")} settingKey="light_muted" />
+                <ColorInput label={t("admin_border")} settingKey="light_border" />
               </TabsContent>
 
               <TabsContent value="dark" className="space-y-4 mt-6">
                 <p className="text-sm text-muted-foreground mb-4">
-                  Configure as cores para o tema escuro (Default). Formato HSL.
+                  {t("admin_dark_theme_desc")}
                 </p>
-                <ColorInput label="Fundo" settingKey="dark_background" />
-                <ColorInput label="Texto" settingKey="dark_foreground" />
-                <ColorInput label="Card" settingKey="dark_card" />
-                <ColorInput label="Primária" settingKey="dark_primary" />
-                <ColorInput label="Secundária" settingKey="dark_secondary" />
-                <ColorInput label="Destaque" settingKey="dark_accent" />
-                <ColorInput label="Muted" settingKey="dark_muted" />
-                <ColorInput label="Borda" settingKey="dark_border" />
+                <ColorInput label={t("admin_background")} settingKey="dark_background" />
+                <ColorInput label={t("admin_text")} settingKey="dark_foreground" />
+                <ColorInput label={t("admin_card")} settingKey="dark_card" />
+                <ColorInput label={t("admin_primary")} settingKey="dark_primary" />
+                <ColorInput label={t("admin_secondary")} settingKey="dark_secondary" />
+                <ColorInput label={t("admin_accent")} settingKey="dark_accent" />
+                <ColorInput label={t("admin_muted")} settingKey="dark_muted" />
+                <ColorInput label={t("admin_border")} settingKey="dark_border" />
               </TabsContent>
             </Tabs>
           </CardContent>
@@ -528,14 +530,14 @@ export default function AdminSettings() {
         
         <Card>
           <CardHeader>
-            <CardTitle>Configurações da Plataforma</CardTitle>
+            <CardTitle>{t("admin_platform_settings")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Permitir Cadastros</Label>
+                <Label>{t("admin_allow_registration")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Permite que novos usuários se cadastrem
+                  {t("admin_allow_registration_desc")}
                 </p>
               </div>
               <Switch
@@ -548,9 +550,9 @@ export default function AdminSettings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Exigir Verificação</Label>
+                <Label>{t("admin_require_verification")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Requer verificação de identidade para negociar
+                  {t("admin_require_verification_desc")}
                 </p>
               </div>
               <Switch
@@ -563,9 +565,9 @@ export default function AdminSettings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>Modo Manutenção</Label>
+                <Label>{t("admin_maintenance_mode")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Plataforma em modo de manutenção
+                  {t("admin_maintenance_mode_desc")}
                 </p>
               </div>
               <Switch
@@ -578,9 +580,9 @@ export default function AdminSettings() {
             <Separator />
             <div className="flex items-center justify-between">
               <div className="space-y-0.5">
-                <Label>USDT Habilitado</Label>
+                <Label>{t("admin_usdt_enabled")}</Label>
                 <p className="text-sm text-muted-foreground">
-                  Habilitar depósitos e saques em USDT
+                  {t("admin_usdt_enabled_desc")}
                 </p>
               </div>
               <Switch
@@ -595,12 +597,12 @@ export default function AdminSettings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Limites Financeiros</CardTitle>
+            <CardTitle>{t("admin_financial_limits")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4">
               <div>
-                <Label htmlFor="min_deposit">Depósito Mínimo (R$)</Label>
+                <Label htmlFor="min_deposit">{t("admin_min_deposit")}</Label>
                 <Input
                   id="min_deposit"
                   type="number"
@@ -609,7 +611,7 @@ export default function AdminSettings() {
                 />
               </div>
               <div>
-                <Label htmlFor="min_withdrawal">Saque Mínimo (R$)</Label>
+                <Label htmlFor="min_withdrawal">{t("admin_min_withdrawal")}</Label>
                 <Input
                   id="min_withdrawal"
                   type="number"
@@ -618,7 +620,7 @@ export default function AdminSettings() {
                 />
               </div>
               <div>
-                <Label htmlFor="withdrawal_fee">Taxa de Saque (%)</Label>
+                <Label htmlFor="withdrawal_fee">{t("admin_withdrawal_fee")}</Label>
                 <Input
                   id="withdrawal_fee"
                   type="number"
@@ -633,11 +635,11 @@ export default function AdminSettings() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Contato e Suporte</CardTitle>
+            <CardTitle>{t("admin_contact_support")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div>
-              <Label htmlFor="support_email">Email de Suporte</Label>
+              <Label htmlFor="support_email">{t("admin_support_email")}</Label>
               <Input
                 id="support_email"
                 type="email"
@@ -647,7 +649,7 @@ export default function AdminSettings() {
               />
             </div>
             <div>
-              <Label htmlFor="support_whatsapp">WhatsApp de Suporte</Label>
+              <Label htmlFor="support_whatsapp">{t("admin_support_whatsapp")}</Label>
               <Input
                 id="support_whatsapp"
                 type="tel"
@@ -663,10 +665,10 @@ export default function AdminSettings() {
           {saving ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Salvando...
+              {t("admin_saving")}
             </>
           ) : (
-            "Salvar Configurações"
+            t("admin_save_settings")
           )}
         </Button>
       </div>
