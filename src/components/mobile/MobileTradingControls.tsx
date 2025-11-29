@@ -117,7 +117,8 @@ export function MobileTradingControls({
         asset_id: selectedAsset.id,
         trade_type: type,
         amount: amount,
-        payout: parseFloat(totalPayout),
+        // Payout deve ser APENAS o LUCRO, igual no desktop
+        payout: parseFloat(payout),
         duration_minutes: duration,
         expires_at: expiresAt.toISOString(),
         is_demo: isDemoMode,
