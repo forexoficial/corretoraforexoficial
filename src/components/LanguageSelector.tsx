@@ -1,4 +1,3 @@
-import { useState } from "react";
 import {
   Select,
   SelectContent,
@@ -6,6 +5,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLanguageContext } from "@/contexts/LanguageContext";
 import flagEN from "@/assets/flag-en.webp";
 import flagPT from "@/assets/flag-pt.webp";
 import flagES from "@/assets/flag-es.webp";
@@ -17,15 +17,15 @@ const languages = [
 ];
 
 export const LanguageSelector = () => {
-  const [selectedLanguage, setSelectedLanguage] = useState("pt");
+  const { language, setLanguage } = useLanguageContext();
 
   return (
-    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+    <Select value={language} onValueChange={setLanguage}>
       <SelectTrigger className="w-8 h-8 border-0 bg-transparent p-0 hover:bg-transparent focus:ring-0 focus:ring-offset-0 [&>svg]:hidden">
         <SelectValue>
           <img
-            src={languages.find((l) => l.code === selectedLanguage)?.flag}
-            alt={selectedLanguage}
+            src={languages.find((l) => l.code === language)?.flag}
+            alt={language}
             className="w-8 h-8 rounded-full object-cover cursor-pointer"
           />
         </SelectValue>
