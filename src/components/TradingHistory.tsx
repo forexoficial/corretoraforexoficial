@@ -101,9 +101,10 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
     if (trade.result === null) return "Pendente";
     
     const isWin = trade.result > 0;
-    // Para vitórias: mostrar payout fixo
-    // Para derrotas: mostrar amount perdido
-    const displayAmount = isWin ? (trade.result - trade.amount) : trade.amount;
+    // NEW: usar sempre o resultado LÍQUIDO vindo do banco
+    // WON  => result = +payout (lucro)
+    // LOST => result = -amount (perda)
+    const displayAmount = Math.abs(trade.result);
     const percentage = ((displayAmount / trade.amount) * 100).toFixed(0);
     const sign = isWin ? "+" : "-";
     
@@ -111,7 +112,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
     let priceInfo = '';
     if (trade.entry_price && trade.exit_price) {
       const priceDiff = ((trade.exit_price - trade.entry_price) / trade.entry_price * 100).toFixed(2);
-      priceInfo = ` | ${trade.entry_price.toFixed(2)} → ${trade.exit_price.toFixed(2)} (${priceDiff > '0' ? '+' : ''}${priceDiff}%)`;
+      priceInfo = ` | ${trade.entry_price.toFixed(2)} → ${trade.exit_price.toFixed(2)} (${Number(priceDiff) > 0 ? '+' : ''}${priceDiff}%)`;
     }
     
     return `${sign}R$ ${displayAmount.toFixed(2)} (${sign}${percentage}%)${priceInfo}`;
