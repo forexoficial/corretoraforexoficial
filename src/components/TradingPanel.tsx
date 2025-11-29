@@ -142,9 +142,10 @@ export const TradingPanel = ({ selectedAsset, isDemoMode, currentBalance, curren
     const expiresAt = new Date();
     expiresAt.setMinutes(expiresAt.getMinutes() + duration);
 
-    const payoutAmount = parseFloat(totalPayout);
+    // Payout é apenas o LUCRO, não o total (investimento + lucro)
+    const payoutAmount = parseFloat(payout);
 
-    console.log(`[TradingPanel] Criando trade: type=${type}, amount=${amount}, entryPrice=${entryPrice}, expires=${expiresAt.toISOString()}`);
+    console.log(`[TradingPanel] Criando trade: type=${type}, amount=${amount}, payout=${payoutAmount}, entryPrice=${entryPrice}, expires=${expiresAt.toISOString()}`);
 
     const { error } = await supabase
       .from('trades')
