@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface FirstDepositDialogProps {
   open: boolean;
@@ -16,6 +17,7 @@ interface FirstDepositDialogProps {
 
 export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleDeposit = () => {
     onOpenChange(false);
@@ -35,10 +37,10 @@ export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogPro
             </div>
           </div>
           <DialogTitle className="text-center text-2xl">
-            Pronto para começar?
+            {t('ready_to_start')}
           </DialogTitle>
           <DialogDescription className="text-center text-base">
-            Você ativou sua conta real! Faça seu primeiro depósito e comece a operar com dinheiro de verdade.
+            {t('activated_real_account')}
           </DialogDescription>
         </DialogHeader>
 
@@ -50,9 +52,9 @@ export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogPro
                 <TrendingUp className="w-4 h-4 text-success" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold">Opere com valores reais</p>
+                <p className="text-sm font-semibold">{t('operate_real_values')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Transforme suas estratégias em lucros reais
+                  {t('transform_strategies')}
                 </p>
               </div>
             </div>
@@ -62,9 +64,9 @@ export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogPro
                 <Zap className="w-4 h-4 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold">Depósito instantâneo</p>
+                <p className="text-sm font-semibold">{t('instant_deposit')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Via PIX, seu saldo é creditado na hora
+                  {t('pix_instant_credit')}
                 </p>
               </div>
             </div>
@@ -74,9 +76,9 @@ export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogPro
                 <Shield className="w-4 h-4 text-accent" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-semibold">100% seguro</p>
+                <p className="text-sm font-semibold">{t('secure_100')}</p>
                 <p className="text-xs text-muted-foreground">
-                  Plataforma regulamentada e criptografada
+                  {t('regulated_platform')}
                 </p>
               </div>
             </div>
@@ -89,19 +91,19 @@ export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogPro
             className="w-full bg-success hover:bg-success/90"
             size="lg"
           >
-            Fazer Primeiro Depósito
+            {t('make_first_deposit')}
           </Button>
           <Button
             variant="ghost"
             onClick={() => onOpenChange(false)}
             className="w-full"
           >
-            Agora não
+            {t('not_now')}
           </Button>
         </div>
 
         <p className="text-center text-xs text-muted-foreground mt-2">
-          Você pode fazer seu primeiro depósito a qualquer momento
+          {t('deposit_anytime')}
         </p>
       </DialogContent>
     </Dialog>

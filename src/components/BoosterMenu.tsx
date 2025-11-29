@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { formatCurrency } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface BoosterMenuProps {
   open: boolean;
@@ -49,6 +50,7 @@ const iconMap: { [key: string]: any } = {
 
 export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [boosters, setBoosters] = useState<Booster[]>([]);
   const [activeBooster, setActiveBooster] = useState<ActiveBooster | null>(null);
   const [loading, setLoading] = useState(true);
@@ -94,7 +96,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
       }
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Erro ao carregar boosters");
+      toast.error(t('error_loading_boosters'));
     } finally {
       setLoading(false);
     }
@@ -102,12 +104,12 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
 
   const handlePurchase = async (booster: Booster) => {
     if (activeBooster) {
-      toast.error("Você já tem um booster ativo!");
+      toast.error(t('already_active_booster'));
       return;
     }
 
     if (balance < booster.price) {
-      toast.error("Saldo insuficiente!");
+      toast.error(t('insufficient_balance_error'));
       return;
     }
 
@@ -140,11 +142,11 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
 
       if (balanceError) throw balanceError;
 
-      toast.success(`Booster ${booster.name} ativado com sucesso!`);
+      toast.success(`${t('booster_menu_title')} ${booster.name} ${t('booster_activated_success')}`);
       fetchData();
     } catch (error) {
       console.error("Error purchasing booster:", error);
-      toast.error("Erro ao ativar booster");
+      toast.error(t('error_activating_booster'));
     } finally {
       setPurchasing(false);
     }
@@ -157,16 +159,16 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
     const expires = new Date(activeBooster.expires_at);
     const diff = expires.getTime() - now.getTime();
     
-    if (diff <= 0) return "Expirado";
+    if (diff <= 0) return t('expired');
     
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
     
     if (hours > 0) {
-      return `${hours}h ${remainingMinutes}min restantes`;
+      return `${hours}${t('hours_short')} ${remainingMinutes}${t('min_remaining')}`;
     }
-    return `${remainingMinutes} minutos restantes`;
+    return `${remainingMinutes} ${t('minutes_remaining')}`;
   };
 
   return (
@@ -178,10 +180,10 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
         <SheetHeader>
           <div className="flex items-center gap-2">
             <Zap className="h-6 w-6 text-primary" />
-            <SheetTitle>Booster</SheetTitle>
+            <SheetTitle>{t('booster_menu_title')}</SheetTitle>
           </div>
           <SheetDescription>
-            Potencialize suas operações com boosters especiais
+            {t('booster_description')}
           </SheetDescription>
         </SheetHeader>
 
@@ -195,9 +197,9 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
                 <div className="flex items-start gap-3">
                   <Zap className="h-5 w-5 text-primary mt-0.5" />
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-1">Booster Ativo!</h4>
+                    <h4 className="font-semibold text-sm mb-1">{t('active_booster')}</h4>
                     <p className="text-xs text-muted-foreground mb-2">
-                      +{activeBooster.payout_increase_percentage}% de payout em todos os ativos
+                      +{activeBooster.payout_increase_percentage}% {t('payout_increase_all')}
                     </p>
                     <Badge variant="secondary" className="text-xs">
                       <Clock className="h-3 w-3 mr-1" />
@@ -210,7 +212,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
 
             {/* Balance Display */}
             <div className="mt-4 p-4 bg-muted/30 rounded-lg">
-              <p className="text-sm text-muted-foreground mb-1">Saldo Disponível</p>
+              <p className="text-sm text-muted-foreground mb-1">{t('available_balance')}</p>
               <p className="text-2xl font-bold">R$ {formatCurrency(balance)}</p>
             </div>
 
@@ -230,7 +232,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
                             <CardTitle className="text-lg">{booster.name}</CardTitle>
                             <CardDescription className="text-xs mt-1 flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              {booster.duration_minutes} minutos
+                              {booster.duration_minutes} {t('minutes')}
                             </CardDescription>
                           </div>
                         </div>
@@ -252,11 +254,11 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
                           disabled={purchasing || !!activeBooster || balance < booster.price}
                         >
                           <Zap className="h-4 w-4 mr-2" />
-                          {purchasing ? "Ativando..." : "Ativar"}
+                          {purchasing ? t('activating') : t('activate')}
                         </Button>
                       </div>
                       {balance < booster.price && !activeBooster && (
-                        <p className="text-xs text-destructive mt-2">Saldo insuficiente</p>
+                        <p className="text-xs text-destructive mt-2">{t('insufficient_balance')}</p>
                       )}
                     </CardContent>
                   </Card>
@@ -268,13 +270,13 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
             <div className="mt-6 p-4 bg-muted/50 rounded-lg">
               <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
                 <Info className="h-4 w-4 text-primary" />
-                Como funcionam os Boosters?
+                {t('how_boosters_work')}
               </h4>
               <ul className="text-xs text-muted-foreground space-y-1">
-                <li>• Os boosters aumentam o payout de todos os ativos durante o período</li>
-                <li>• Apenas um booster pode estar ativo por vez</li>
-                <li>• Os efeitos são aplicados automaticamente após ativação</li>
-                <li>• O valor é debitado do seu saldo no momento da compra</li>
+                <li>• {t('boosters_increase_payout')}</li>
+                <li>• {t('one_booster_active')}</li>
+                <li>• {t('effects_applied_auto')}</li>
+                <li>• {t('debited_on_purchase')}</li>
               </ul>
             </div>
           </>

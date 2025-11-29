@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Mail, MessageCircle, Send, Clock, Phone } from "lucide-react";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SupportDialogProps {
   open: boolean;
@@ -11,12 +12,13 @@ interface SupportDialogProps {
 
 export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
   const { settings } = usePlatformSettings();
+  const { t } = useTranslation();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Suporte ao Cliente - {settings.platform_name}</DialogTitle>
+          <DialogTitle>{t('customer_support')} - {settings.platform_name}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
@@ -31,7 +33,7 @@ export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
             >
               <MessageCircle className="h-5 w-5 text-green-600" />
               <div className="text-left">
-                <div className="font-semibold">WhatsApp</div>
+                <div className="font-semibold">{t('whatsapp')}</div>
                 <div className="text-xs text-muted-foreground">{settings.support_phone}</div>
               </div>
             </Button>
@@ -46,7 +48,7 @@ export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
             >
               <Phone className="h-5 w-5 text-blue-500" />
               <div className="text-left">
-                <div className="font-semibold">Telefone</div>
+                <div className="font-semibold">{t('phone')}</div>
                 <div className="text-xs text-muted-foreground">{settings.support_phone}</div>
               </div>
             </Button>
@@ -58,7 +60,7 @@ export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
             >
               <Mail className="h-5 w-5 text-red-500" />
               <div className="text-left">
-                <div className="font-semibold">Email</div>
+                <div className="font-semibold">{t('email')}</div>
                 <div className="text-xs text-muted-foreground">{settings.support_email}</div>
               </div>
             </Button>
@@ -69,12 +71,12 @@ export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
-              <span className="font-semibold">Horário de Atendimento</span>
+              <span className="font-semibold">{t('business_hours')}</span>
             </div>
             <p className="text-muted-foreground">
-              Segunda a Sexta: 9h às 18h (Horário de Brasília)<br />
-              Sábados: 9h às 13h<br />
-              Domingos e Feriados: Fechado
+              {t('weekday_hours')}<br />
+              {t('saturday_hours')}<br />
+              {t('sunday_closed')}
             </p>
           </div>
         </div>
