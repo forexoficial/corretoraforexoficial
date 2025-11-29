@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Camera, X, RotateCw, Check } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface CameraCaptureProps {
   orientation: "horizontal" | "vertical";
@@ -18,6 +19,7 @@ export const CameraCapture = ({
   title,
   subtitle,
 }: CameraCaptureProps) => {
+  const { t } = useTranslation();
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -47,7 +49,7 @@ export const CameraCapture = ({
       setStream(mediaStream);
     } catch (error) {
       console.error("Error accessing camera:", error);
-      toast.error("Erro ao acessar a câmera. Verifique as permissões.");
+      toast.error(t("toast_camera_access_error"));
     }
   };
 

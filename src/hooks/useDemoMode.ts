@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const useDemoMode = () => {
+  const { t } = useTranslation();
   const [isDemoMode, setIsDemoMode] = useState(true);
   const [demoBalance, setDemoBalance] = useState(10000);
   const [realBalance, setRealBalance] = useState(0);
@@ -162,10 +164,10 @@ export const useDemoMode = () => {
       setIsDemoMode(newMode);
       
       if (newMode) {
-        toast.success("Modo Demo ativado - Saldo: R$ 10.000,00");
+        toast.success(t("toast_demo_mode_activated"));
       } else {
         // Switching to Real Mode
-        toast.success("Modo Real ativado - Opere com dinheiro real");
+        toast.success(t("toast_real_mode_activated"));
         
         // Check if this is the first time switching to real mode and no deposits made
         const isFirstDeposit = await checkIfFirstDeposit();
@@ -178,7 +180,7 @@ export const useDemoMode = () => {
       }
     } catch (error) {
       console.error('Error toggling demo mode:', error);
-      toast.error("Erro ao alternar modo");
+      toast.error(t("toast_mode_switch_error"));
     }
   };
 
@@ -195,10 +197,10 @@ export const useDemoMode = () => {
       if (error) throw error;
 
       setDemoBalance(10000);
-      toast.success("Saldo demo resetado para R$ 10.000,00");
+      toast.success(t("toast_demo_balance_reset"));
     } catch (error) {
       console.error('Error resetting demo balance:', error);
-      toast.error("Erro ao resetar saldo demo");
+      toast.error(t("toast_demo_reset_error"));
     }
   };
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface AvatarUploadDialogProps {
   open: boolean;
@@ -15,6 +16,7 @@ interface AvatarUploadDialogProps {
 }
 
 export function AvatarUploadDialog({ open, onOpenChange, userId, onUploadComplete }: AvatarUploadDialogProps) {
+  const { t } = useTranslation();
   const [imageSrc, setImageSrc] = useState<string>("");
   const [crop, setCrop] = useState<Crop>({
     unit: "%",
@@ -33,7 +35,7 @@ export function AvatarUploadDialog({ open, onOpenChange, userId, onUploadComplet
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Por favor, selecione uma imagem válida");
+      toast.error(t("toast_select_valid_image"));
       return;
     }
 
@@ -97,7 +99,7 @@ export function AvatarUploadDialog({ open, onOpenChange, userId, onUploadComplet
 
   const handleUpload = async () => {
     if (!completedCrop || !imgRef.current) {
-      toast.error("Por favor, selecione uma área da imagem");
+      toast.error(t("toast_select_image_area"));
       return;
     }
 
@@ -129,14 +131,14 @@ export function AvatarUploadDialog({ open, onOpenChange, userId, onUploadComplet
 
       if (updateError) throw updateError;
 
-      toast.success("Foto de perfil atualizada com sucesso!");
+      toast.success(t("toast_profile_photo_updated"));
       onUploadComplete();
       onOpenChange(false);
       setImageSrc("");
       setCompletedCrop(null);
     } catch (error: any) {
       console.error("Upload error:", error);
-      toast.error("Erro ao fazer upload da foto: " + error.message);
+      toast.error(t("toast_photo_upload_error") + ": " + error.message);
     } finally {
       setUploading(false);
     }

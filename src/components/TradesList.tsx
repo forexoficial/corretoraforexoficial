@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ArrowUp, ArrowDown, Clock } from "lucide-react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Trade {
   id: string;
@@ -21,6 +22,7 @@ interface Trade {
 }
 
 export const TradesList = () => {
+  const { t } = useTranslation();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentTime, setCurrentTime] = useState(Date.now());
@@ -89,7 +91,7 @@ export const TradesList = () => {
       .order('created_at', { ascending: false });
 
     if (error) {
-      toast.error("Erro ao carregar operações");
+      toast.error(t("toast_error_loading_operations"));
       console.error(error);
     } else {
       setTrades(data || []);

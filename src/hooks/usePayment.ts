@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { paymentRequestSchema } from "@/types/payment-gateway";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface PaymentData {
   qrCode?: string;
@@ -15,6 +16,7 @@ interface PaymentData {
 }
 
 export const usePayment = () => {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [paymentData, setPaymentData] = useState<PaymentData | null>(null);
 
@@ -65,12 +67,12 @@ export const usePayment = () => {
       };
 
       setPaymentData(payment);
-      toast.success("Pagamento criado com sucesso!");
+      toast.success(t("toast_payment_created"));
       return payment;
 
     } catch (error: any) {
       console.error('Payment creation error:', error);
-      toast.error(error.message || "Erro ao criar pagamento");
+      toast.error(error.message || t("toast_payment_error"));
       return null;
     } finally {
       setLoading(false);
