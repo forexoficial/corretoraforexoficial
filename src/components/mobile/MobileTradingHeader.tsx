@@ -1,3 +1,4 @@
+import { useTranslation } from "@/hooks/useTranslation";
 import { Menu, RefreshCw, Wallet, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { usePlatformCustomization } from "@/contexts/PlatformCustomizationContext";
@@ -25,6 +26,7 @@ interface MobileTradingHeaderProps {
 }
 
 export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps) {
+  const { t } = useTranslation();
   const { customization } = usePlatformCustomization();
   const { isDemoMode, currentBalance, toggleDemoMode } = useDemoMode();
   const { user } = useAuth();
@@ -72,8 +74,8 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
             </SheetTrigger>
             <SheetContent side="left" className="p-0 w-[85vw] max-w-[320px]">
               <div className="py-6 px-6 border-b border-border bg-background/95 backdrop-blur-sm">
-                <h2 className="text-lg font-semibold">Menu</h2>
-                <p className="text-xs text-muted-foreground mt-1">Acesse todas as funcionalidades</p>
+                <h2 className="text-lg font-semibold">{t("menu", "Menu")}</h2>
+                <p className="text-xs text-muted-foreground mt-1">{t("all_features", "Acesse todas as funcionalidades")}</p>
               </div>
               <TradingSidebar isMobileSheet={true} />
             </SheetContent>
@@ -107,14 +109,14 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center gap-1 hover:opacity-80 transition-opacity">
                   <span className="text-[10px] text-muted-foreground">
-                    {isDemoMode ? "Conta demo" : "Conta real"}
+                    {isDemoMode ? t("demo_account", "Conta demo") : t("real_account", "Conta real")}
                   </span>
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="bg-popover backdrop-blur-xl border-border">
                 <DropdownMenuItem onClick={withClickSound(toggleDemoMode)}>
-                  {isDemoMode ? "Trocar para Conta Real" : "Trocar para Conta Demo"}
+                  {isDemoMode ? t("switch_to_real", "Trocar para Conta Real") : t("switch_to_demo", "Trocar para Conta Demo")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -1,3 +1,4 @@
+import { useTranslation } from "@/hooks/useTranslation";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,8 @@ export default function DemoModeToggle({
   demoBalance,
   realBalance,
 }: DemoModeToggleProps) {
+  const { t } = useTranslation();
+  
   return (
     <div className="space-y-3">
       {/* Balance Cards */}
@@ -39,7 +42,7 @@ export default function DemoModeToggle({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-primary" />
-              <span className="text-xs font-semibold text-foreground">Demo</span>
+              <span className="text-xs font-semibold text-foreground">{t("demo_mode", "Demo")}</span>
             </div>
             <Switch
               id="demo-mode"
@@ -62,11 +65,11 @@ export default function DemoModeToggle({
                     className="mt-2 w-full h-7 text-xs text-foreground hover:bg-accent hover:text-accent-foreground"
                   >
                     <RotateCcw className="h-3 w-3 mr-1" />
-                    Resetar
+                    {t("reset", "Resetar")}
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>Resetar saldo para R$ 10.000,00</p>
+                  <p>{t("reset_balance", "Resetar saldo para R$ 10.000,00")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -82,7 +85,7 @@ export default function DemoModeToggle({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Wallet className={`w-4 h-4 ${!isDemoMode ? 'text-success' : 'text-muted-foreground'}`} />
-              <span className="text-xs font-semibold text-foreground">Real</span>
+              <span className="text-xs font-semibold text-foreground">{t("real_mode", "Real")}</span>
             </div>
             <Switch
               id="real-mode"
@@ -102,11 +105,11 @@ export default function DemoModeToggle({
         <p className="text-xs text-muted-foreground leading-relaxed">
           {isDemoMode ? (
             <>
-              💡 <span className="font-medium text-foreground">Modo treino:</span> Pratique suas estratégias com R$ 10.000 virtuais. Sem risco real.
+              💡 {t("demo_info", "Modo treino: Pratique suas estratégias com R$ 10.000 virtuais. Sem risco real.")}
             </>
           ) : (
             <>
-              ⚡ <span className="font-medium text-foreground">Modo real:</span> Suas operações afetam seu saldo real. Depósitos e saques disponíveis.
+              ⚡ {t("real_info", "Modo real: Suas operações afetam seu saldo real. Depósitos e saques disponíveis.")}
             </>
           )}
         </p>
