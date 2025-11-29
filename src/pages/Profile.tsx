@@ -666,7 +666,7 @@ export default function Profile() {
                   </p>
                 </div>
                 <Button 
-                  onClick={() => navigate('/affiliate/dashboard')}
+                  onClick={() => navigate('/affiliate')}
                   className="gap-2"
                 >
                   <Award className="h-4 w-4" />
