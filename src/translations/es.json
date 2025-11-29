@@ -511,5 +511,8 @@
   "timezone": "Zona horaria",
   "theme": "Tema",
   "default_theme": "Predeterminado",
-  "light_theme": "Claro"
+  "light_theme": "Claro",
+  "week_leaders": "Líderes de la semana",
+  "no_traders_ranking": "No hay traders en el ranking",
+  "online": "En línea"
 }

@@ -511,5 +511,8 @@
   "timezone": "Fuso horário",
   "theme": "Tema",
   "default_theme": "Default",
-  "light_theme": "Light"
+  "light_theme": "Light",
+  "week_leaders": "Líderes da semana",
+  "no_traders_ranking": "Nenhum trader no ranking",
+  "online": "Online"
 }

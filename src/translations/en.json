@@ -511,5 +511,8 @@
   "timezone": "Timezone",
   "theme": "Theme",
   "default_theme": "Default",
-  "light_theme": "Light"
+  "light_theme": "Light",
+  "week_leaders": "Week Leaders",
+  "no_traders_ranking": "No traders in ranking",
+  "online": "Online"
 }
