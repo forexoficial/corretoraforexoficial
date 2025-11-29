@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export interface PriceLineConfig {
   visible: boolean;
@@ -25,28 +26,29 @@ interface PriceLineSettingsProps {
   onChange: (config: PriceLineConfig) => void;
 }
 
-const lineStyles = [
-  { value: 0, label: "Sólida" },
-  { value: 1, label: "Pontilhada" },
-  { value: 2, label: "Tracejada" },
-  { value: 3, label: "Tracejada Larga" },
-  { value: 4, label: "Pontilhada Esparsa" },
-];
-
-const presetColors = [
-  { value: "#ffffff", label: "Branco" },
-  { value: "#22c55e", label: "Verde" },
-  { value: "#ef4444", label: "Vermelho" },
-  { value: "#3b82f6", label: "Azul" },
-  { value: "#eab308", label: "Amarelo" },
-  { value: "#a855f7", label: "Roxo" },
-  { value: "#ec4899", label: "Rosa" },
-  { value: "#14b8a6", label: "Teal" },
-];
-
 export function PriceLineSettings({ config, onChange }: PriceLineSettingsProps) {
   const [open, setOpen] = useState(false);
   const [localConfig, setLocalConfig] = useState<PriceLineConfig>(config);
+  const { t } = useTranslation();
+
+  const lineStyles = [
+    { value: 0, label: t("solid") },
+    { value: 1, label: t("dotted") },
+    { value: 2, label: t("dashed") },
+    { value: 3, label: `${t("dashed")} ${t("thickness")}` },
+    { value: 4, label: `${t("dotted")} Sparse` },
+  ];
+
+  const presetColors = [
+    { value: "#ffffff", label: "Branco" },
+    { value: "#22c55e", label: "Verde" },
+    { value: "#ef4444", label: "Vermelho" },
+    { value: "#3b82f6", label: "Azul" },
+    { value: "#eab308", label: "Amarelo" },
+    { value: "#a855f7", label: "Roxo" },
+    { value: "#ec4899", label: "Rosa" },
+    { value: "#14b8a6", label: "Teal" },
+  ];
 
   useEffect(() => {
     setLocalConfig(config);
@@ -66,14 +68,14 @@ export function PriceLineSettings({ config, onChange }: PriceLineSettingsProps) 
       </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Configurações da Linha de Preço</DialogTitle>
+          <DialogTitle>{t("price_line_settings")}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-6 py-4">
           {/* Visibilidade */}
           <div className="flex items-center justify-between">
             <Label htmlFor="visible" className="text-sm font-medium">
-              Mostrar Linha de Preço
+              {t("visible")}
             </Label>
             <Switch
               id="visible"
@@ -86,7 +88,7 @@ export function PriceLineSettings({ config, onChange }: PriceLineSettingsProps) 
 
           {/* Cor */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Cor da Linha</Label>
+            <Label className="text-sm font-medium">{t("color")}</Label>
             <div className="grid grid-cols-4 gap-2">
               {presetColors.map((preset) => (
                 <button
@@ -124,7 +126,7 @@ export function PriceLineSettings({ config, onChange }: PriceLineSettingsProps) 
           {/* Espessura */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-medium">Espessura da Linha</Label>
+              <Label className="text-sm font-medium">{t("thickness")}</Label>
               <span className="text-sm text-muted-foreground">{localConfig.width}px</span>
             </div>
             <Slider
@@ -141,7 +143,7 @@ export function PriceLineSettings({ config, onChange }: PriceLineSettingsProps) 
 
           {/* Estilo */}
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Estilo da Linha</Label>
+            <Label className="text-sm font-medium">{t("style")}</Label>
             <Select
               value={localConfig.style.toString()}
               onValueChange={(value) =>
