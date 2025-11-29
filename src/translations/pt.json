@@ -514,5 +514,18 @@
   "light_theme": "Light",
   "week_leaders": "Líderes da semana",
   "no_traders_ranking": "Nenhum trader no ranking",
-  "online": "Online"
+  "online": "Online",
+  "identity_approved": "Identidade aprovada",
+  "under_review": "Em análise",
+  "identity_rejected": "Identidade rejeitada",
+  "identity_pending": "Identidade pendente",
+  "registration_complete": "Cadastro completo!",
+  "complete_registration": "Complete seu cadastro",
+  "identity_verified_success": "Sua identidade foi verificada com sucesso. Você já pode operar com dinheiro real.",
+  "documents_under_review": "Seus documentos estão em análise. Aguarde a aprovação para operar com dinheiro real.",
+  "verification_rejected_resubmit": "Sua verificação foi rejeitada. Por favor, envie os documentos novamente.",
+  "verification_required_desc": "Para desbloquear todos os recursos da plataforma e começar a operar com dinheiro real, é necessário verificar sua identidade.",
+  "account_created": "Conta criada",
+  "email_confirmed": "Email confirmado",
+  "resend_documents": "Reenviar Documentos"
 }

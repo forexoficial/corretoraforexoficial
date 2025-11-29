@@ -514,5 +514,18 @@
   "light_theme": "Light",
   "week_leaders": "Week Leaders",
   "no_traders_ranking": "No traders in ranking",
-  "online": "Online"
+  "online": "Online",
+  "identity_approved": "Identity approved",
+  "under_review": "Under review",
+  "identity_rejected": "Identity rejected",
+  "identity_pending": "Identity pending",
+  "registration_complete": "Registration complete!",
+  "complete_registration": "Complete your registration",
+  "identity_verified_success": "Your identity has been successfully verified. You can now trade with real money.",
+  "documents_under_review": "Your documents are under review. Please wait for approval to trade with real money.",
+  "verification_rejected_resubmit": "Your verification was rejected. Please submit the documents again.",
+  "verification_required_desc": "To unlock all platform features and start trading with real money, you need to verify your identity.",
+  "account_created": "Account created",
+  "email_confirmed": "Email confirmed",
+  "resend_documents": "Resend Documents"
 }

@@ -9,10 +9,12 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export const VerificationProgress = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [verificationStatus, setVerificationStatus] = useState<string>("pending");
   const [loading, setLoading] = useState(true);
 
@@ -52,13 +54,13 @@ export const VerificationProgress = () => {
   const getStatusText = () => {
     switch (verificationStatus) {
       case "approved":
-        return "Identidade aprovada";
+        return t("identity_approved");
       case "under_review":
-        return "Em análise";
+        return t("under_review");
       case "rejected":
-        return "Identidade rejeitada";
+        return t("identity_rejected");
       default:
-        return "Identidade pendente";
+        return t("identity_pending");
     }
   };
 
@@ -135,17 +137,17 @@ export const VerificationProgress = () => {
             <div className="flex-1">
               <h4 className="font-semibold text-sm mb-1">
                 {verificationStatus === "approved" 
-                  ? "Cadastro completo!" 
-                  : "Complete seu cadastro"}
+                  ? t("registration_complete") 
+                  : t("complete_registration")}
               </h4>
               <p className="text-xs text-muted-foreground leading-relaxed">
                 {verificationStatus === "approved"
-                  ? "Sua identidade foi verificada com sucesso. Você já pode operar com dinheiro real."
+                  ? t("identity_verified_success")
                   : verificationStatus === "under_review"
-                  ? "Seus documentos estão em análise. Aguarde a aprovação para operar com dinheiro real."
+                  ? t("documents_under_review")
                   : verificationStatus === "rejected"
-                  ? "Sua verificação foi rejeitada. Por favor, envie os documentos novamente."
-                  : "Para desbloquear todos os recursos da plataforma e começar a operar com dinheiro real, é necessário verificar sua identidade."}
+                  ? t("verification_rejected_resubmit")
+                  : t("verification_required_desc")}
               </p>
             </div>
           </div>
@@ -153,11 +155,11 @@ export const VerificationProgress = () => {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-xs">
               <div className="w-2 h-2 rounded-full bg-success"></div>
-              <span className="text-muted-foreground">Conta criada</span>
+              <span className="text-muted-foreground">{t("account_created")}</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <div className="w-2 h-2 rounded-full bg-success"></div>
-              <span className="text-muted-foreground">Email confirmado</span>
+              <span className="text-muted-foreground">{t("email_confirmed")}</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <div className={`w-2 h-2 rounded-full ${getStatusColor()}`}></div>
@@ -171,7 +173,7 @@ export const VerificationProgress = () => {
               className="w-full"
               size="sm"
             >
-              {verificationStatus === "rejected" ? "Reenviar Documentos" : "Verificar Identidade"}
+              {verificationStatus === "rejected" ? t("resend_documents") : t("verify_identity")}
             </Button>
           )}
         </div>
