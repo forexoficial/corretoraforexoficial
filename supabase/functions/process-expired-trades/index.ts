@@ -177,14 +177,12 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
         const status = won ? 'won' : 'lost'
 
         // Calculate result for the trade
-        // CRITICAL: Balance is NOT deducted when trade is created (see architecture/balance-deduction-timing)
-        // It's only deducted/added when trade closes
-        // The trigger does: balance = balance - amount + result
-        // If WON: result = amount + payout, so balance = balance - amount + (amount + payout) = balance + payout ✓
-        // If LOST: result = 0, so balance = balance - amount + 0 = balance - amount ✓
+        // The database trigger will apply: balance - amount + result
+        // If WON: result = amount + payout (user gets back investment + profit)
+        // If LOST: result = 0 (user loses the investment)
         const result = won ? (trade.amount + trade.payout) : 0
 
-        console.log(`Trade ${trade.id} result: ${status.toUpperCase()}, amount=${trade.amount}, payout=${trade.payout}, calculated result=${result}`)
+        console.log(`Trade ${trade.id} result: ${status.toUpperCase()}, result value: ${result}`)
 
         // For display purposes: show profit/loss
         const displayResult = won ? trade.payout : -trade.amount
@@ -210,7 +208,7 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
 
         // Balance is updated automatically by the database trigger handle_trade_balance_on_update
         // The trigger applies: balance = balance - amount + result
-        // If WON: balance = balance - amount + payout = balance + (payout - amount) ✓
+        // If WON: balance = balance - amount + (amount + payout) = balance + payout ✓
         // If LOST: balance = balance - amount + 0 = balance - amount ✓
         
         processedCount++
