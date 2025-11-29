@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/hooks/useTranslation";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -25,6 +26,7 @@ import secureIcon4 from "@/assets/secure-verified-4.webp";
 import secureIcon5 from "@/assets/secure-verified-5.webp";
 
 export default function Withdrawal() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { settings } = usePlatformSettings();
@@ -195,27 +197,27 @@ export default function Withdrawal() {
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
                 onClick={() => navigate('/deposit')}
               >
-                Depósito
+                {t("deposit", "Depósito")}
               </TabsTrigger>
               <TabsTrigger 
                 value="withdrawal" 
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
               >
-                Retirada
+                {t("withdrawal", "Retirada")}
               </TabsTrigger>
               <TabsTrigger 
                 value="transactions"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
                 onClick={() => navigate('/transactions')}
               >
-                Transações
+                {t("transactions", "Transações")}
               </TabsTrigger>
               <TabsTrigger 
                 value="profile"
                 className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
                 onClick={() => navigate('/profile')}
               >
-                Perfil
+                {t("profile", "Perfil")}
               </TabsTrigger>
             </TabsList>
           </Tabs>
@@ -228,29 +230,29 @@ export default function Withdrawal() {
           {/* Account Info Column */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-card rounded-lg p-6 border border-border space-y-4">
-              <h3 className="text-sm font-medium mb-4">Conta:</h3>
+              <h3 className="text-sm font-medium mb-4">{t("account_label", "Conta:")}</h3>
               
               <div className="space-y-2">
-                <Label>Tipo de saldo</Label>
+                <Label>{t("balance_type", "Tipo de saldo")}</Label>
                 <Select value={accountType} onValueChange={(value: any) => setAccountType(value)}>
                   <SelectTrigger className="bg-background">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-card border-border z-50">
-                    <SelectItem value="real">Saldo Real</SelectItem>
-                    <SelectItem value="crypto">Saldo Cripto</SelectItem>
-                    <SelectItem value="bonus">Saldo Bônus</SelectItem>
+                    <SelectItem value="real">{t("real_balance", "Saldo Real")}</SelectItem>
+                    <SelectItem value="crypto">{t("crypto_balance", "Saldo Cripto")}</SelectItem>
+                    <SelectItem value="bonus">{t("bonus_balance", "Saldo Bônus")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-3 pt-4 border-t border-border">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Saldo:</span>
+                  <span className="text-muted-foreground">{t("available_balance", "Saldo:")}</span>
                   <span className="font-semibold">R$ {balances[accountType].toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Disponível para retirada</span>
+                  <span className="text-muted-foreground">{t("available_for_withdrawal", "Disponível para retirada")}</span>
                   <span className="font-semibold text-success">R$ {balances[accountType].toFixed(2)}</span>
                 </div>
               </div>
@@ -260,11 +262,11 @@ export default function Withdrawal() {
           {/* Withdrawal Form Column */}
           <div className="lg:col-span-1">
             <form onSubmit={handleWithdrawal} className="bg-card rounded-lg p-6 border border-border space-y-6">
-              <h3 className="text-lg font-semibold mb-4">Dados do saque</h3>
+              <h3 className="text-lg font-semibold mb-4">{t("withdrawal_data", "Dados do saque")}</h3>
 
               {/* Withdrawal Type */}
               <div className="space-y-2">
-                <Label>Tipo de saque</Label>
+                <Label>{t("withdrawal_type", "Tipo de saque")}</Label>
                 <Select value={withdrawalType} onValueChange={(value: any) => setWithdrawalType(value)}>
                   <SelectTrigger className="bg-background">
                     <SelectValue />
@@ -278,7 +280,7 @@ export default function Withdrawal() {
 
               {/* Key Type */}
               <div className="space-y-2">
-                <Label>Tipo da chave</Label>
+                <Label>{t("key_type", "Tipo da chave")}</Label>
                 <Select value={keyType} onValueChange={(value: any) => setKeyType(value)}>
                   <SelectTrigger className="bg-background">
                     <SelectValue />
@@ -295,19 +297,19 @@ export default function Withdrawal() {
 
               {/* PIX Key Input */}
               <div className="space-y-2">
-                <Label htmlFor="pixKey">Chave pix</Label>
+                <Label htmlFor="pixKey">{t("pix_key", "Chave pix")}</Label>
                 <Input
                   id="pixKey"
                   value={pixKey}
                   onChange={(e) => setPixKey(e.target.value)}
-                  placeholder={`Digite sua chave ${keyTypeLabels[keyType]}`}
+                  placeholder={`${t("enter_pix_key", "Digite sua chave")} ${keyTypeLabels[keyType]}`}
                   required
                 />
               </div>
 
               {/* Amount Input */}
               <div className="space-y-2">
-                <Label htmlFor="amount">Valor</Label>
+                <Label htmlFor="amount">{t("value", "Valor")}</Label>
                 <div className="relative">
                   <Input
                     id="amount"
@@ -348,7 +350,7 @@ export default function Withdrawal() {
                 size="lg"
                 disabled={isSubmitting || balanceLoading}
               >
-                <span>{isSubmitting ? "Processando..." : "Sacar"}</span>
+                <span>{isSubmitting ? t("processing_payment", "Processando...") : t("withdraw", "Sacar")}</span>
                 {!isSubmitting && <ArrowRight className="w-5 h-5 ml-2" />}
               </Button>
             </form>
@@ -357,7 +359,7 @@ export default function Withdrawal() {
           {/* Important Info Column */}
           <div className="lg:col-span-1 space-y-4">
             <div className="bg-card rounded-lg p-6 border border-border">
-              <h3 className="text-sm font-medium mb-4">Informações importantes:</h3>
+              <h3 className="text-sm font-medium mb-4">{t("important_info", "Informações importantes:")}</h3>
               <div className="bg-primary/10 border-2 border-primary rounded-lg p-4">
                 <div className="flex items-center gap-4">
                   <div className="w-20 h-20 flex items-center justify-center flex-shrink-0">
@@ -368,8 +370,8 @@ export default function Withdrawal() {
                     />
                   </div>
                   <div className="space-y-2 text-sm flex-1">
-                    <div>Valor mínimo: <span className="font-bold">{withdrawalType === "BRL" ? `R$ ${settings.min_withdrawal.toFixed(2)}` : `${settings.min_withdrawal.toFixed(2)} USDT`}</span></div>
-                    <div>Valor máximo: <span className="font-bold">{withdrawalType === "BRL" ? `R$ ${settings.max_withdrawal.toFixed(2)}` : `${settings.max_withdrawal.toFixed(2)} USDT`}</span></div>
+                    <div>{t("min_value", "Valor mínimo:")}<span className="font-bold">{withdrawalType === "BRL" ? `R$ ${settings.min_withdrawal.toFixed(2)}` : `${settings.min_withdrawal.toFixed(2)} USDT`}</span></div>
+                    <div>{t("max_value", "Valor máximo:")} <span className="font-bold">{withdrawalType === "BRL" ? `R$ ${settings.max_withdrawal.toFixed(2)}` : `${settings.max_withdrawal.toFixed(2)} USDT`}</span></div>
                   </div>
                 </div>
               </div>
@@ -387,7 +389,7 @@ export default function Withdrawal() {
                 </svg>
               </div>
               <div className="text-sm">
-                <div className="text-muted-foreground">Valor mínimo do depósito:</div>
+                <div className="text-muted-foreground">{t("min_deposit_label", "Valor mínimo do depósito:")}</div>
                 <div className="font-semibold">{settings.min_deposit.toFixed(2)}</div>
               </div>
             </div>
@@ -398,7 +400,7 @@ export default function Withdrawal() {
                 </svg>
               </div>
               <div className="text-sm">
-                <div className="text-muted-foreground">Valor mínimo de retirada:</div>
+                <div className="text-muted-foreground">{t("min_withdrawal_label", "Valor mínimo de retirada:")}</div>
                 <div className="font-semibold">{settings.min_withdrawal.toFixed(2)}</div>
               </div>
             </div>
@@ -409,8 +411,8 @@ export default function Withdrawal() {
                 </svg>
               </div>
               <div className="text-sm">
-                <div className="font-semibold">Retirada rápida</div>
-                <div className="text-muted-foreground">de sua conta</div>
+                <div className="font-semibold">{t("fast_withdrawal", "Retirada rápida")}</div>
+                <div className="text-muted-foreground">{t("from_your_account", "de sua conta")}</div>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -421,9 +423,9 @@ export default function Withdrawal() {
               </div>
               <div className="text-sm">
                 <div className="font-semibold">
-                  {settings.withdrawal_fee > 0 ? `${settings.withdrawal_fee}% de taxa` : "Sem comissão"}
+                  {settings.withdrawal_fee > 0 ? `${settings.withdrawal_fee}% ${t("commission_on_withdrawals", "de taxa")}` : t("no_commission", "Sem comissão")}
                 </div>
-                <div className="text-muted-foreground">em saques</div>
+                <div className="text-muted-foreground">{t("commission_on_withdrawals", "em saques")}</div>
               </div>
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Mail, Phone, MapPin, Calendar, TrendingUp, DollarSign, Award, Settings, LogOut, Edit2, Save, X, Copy, Check, Shield, Crown, Zap } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,6 +22,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
 
 export default function Profile() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -147,7 +149,7 @@ export default function Profile() {
       const activities = trades?.map(trade => ({
         type: "trade",
         asset: trade.assets?.symbol || trade.assets?.name || "N/A",
-        result: trade.status === 'won' ? 'Ganho' : trade.status === 'lost' ? 'Perda' : 'Aberto',
+        result: trade.status === 'won' ? t("gain", "Ganho") : trade.status === 'lost' ? t("loss", "Perda") : t("open", "Aberto"),
         amount: trade.result 
           ? (trade.result >= 0 
               ? `+R$ ${Math.abs(trade.result).toFixed(2)}` 
@@ -184,23 +186,23 @@ export default function Profile() {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    if (diffHours < 1) return "Agora mesmo";
-    if (diffHours < 24) return `${diffHours} hora${diffHours > 1 ? 's' : ''} atrás`;
-    return `${diffDays} dia${diffDays > 1 ? 's' : ''} atrás`;
+    if (diffHours < 1) return t("just_now", "Agora mesmo");
+    if (diffHours < 24) return `${diffHours} ${diffHours > 1 ? t("hours_ago", "horas atrás") : t("hour_ago", "hora atrás")}`;
+    return `${diffDays} ${diffDays > 1 ? t("days_ago", "dias atrás") : t("day_ago", "dia atrás")}`;
   };
 
   const statsCards = [
-    { label: "Total de Trades (Real)", value: stats.totalTrades.toLocaleString('pt-BR'), icon: TrendingUp, color: "text-primary" },
-    { label: "Taxa de Sucesso (Real)", value: `${stats.successRate}%`, icon: Award, color: "text-green-500" },
-    { label: "Lucro Total (Real)", value: `R$ ${stats.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: "text-accent" },
-    { label: "Mês Atual (Real)", value: `R$ ${stats.monthProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: TrendingUp, color: "text-blue-500" }
+    { label: t("total_trades_real", "Total de Trades (Real)"), value: stats.totalTrades.toLocaleString('pt-BR'), icon: TrendingUp, color: "text-primary" },
+    { label: t("success_rate_real", "Taxa de Sucesso (Real)"), value: `${stats.successRate}%`, icon: Award, color: "text-green-500" },
+    { label: t("total_profit_real", "Lucro Total (Real)"), value: `R$ ${stats.totalProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: DollarSign, color: "text-accent" },
+    { label: t("current_month_real", "Mês Atual (Real)"), value: `R$ ${stats.monthProfit.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, icon: TrendingUp, color: "text-blue-500" }
   ];
 
   const achievements = [
-    { title: "Primeiro Trade", description: "Complete seu primeiro trade", unlocked: true },
-    { title: "Semana Lucrativa", description: "7 dias consecutivos com lucro", unlocked: true },
-    { title: "Master Trader", description: "100 trades com sucesso", unlocked: false },
-    { title: "Alto Volume", description: "R$ 10,000 em volume", unlocked: true }
+    { title: t("first_trade", "Primeiro Trade"), description: t("complete_first_trade", "Complete seu primeiro trade"), unlocked: true },
+    { title: t("profitable_week", "Semana Lucrativa"), description: t("seven_days_profit", "7 dias consecutivos com lucro"), unlocked: true },
+    { title: t("master_trader", "Master Trader"), description: t("hundred_trades", "100 trades com sucesso"), unlocked: false },
+    { title: t("high_volume", "Alto Volume"), description: t("volume_amount", "R$ 10,000 em volume"), unlocked: true }
   ];
 
   const handleSave = async () => {
@@ -215,14 +217,14 @@ export default function Profile() {
       if (error) throw error;
 
       toast({
-        title: "Perfil atualizado",
-        description: "Suas alterações foram salvas com sucesso!",
+        title: t("profile_updated", "Perfil atualizado"),
+        description: t("profile_saved_success", "Suas alterações foram salvas com sucesso!"),
       });
       setIsEditing(false);
       loadProfile();
     } catch (error: any) {
       toast({
-        title: "Erro ao atualizar perfil",
+        title: t("error_updating_profile", "Erro ao atualizar perfil"),
         description: error.message,
         variant: "destructive",
       });
@@ -237,7 +239,7 @@ export default function Profile() {
     if (user?.id) {
       navigator.clipboard.writeText(user.id);
       setCopiedId(true);
-      sonnerToast.success("ID copiado para a área de transferência!");
+      sonnerToast.success(t("id_copied", "ID copiado para a área de transferência!"));
       setTimeout(() => setCopiedId(false), 2000);
     }
   };
@@ -269,7 +271,7 @@ export default function Profile() {
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <Button variant="ghost" onClick={() => navigate("/")}>
-                ← Voltar
+                ← {t("back", "Voltar")}
               </Button>
               <div className="flex gap-2">
                 <Button variant="outline" size="icon">
@@ -288,14 +290,14 @@ export default function Profile() {
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Tem certeza que deseja sair?</AlertDialogTitle>
+            <AlertDialogTitle>{t("logout_confirm_title", "Tem certeza que deseja sair?")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Você será desconectado da sua conta e precisará fazer login novamente para acessar.
+              {t("logout_confirm_desc", "Você será desconectado da sua conta e precisará fazer login novamente para acessar.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmLogout}>Sair</AlertDialogAction>
+            <AlertDialogCancel>{t("cancel", "Cancelar")}</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmLogout}>{t("logout", "Sair")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -347,13 +349,13 @@ export default function Profile() {
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-3xl font-bold">{profileData.name}</h1>
                     <Badge variant="secondary" className="bg-accent/20 text-accent">
-                      Verificado
+                      {t("verified", "Verificado")}
                     </Badge>
                   </div>
                   
                   {/* User ID Display */}
                   <div className="flex items-center gap-2 mb-4 p-2 bg-muted/50 rounded-lg w-fit">
-                    <span className="text-sm text-muted-foreground">ID:</span>
+                    <span className="text-sm text-muted-foreground">{t("id_label", "ID:")}</span>
                     <code className="text-sm font-mono">{user?.id}</code>
                     <Button
                       variant="ghost"
@@ -385,21 +387,21 @@ export default function Profile() {
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-4 w-4" />
-                      Membro desde {profileData.joinDate}
+                      {t("member_since", "Membro desde")} {profileData.joinDate}
                     </div>
                   </div>
                 </>
               ) : (
                 <div className="space-y-4">
                   <div>
-                    <Label>Nome</Label>
+                    <Label>{t("name", "Nome")}</Label>
                     <Input
                       value={profileData.name}
                       onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
                     />
                   </div>
                   <div>
-                    <Label>Bio</Label>
+                    <Label>{t("bio", "Bio")}</Label>
                     <Textarea
                       value={profileData.bio}
                       onChange={(e) => setProfileData({ ...profileData, bio: e.target.value })}
@@ -415,11 +417,11 @@ export default function Profile() {
                 <>
                   <Button onClick={() => navigate("/")} variant="outline" className="gap-2">
                     <TrendingUp className="h-4 w-4" />
-                    Voltar a Negociar
+                    {t("back_to_trading", "Voltar a Negociar")}
                   </Button>
                   <Button onClick={() => setIsEditing(true)} className="gap-2">
                     <Edit2 className="h-4 w-4" />
-                    Editar Perfil
+                    {t("edit_profile", "Editar Perfil")}
                   </Button>
                   {isMobile && (
                     <Button onClick={handleLogoutClick} variant="destructive" size="icon">
@@ -431,11 +433,11 @@ export default function Profile() {
                 <>
                   <Button onClick={handleSave} className="gap-2">
                     <Save className="h-4 w-4" />
-                    Salvar
+                    {t("save", "Salvar")}
                   </Button>
                   <Button onClick={handleCancel} variant="outline" className="gap-2">
                     <X className="h-4 w-4" />
-                    Cancelar
+                    {t("cancel", "Cancelar")}
                   </Button>
                 </>
               )}

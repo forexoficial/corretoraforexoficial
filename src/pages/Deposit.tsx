@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useTranslation } from "@/hooks/useTranslation";
 import { ArrowLeft, Shield, Wallet, Zap, Info, BadgeCheck, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { TradingHeader } from "@/components/TradingHeader";
@@ -22,6 +23,7 @@ import { formatDocument, validateDocument, DocumentType } from "@/lib/validators
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
 
 export default function Deposit() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { settings } = usePlatformSettings();
   const { loading, paymentData, createPayment, resetPayment } = usePayment();
@@ -176,28 +178,28 @@ export default function Deposit() {
                   value="deposit" 
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-2 text-xs sm:text-sm whitespace-nowrap"
                 >
-                  Depósito
+                  {t("deposit", "Depósito")}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="withdrawal"
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-2 text-xs sm:text-sm whitespace-nowrap"
                   onClick={() => navigate('/withdrawal')}
                 >
-                  Retirada
+                  {t("withdrawal", "Retirada")}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="transactions"
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-2 text-xs sm:text-sm whitespace-nowrap"
                   onClick={() => navigate('/transactions')}
                 >
-                  Transações
+                  {t("transactions", "Transações")}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="profile"
                   className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-2 text-xs sm:text-sm whitespace-nowrap"
                   onClick={() => navigate('/profile')}
                 >
-                  Perfil
+                  {t("profile", "Perfil")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -234,7 +236,7 @@ export default function Deposit() {
               <div className="bg-card rounded-lg p-4 sm:p-5 border border-border">
                 <div className="flex items-center gap-2 mb-3">
                   <BadgeCheck className="w-4 h-4 text-primary" />
-                  <h3 className="text-xs sm:text-sm font-medium">Método de pagamento:</h3>
+                  <h3 className="text-xs sm:text-sm font-medium">{t("payment_method_label", "Método de pagamento:")}</h3>
                 </div>
                 <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/50 rounded-lg p-3 sm:p-4">
                   <div className="flex items-center gap-3">
@@ -247,13 +249,13 @@ export default function Deposit() {
                     </div>
                     <div className="space-y-1 text-xs sm:text-sm flex-1">
                       <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground">Mínimo:</span>
+                        <span className="text-muted-foreground">{t("minimum", "Mínimo:")} </span>
                         <span className="font-bold text-primary">
                           R$ {settings.min_deposit.toFixed(2)}
                         </span>
                       </div>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground">Máximo:</span>
+                        <span className="text-muted-foreground">{t("maximum", "Máximo:")}</span>
                         <span className="font-bold text-primary">R$ 50.000</span>
                       </div>
                     </div>
@@ -266,16 +268,16 @@ export default function Deposit() {
                 <div className="bg-card rounded-lg p-3 border border-border">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-success" />
-                    <span className="text-[10px] sm:text-xs font-medium">Seguro</span>
+                    <span className="text-[10px] sm:text-xs font-medium">{t("secure", "Seguro")}</span>
                   </div>
-                  <p className="text-[9px] sm:text-[10px] text-muted-foreground">Transações protegidas</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground">{t("protected_transactions", "Transações protegidas")}</p>
                 </div>
                 <div className="bg-card rounded-lg p-3 border border-border">
                   <div className="flex items-center gap-2 mb-1.5">
                     <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-primary" />
-                    <span className="text-[10px] sm:text-xs font-medium">Rápido</span>
+                    <span className="text-[10px] sm:text-xs font-medium">{t("fast", "Rápido")}</span>
                   </div>
-                  <p className="text-[9px] sm:text-[10px] text-muted-foreground">Crédito instantâneo</p>
+                  <p className="text-[9px] sm:text-[10px] text-muted-foreground">{t("instant_credit", "Crédito instantâneo")}</p>
                 </div>
               </div>
             </div>
@@ -283,10 +285,10 @@ export default function Deposit() {
             {/* Payment Form Column */}
             <div className="lg:col-span-2">
               <Card className="p-6">
-                <h3 className="text-lg font-semibold mb-4">Dados do Pagamento</h3>
+                <h3 className="text-lg font-semibold mb-4">{t("payment_data", "Dados do Pagamento")}</h3>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="amount">Valor (R$)</Label>
+                    <Label htmlFor="amount">{t("value", "Valor")} (R$)</Label>
                     <Input
                       id="amount"
                       type="number"
@@ -314,12 +316,12 @@ export default function Deposit() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Nome Completo</Label>
+                    <Label htmlFor="name">{t("full_name_label", "Nome Completo")}</Label>
                     <Input
                       id="name"
                       value={payerName}
                       onChange={(e) => setPayerName(e.target.value)}
-                      placeholder="Seu nome completo"
+                      placeholder={t("your_full_name", "Seu nome completo")}
                       required
                     />
                   </div>
@@ -370,10 +372,10 @@ export default function Deposit() {
                     {loading ? (
                       <>
                         <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Processando...
+                        {t("processing_payment", "Processando...")}
                       </>
                     ) : (
-                      "Gerar QR Code PIX"
+                      t("generate_qr_code", "Gerar QR Code PIX")
                     )}
                   </Button>
                 </form>
@@ -389,7 +391,7 @@ export default function Deposit() {
                   <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="text-xs sm:text-sm min-w-0">
-                  <div className="text-muted-foreground text-[10px] sm:text-xs">Depósito mínimo:</div>
+                  <div className="text-muted-foreground text-[10px] sm:text-xs">{t("min_deposit_label", "Depósito mínimo:")}</div>
                   <div className="font-semibold truncate">R$ {settings.min_deposit.toFixed(2)}</div>
                 </div>
               </div>
@@ -398,7 +400,7 @@ export default function Deposit() {
                   <Wallet className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="text-xs sm:text-sm min-w-0">
-                  <div className="text-muted-foreground text-[10px] sm:text-xs">Saque mínimo:</div>
+                  <div className="text-muted-foreground text-[10px] sm:text-xs">{t("min_withdrawal_label", "Saque mínimo:")}</div>
                   <div className="font-semibold truncate">R$ {settings.min_withdrawal.toFixed(2)}</div>
                 </div>
               </div>
@@ -407,8 +409,8 @@ export default function Deposit() {
                   <Zap className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                 </div>
                 <div className="text-xs sm:text-sm min-w-0">
-                  <div className="font-semibold text-[10px] sm:text-xs">Crédito instantâneo</div>
-                  <div className="text-muted-foreground text-[10px] sm:text-xs">após pagamento</div>
+                  <div className="font-semibold text-[10px] sm:text-xs">{t("instant_credit", "Crédito instantâneo")}</div>
+                  <div className="text-muted-foreground text-[10px] sm:text-xs">{t("instant_credit_after", "após pagamento")}</div>
                 </div>
               </div>
               <div className="flex items-start gap-2 sm:gap-3">
@@ -417,9 +419,9 @@ export default function Deposit() {
                 </div>
                 <div className="text-xs sm:text-sm min-w-0">
                   <div className="font-semibold text-[10px] sm:text-xs">
-                    {settings.deposit_fee > 0 ? `${settings.deposit_fee}% de taxa` : "Sem comissão"}
+                    {settings.deposit_fee > 0 ? `${settings.deposit_fee}% ${t("commission_on_deposits", "de taxa")}` : t("no_commission", "Sem comissão")}
                   </div>
-                  <div className="text-muted-foreground text-[10px] sm:text-xs">em depósitos</div>
+                  <div className="text-muted-foreground text-[10px] sm:text-xs">{t("commission_on_deposits", "em depósitos")}</div>
                 </div>
               </div>
             </div>
