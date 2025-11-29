@@ -553,5 +553,14 @@
   "toast_fill_name": "Please fill in your full name",
   "toast_copied_success": "Copied Successfully!",
   "toast_buy": "Buy",
-  "toast_sell": "Sell"
+  "toast_sell": "Sell",
+  "trade_marker_buy": "BUY",
+  "trade_marker_sell": "SELL",
+  "trade_marker_expiring": "⚠ EXPIRING",
+  "trade_marker_time_remaining": "Time remaining",
+  "trade_marker_entry_price": "Entry price",
+  "trade_marker_investment": "Investment",
+  "trade_marker_profit": "📈 Profit",
+  "trade_marker_loss": "📉 Loss",
+  "trade_marker_return": "🎯 Return"
 }
