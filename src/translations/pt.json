@@ -124,5 +124,19 @@
   "menu": "Menu",
   "all_features": "Acesse todas as funcionalidades",
   "verified": "Verificado",
-  "member_since": "Membro desde"
+  "member_since": "Membro desde",
+  "time": "Tempo",
+  "switch_time": "Tempo de Comutação",
+  "investment": "Investimento",
+  "trade": "Trocar",
+  "profit": "Lucro",
+  "has_open_trade": "Você já tem uma operação aberta",
+  "trade_history": "Histórico de trading",
+  "all_positions": "Todas as posições",
+  "won_positions": "Ganhas",
+  "lost_positions": "Perdidas",
+  "no_trades_found": "Nenhuma operação encontrada",
+  "recent_trades": "Operações Recentes",
+  "no_recent_trades": "Nenhuma operação recente",
+  "pending": "Pendente"
 }

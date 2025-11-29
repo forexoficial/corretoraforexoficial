@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Minus, Plus, Banknote } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
@@ -24,6 +25,7 @@ export const TradeControls = ({
   onShowBoosterMenu,
   onShowHistory,
 }: TradeControlsProps) => {
+  const { t } = useTranslation();
   const { settings } = usePlatformSettings();
   const navigate = useNavigate();
   const { hasOpenTrade } = useTradeContext();
@@ -118,7 +120,7 @@ export const TradeControls = ({
       {/* Duration */}
       <div className="relative border border-border rounded-lg p-1.5 pt-3">
         <span className="absolute -top-2 left-3 px-1.5 bg-[hsl(var(--panel-bg))] text-[9px] text-muted-foreground uppercase">
-          Tempo
+          {t("time", "Tempo")}
         </span>
         <div className="flex items-center justify-center gap-2.5 mb-0.5">
           <Button
@@ -146,14 +148,14 @@ export const TradeControls = ({
           </Button>
         </div>
         <div className="text-[9px] text-center text-green-500 uppercase font-semibold">
-          Tempo de Comutação
+          {t("switch_time", "Tempo de Comutação")}
         </div>
       </div>
 
       {/* Amount */}
       <div className="relative border border-border rounded-lg p-1.5 pt-3">
         <span className="absolute -top-2 left-3 px-1.5 bg-[hsl(var(--panel-bg))] text-[9px] text-muted-foreground uppercase">
-          Investimento
+          {t("investment", "Investimento")}
         </span>
         <div className="flex items-center justify-center gap-2.5 mb-0.5">
           <Button
@@ -195,7 +197,7 @@ export const TradeControls = ({
           </Button>
         </div>
         <div className="text-[9px] text-center text-green-500 uppercase font-semibold">
-          Trocar
+          {t("trade", "Trocar")}
         </div>
       </div>
 
@@ -205,7 +207,7 @@ export const TradeControls = ({
         
         <div className="relative">
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
-            Retorno Potencial
+            {t("potential_return", "Retorno Potencial")}
           </div>
           
           <div className="flex items-baseline gap-1.5 mb-1">
@@ -218,14 +220,14 @@ export const TradeControls = ({
           </div>
           
           <div className="flex items-center justify-between text-[10px]">
-            <span className="text-muted-foreground">Lucro:</span>
+            <span className="text-muted-foreground">{t("profit", "Lucro")}:</span>
             <span className="font-bold text-success">
               +R$ {parseFloat(payout).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
           </div>
           
           <div className="flex items-center justify-between text-[10px] mt-0.5 pt-1 border-t border-success/20">
-            <span className="text-muted-foreground">Investimento:</span>
+            <span className="text-muted-foreground">{t("investment", "Investimento")}:</span>
             <span className="font-medium text-foreground/70">
               R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </span>
@@ -237,7 +239,7 @@ export const TradeControls = ({
       <div className="flex flex-col gap-2">
         {hasOpenTrade && (
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-2 text-xs text-warning text-center">
-            Você já tem uma operação aberta
+            {t("has_open_trade", "Você já tem uma operação aberta")}
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
@@ -255,7 +257,7 @@ export const TradeControls = ({
             disabled={hasOpenTrade || isCreating}
             disableSound
           >
-            <span className="relative z-10">C Mercado</span>
+            <span className="relative z-10">{t("c_market", "C Mercado")}</span>
           </Button>
           <Button
             className="h-14 text-white font-bold text-base rounded-xl relative overflow-hidden
@@ -271,7 +273,7 @@ export const TradeControls = ({
             disabled={hasOpenTrade || isCreating}
             disableSound
           >
-            <span className="relative z-10">V Mercado</span>
+            <span className="relative z-10">{t("v_market", "V Mercado")}</span>
           </Button>
         </div>
 
@@ -287,7 +289,7 @@ export const TradeControls = ({
             onClick={onShowBoosterMenu}
             disableSound
           >
-            <span className="relative z-10">Booster</span>
+            <span className="relative z-10">{t("booster", "Booster")}</span>
           </Button>
           <Button
             variant="secondary"
@@ -299,7 +301,7 @@ export const TradeControls = ({
             onClick={onShowHistory}
             disableSound
           >
-            <span className="relative z-10">Histórico</span>
+            <span className="relative z-10">{t("history", "Histórico")}</span>
           </Button>
         </div>
 
@@ -314,7 +316,7 @@ export const TradeControls = ({
           disableSound
         >
           <Banknote className="w-4 h-4 mr-2 relative z-10" />
-          <span className="relative z-10">Retirada</span>
+          <span className="relative z-10">{t("withdrawal", "Retirada")}</span>
         </Button>
       </div>
     </div>

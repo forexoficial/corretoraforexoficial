@@ -124,5 +124,19 @@
   "menu": "Menu",
   "all_features": "Access all features",
   "verified": "Verified",
-  "member_since": "Member since"
+  "member_since": "Member since",
+  "time": "Time",
+  "switch_time": "Switch Time",
+  "investment": "Investment",
+  "trade": "Trade",
+  "profit": "Profit",
+  "has_open_trade": "You already have an open trade",
+  "trade_history": "Trading history",
+  "all_positions": "All positions",
+  "won_positions": "Won",
+  "lost_positions": "Lost",
+  "no_trades_found": "No trades found",
+  "recent_trades": "Recent Trades",
+  "no_recent_trades": "No recent trades",
+  "pending": "Pending"
 }

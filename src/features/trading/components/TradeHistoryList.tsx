@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ interface TradeHistoryListProps {
 }
 
 export const TradeHistoryList = ({ open, onOpenChange }: TradeHistoryListProps) => {
+  const { t } = useTranslation();
   const [filter, setFilter] = useState<'all' | 'won' | 'lost'>('all');
   const [userId, setUserId] = useState<string>();
   const isMobile = useIsMobile();
@@ -42,7 +44,7 @@ export const TradeHistoryList = ({ open, onOpenChange }: TradeHistoryListProps) 
   };
 
   const formatResult = (trade: Trade) => {
-    if (trade.result === null) return "Pendente";
+    if (trade.result === null) return t("pending", "Pendente");
     
     const isWin = trade.result > 0;
     const displayAmount = Math.abs(trade.result);
@@ -67,18 +69,18 @@ export const TradeHistoryList = ({ open, onOpenChange }: TradeHistoryListProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card">
         <SheetHeader className="border-b border-border p-4 pb-3">
-          <SheetTitle className="text-base font-semibold">Histórico de trading</SheetTitle>
+          <SheetTitle className="text-base font-semibold">{t("trade_history", "Histórico de trading")}</SheetTitle>
         </SheetHeader>
 
         <div className="p-4 space-y-4">
           <Select value={filter} onValueChange={(val) => setFilter(val as any)}>
             <SelectTrigger className="w-full bg-background">
-              <SelectValue placeholder="Todas as posições" />
+              <SelectValue placeholder={t("all_positions", "Todas as posições")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as posições</SelectItem>
-              <SelectItem value="won">Ganhas</SelectItem>
-              <SelectItem value="lost">Perdidas</SelectItem>
+              <SelectItem value="all">{t("all_positions", "Todas as posições")}</SelectItem>
+              <SelectItem value="won">{t("won_positions", "Ganhas")}</SelectItem>
+              <SelectItem value="lost">{t("lost_positions", "Perdidas")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -87,7 +89,7 @@ export const TradeHistoryList = ({ open, onOpenChange }: TradeHistoryListProps) 
               <LoadingSpinner size="sm" className="py-8" />
             ) : trades.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm">
-                Nenhuma operação encontrada
+                {t("no_trades_found", "Nenhuma operação encontrada")}
               </div>
             ) : (
               trades.map((trade) => (
@@ -150,7 +152,7 @@ export const TradeHistoryList = ({ open, onOpenChange }: TradeHistoryListProps) 
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 size="lg"
               >
-                Voltar a Negociar
+                {t("back_to_trading", "Voltar a Negociar")}
               </Button>
             </div>
           )}
