@@ -354,5 +354,11 @@
   "all_levels": "Todos los Niveles",
   "pending_positions": "Pendientes",
   "user_not_authenticated": "Usuario no autenticado",
-  "error_loading_history": "Error al cargar historial"
+  "error_loading_history": "Error al cargar historial",
+  "promotions": "Promociones",
+  "available": "Disponible",
+  "no_promotions_available": "No tienes promociones disponibles por el momento",
+  "no_promotions_used": "No tienes promociones utilizadas aún",
+  "valid_until": "Válido hasta",
+  "used_on": "Utilizado en"
 }
