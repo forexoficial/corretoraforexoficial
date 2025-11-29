@@ -562,5 +562,7 @@
   "trade_marker_investment": "Inversión",
   "trade_marker_profit": "📈 Ganancia",
   "trade_marker_loss": "📉 Pérdida",
-  "trade_marker_return": "🎯 Retorno"
+  "trade_marker_return": "🎯 Retorno",
+  "entry_line_buy": "COMPRA",
+  "entry_line_sell": "VENTA"
 }
