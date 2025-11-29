@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronUp, ChevronDown, Wrench, SlidersHorizontal, Compass, Radio, Clock, TrendingUp, CandlestickChart, AreaChart, BarChart3 } from "lucide-react";
+import { ChevronUp, ChevronDown, Wrench, SlidersHorizontal, Clock, TrendingUp, CandlestickChart, AreaChart, BarChart3 } from "lucide-react";
 import { TradingSidebar } from "@/components/TradingSidebar";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useTradeAlerts } from "@/hooks/useTradeAlerts";
@@ -398,12 +398,6 @@ const Index = () => {
                   config={priceLineConfig}
                   onChange={handlePriceLineConfigChange}
                 />
-                <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors">
-                  <Compass className="h-4 w-4 text-muted-foreground" />
-                </button>
-                <button className="h-10 w-10 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors">
-                  <Radio className="h-4 w-4 text-muted-foreground" />
-                </button>
               </div>
               
               <TradingViewChart
