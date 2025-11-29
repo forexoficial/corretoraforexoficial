@@ -11,7 +11,8 @@ import type { DrawingTool } from "@/hooks/useChartDrawing";
 import { TradingViewChart } from "@/components/TradingViewChart";
 import { TradingPanel } from "@/components/TradingPanel";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
-import { TradesList } from "@/components/TradesList";
+import { TradeProvider } from "@/features/trading/context/TradeContext";
+import { RecentTradesList } from "@/features/trading/components/RecentTradesList";
 import { TradingFooter } from "@/components/TradingFooter";
 import { TradingHeader } from "@/components/TradingHeader";
 import { Button } from "@/components/ui/button";
@@ -326,20 +327,23 @@ const Index = () => {
   // Render Mobile View
   if (isMobile) {
     return (
-      <MobileTradingView
-        selectedAsset={selectedAsset}
-        isDemoMode={isDemoMode}
-        currentBalance={currentBalance}
-        onAssetChange={(asset) => {
-          setSelectedAsset(asset);
-          persistentState.saveCurrentAsset(asset.id);
-        }}
-      />
+      <TradeProvider userId={user?.id}>
+        <MobileTradingView
+          selectedAsset={selectedAsset}
+          isDemoMode={isDemoMode}
+          currentBalance={currentBalance}
+          onAssetChange={(asset) => {
+            setSelectedAsset(asset);
+            persistentState.saveCurrentAsset(asset.id);
+          }}
+        />
+      </TradeProvider>
     );
   }
 
   // Render Desktop View
   return (
+    <TradeProvider userId={user?.id}>
     <>
       <PlatformPopup />
       <TradingHeader 
@@ -440,7 +444,7 @@ const Index = () => {
               }`}
             >
               <div className="overflow-y-auto max-h-[200px]">
-                <TradesList />
+                <RecentTradesList />
               </div>
             </div>
           </div>
@@ -513,6 +517,7 @@ const Index = () => {
       </DialogContent>
     </Dialog>
     </>
+    </TradeProvider>
   );
 };
 
