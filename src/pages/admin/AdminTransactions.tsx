@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Loader2, Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   Table,
   TableBody,
@@ -28,6 +29,7 @@ interface Transaction {
 }
 
 export default function AdminTransactions() {
+  const { t } = useTranslation();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -73,7 +75,7 @@ export default function AdminTransactions() {
       .eq("id", transaction.id);
 
     if (txError) {
-      toast.error("Erro ao aprovar transação");
+      toast.error(t("admin_error_approve"));
       return;
     }
 
@@ -93,7 +95,7 @@ export default function AdminTransactions() {
       }
     }
 
-    toast.success("Transação aprovada com sucesso!");
+    toast.success(t("admin_transaction_approved"));
     fetchTransactions();
   };
 
@@ -104,11 +106,11 @@ export default function AdminTransactions() {
       .eq("id", id);
 
     if (error) {
-      toast.error("Erro ao rejeitar transação");
+      toast.error(t("admin_error_reject"));
       return;
     }
 
-    toast.success("Transação rejeitada!");
+    toast.success(t("admin_transaction_rejected"));
     fetchTransactions();
   };
 
@@ -119,21 +121,21 @@ export default function AdminTransactions() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Transações</h1>
-        <p className="text-muted-foreground">Histórico de todas as transações</p>
+        <h1 className="text-4xl font-bold mb-2">{t("admin_transactions_title")}</h1>
+        <p className="text-muted-foreground">{t("admin_transactions_desc")}</p>
       </div>
 
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Usuário</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Método</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Ações</TableHead>
+              <TableHead>{t("admin_user_column")}</TableHead>
+              <TableHead>{t("admin_type_column")}</TableHead>
+              <TableHead>{t("admin_method_column")}</TableHead>
+              <TableHead>{t("admin_value_column")}</TableHead>
+              <TableHead>{t("admin_status_column")}</TableHead>
+              <TableHead>{t("admin_date_column")}</TableHead>
+              <TableHead>{t("admin_actions_column")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -144,7 +146,7 @@ export default function AdminTransactions() {
                 </TableCell>
                 <TableCell>
                   <Badge variant={transaction.type === "deposit" ? "default" : "secondary"}>
-                    {transaction.type === "deposit" ? "Depósito" : "Saque"}
+                    {transaction.type === "deposit" ? t("admin_deposit") : t("admin_withdrawal")}
                   </Badge>
                 </TableCell>
                 <TableCell>{transaction.payment_method || "N/A"}</TableCell>
@@ -156,9 +158,9 @@ export default function AdminTransactions() {
                     transaction.status === "completed" ? "default" :
                     transaction.status === "pending" ? "secondary" : "destructive"
                   }>
-                    {transaction.status === "completed" && "Completo"}
-                    {transaction.status === "pending" && "Pendente"}
-                    {transaction.status === "failed" && "Falhou"}
+                    {transaction.status === "completed" && t("admin_complete")}
+                    {transaction.status === "pending" && t("pending")}
+                    {transaction.status === "failed" && t("failed")}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
@@ -180,7 +182,7 @@ export default function AdminTransactions() {
                         onClick={() => handleApprove(transaction)}
                       >
                         <Check className="h-4 w-4 mr-1" />
-                        Aprovar
+                        {t("admin_approve")}
                       </Button>
                       <Button
                         variant="destructive"
@@ -188,7 +190,7 @@ export default function AdminTransactions() {
                         onClick={() => handleReject(transaction.id)}
                       >
                         <X className="h-4 w-4 mr-1" />
-                        Rejeitar
+                        {t("admin_reject")}
                       </Button>
                     </div>
                   )}

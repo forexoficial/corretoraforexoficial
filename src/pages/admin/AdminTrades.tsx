@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 import {
   Table,
   TableBody,
@@ -33,6 +34,7 @@ interface Trade {
 }
 
 export default function AdminTrades() {
+  const { t } = useTranslation();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,21 +88,21 @@ export default function AdminTrades() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Negociações</h1>
-        <p className="text-muted-foreground">Histórico de todas as negociações</p>
+        <h1 className="text-4xl font-bold mb-2">{t("admin_trades_title")}</h1>
+        <p className="text-muted-foreground">{t("admin_trades_desc")}</p>
       </div>
 
       <Card>
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Usuário</TableHead>
-              <TableHead>Ativo</TableHead>
-              <TableHead>Tipo</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Payout</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead>{t("admin_user_column")}</TableHead>
+              <TableHead>{t("admin_asset_column")}</TableHead>
+              <TableHead>{t("admin_type_column")}</TableHead>
+              <TableHead>{t("admin_value_column")}</TableHead>
+              <TableHead>{t("admin_payout_column")}</TableHead>
+              <TableHead>{t("admin_status_column")}</TableHead>
+              <TableHead>{t("admin_date_column")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -124,9 +126,9 @@ export default function AdminTrades() {
                     trade.status === "won" ? "default" :
                     trade.status === "open" ? "secondary" : "destructive"
                   }>
-                    {trade.status === "won" && "Ganhou"}
-                    {trade.status === "lost" && "Perdeu"}
-                    {trade.status === "open" && "Aberto"}
+                    {trade.status === "won" && t("admin_won")}
+                    {trade.status === "lost" && t("admin_lost")}
+                    {trade.status === "open" && t("admin_open")}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">

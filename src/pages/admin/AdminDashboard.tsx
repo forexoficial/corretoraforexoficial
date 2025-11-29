@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Users, Shield, TrendingUp, DollarSign } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function AdminDashboard() {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     totalUsers: 0,
     pendingVerifications: 0,
@@ -34,25 +36,25 @@ export default function AdminDashboard() {
 
   const statCards = [
     {
-      title: "Total de Usuários",
+      title: t("admin_total_users"),
       value: stats.totalUsers,
       icon: Users,
       color: "text-blue-500"
     },
     {
-      title: "Verificações Pendentes",
+      title: t("admin_pending_verifications"),
       value: stats.pendingVerifications,
       icon: Shield,
       color: "text-yellow-500"
     },
     {
-      title: "Negociações Ativas",
+      title: t("admin_active_trades"),
       value: stats.activeTrades,
       icon: TrendingUp,
       color: "text-green-500"
     },
     {
-      title: "Total de Transações",
+      title: t("admin_total_transactions"),
       value: stats.totalTransactions,
       icon: DollarSign,
       color: "text-purple-500"
@@ -62,8 +64,8 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
-        <p className="text-muted-foreground">Visão geral do sistema</p>
+        <h1 className="text-4xl font-bold mb-2">{t("admin_dashboard_title")}</h1>
+        <p className="text-muted-foreground">{t("admin_dashboard_desc")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
