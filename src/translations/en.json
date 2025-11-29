@@ -506,5 +506,10 @@
   "admin_error_delete_booster": "Error deleting booster",
   "admin_booster_deactivated": "Booster deactivated",
   "admin_booster_activated": "Booster activated",
-  "admin_error_update_status": "Error updating status"
+  "admin_error_update_status": "Error updating status",
+  "settings_menu_title": "Settings",
+  "timezone": "Timezone",
+  "theme": "Theme",
+  "default_theme": "Default",
+  "light_theme": "Light"
 }

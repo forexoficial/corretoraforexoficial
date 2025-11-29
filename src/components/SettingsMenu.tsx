@@ -7,32 +7,34 @@ import {
 } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "next-themes";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SettingsMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const themes = [
-  { id: "dark", label: "Default", color: "hsl(0 0% 10%)" },
-  { id: "light", label: "Light", color: "hsl(0 0% 100%)" },
-];
-
 export const SettingsMenu = ({ open, onOpenChange }: SettingsMenuProps) => {
   const { theme, setTheme } = useTheme();
+  const { t } = useTranslation();
+
+  const themes = [
+    { id: "dark", label: t("default_theme"), color: "hsl(0 0% 10%)" },
+    { id: "light", label: t("light_theme"), color: "hsl(0 0% 100%)" },
+  ];
   
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:w-[400px]">
         <SheetHeader>
-          <SheetTitle className="text-left">Configurações</SheetTitle>
+          <SheetTitle className="text-left">{t("settings_menu_title")}</SheetTitle>
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
           {/* Fuso horário */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">
-              Fuso horário
+              {t("timezone")}
             </label>
             <Select value="utc-3" disabled>
               <SelectTrigger className="w-full">
@@ -47,7 +49,7 @@ export const SettingsMenu = ({ open, onOpenChange }: SettingsMenuProps) => {
           {/* Tema */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">
-              Tema
+              {t("theme")}
             </label>
             <div className="space-y-2">
               {themes.map((themeOption) => {
