@@ -138,5 +138,12 @@
   "no_trades_found": "No se encontraron operaciones",
   "recent_trades": "Operaciones Recientes",
   "no_recent_trades": "No hay operaciones recientes",
-  "pending": "Pendiente"
+  "pending": "Pendiente",
+  "ranking": "Ranking",
+  "help": "Ayuda",
+  "promotion": "Promoción",
+  "analytics": "Analytics",
+  "legal": "Legal",
+  "analytics_dashboard": "Panel de Analytics",
+  "monitor_performance": "Monitorea tu rendimiento en tiempo real"
 }

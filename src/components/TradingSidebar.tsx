@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { History, Trophy, HelpCircle, User, MoreHorizontal, Gift, Settings, Zap, BarChart3 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import { SupportDialog } from "@/components/SupportDialog";
 import { TradingHistory } from "@/components/TradingHistory";
 import { RankingLeaderboard } from "@/components/RankingLeaderboard";
@@ -23,6 +24,7 @@ export const TradingSidebar = ({
   userId?: string;
   isDemoMode?: boolean;
 }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [showSupportDialog, setShowSupportDialog] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
@@ -41,7 +43,7 @@ export const TradingSidebar = ({
         onClick={() => setShowHistory(true)}
       >
         <History className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Histórico</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("history", "Histórico")}</span>
       </button>
       
       <button 
@@ -60,7 +62,7 @@ export const TradingSidebar = ({
           </div>
         )}
         {isMobileSheet && <Zap className="w-5 h-5 text-yellow-500" />}
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Booster</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("booster", "Booster")}</span>
       </button>
       
       <button 
@@ -68,7 +70,7 @@ export const TradingSidebar = ({
         onClick={() => setShowRanking(true)}
       >
         <Trophy className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-primary fill-primary`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Ranking</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("ranking", "Ranking")}</span>
       </button>
       
       <button 
@@ -76,7 +78,7 @@ export const TradingSidebar = ({
         onClick={() => setShowSupportDialog(true)}
       >
         <HelpCircle className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Ajuda</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("help", "Ajuda")}</span>
       </button>
       
       <button 
@@ -84,7 +86,7 @@ export const TradingSidebar = ({
         onClick={() => navigate("/profile")}
       >
         <User className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Perfil</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("profile", "Perfil")}</span>
       </button>
       
       <button 
@@ -92,7 +94,7 @@ export const TradingSidebar = ({
         onClick={() => setShowPromotions(true)}
       >
         <Gift className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Promoção</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("promotion", "Promoção")}</span>
       </button>
       
       <button 
@@ -100,7 +102,7 @@ export const TradingSidebar = ({
         onClick={() => setShowSettings(true)}
       >
         <Settings className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Configurações</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("settings", "Configurações")}</span>
       </button>
       
       <button 
@@ -108,7 +110,7 @@ export const TradingSidebar = ({
         onClick={() => setShowAnalytics(true)}
       >
         <BarChart3 className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Analytics</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("analytics", "Analytics")}</span>
       </button>
       
       <button 
@@ -116,7 +118,7 @@ export const TradingSidebar = ({
         onClick={() => setShowLegal(true)}
       >
         <MoreHorizontal className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
-        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>Legal</span>
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("legal", "Legal")}</span>
       </button>
     </aside>
 
@@ -139,9 +141,9 @@ export const TradingSidebar = ({
                 <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
               </div>
               <div>
-                <h2 className="text-base sm:text-lg font-bold">Analytics Dashboard</h2>
+                <h2 className="text-base sm:text-lg font-bold">{t("analytics_dashboard", "Analytics Dashboard")}</h2>
                 <p className="text-[10px] sm:text-xs text-muted-foreground hidden sm:block">
-                  Monitore sua performance em tempo real
+                  {t("monitor_performance", "Monitore sua performance em tempo real")}
                 </p>
               </div>
             </div>
