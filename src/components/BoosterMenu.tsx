@@ -25,7 +25,11 @@ interface BoosterMenuProps {
 interface Booster {
   id: string;
   name: string;
+  name_en?: string;
+  name_es?: string;
   description: string;
+  description_en?: string;
+  description_es?: string;
   payout_increase_percentage: number;
   duration_minutes: number;
   price: number;
@@ -50,12 +54,26 @@ const iconMap: { [key: string]: any } = {
 
 export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
   const { user } = useAuth();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [boosters, setBoosters] = useState<Booster[]>([]);
   const [activeBooster, setActiveBooster] = useState<ActiveBooster | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
   const [balance, setBalance] = useState(0);
+
+  // Helper function to get translated name
+  const getBoosterName = (booster: Booster) => {
+    if (language === 'en' && booster.name_en) return booster.name_en;
+    if (language === 'es' && booster.name_es) return booster.name_es;
+    return booster.name; // Default to Portuguese
+  };
+
+  // Helper function to get translated description
+  const getBoosterDescription = (booster: Booster) => {
+    if (language === 'en' && booster.description_en) return booster.description_en;
+    if (language === 'es' && booster.description_es) return booster.description_es;
+    return booster.description; // Default to Portuguese
+  };
 
   useEffect(() => {
     if (open && user) {
@@ -142,7 +160,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
 
       if (balanceError) throw balanceError;
 
-      toast.success(`${t('booster_menu_title')} ${booster.name} ${t('booster_activated_success')}`);
+      toast.success(`${t('booster_menu_title')} ${getBoosterName(booster)} ${t('booster_activated_success')}`);
       fetchData();
     } catch (error) {
       console.error("Error purchasing booster:", error);
@@ -229,7 +247,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
                             <Icon className="h-6 w-6 text-primary" />
                           </div>
                           <div>
-                            <CardTitle className="text-lg">{booster.name}</CardTitle>
+                            <CardTitle className="text-lg">{getBoosterName(booster)}</CardTitle>
                             <CardDescription className="text-xs mt-1 flex items-center gap-1">
                               <Clock className="h-3 w-3" />
                               {booster.duration_minutes} {t('minutes')}
@@ -243,7 +261,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
                     </CardHeader>
                     <CardContent>
                       <p className="text-sm text-muted-foreground mb-4">
-                        {booster.description}
+                        {getBoosterDescription(booster)}
                       </p>
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-primary">

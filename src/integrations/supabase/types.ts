@@ -134,12 +134,16 @@ export type Database = {
         Row: {
           created_at: string
           description: string
+          description_en: string | null
+          description_es: string | null
           display_order: number
           duration_minutes: number
           icon: string | null
           id: string
           is_active: boolean
           name: string
+          name_en: string | null
+          name_es: string | null
           payout_increase_percentage: number
           price: number
           updated_at: string
@@ -147,12 +151,16 @@ export type Database = {
         Insert: {
           created_at?: string
           description: string
+          description_en?: string | null
+          description_es?: string | null
           display_order?: number
           duration_minutes: number
           icon?: string | null
           id?: string
           is_active?: boolean
           name: string
+          name_en?: string | null
+          name_es?: string | null
           payout_increase_percentage: number
           price: number
           updated_at?: string
@@ -160,12 +168,16 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string
+          description_en?: string | null
+          description_es?: string | null
           display_order?: number
           duration_minutes?: number
           icon?: string | null
           id?: string
           is_active?: boolean
           name?: string
+          name_en?: string | null
+          name_es?: string | null
           payout_increase_percentage?: number
           price?: number
           updated_at?: string
