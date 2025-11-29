@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, Minus, Plus } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
-import { useSoundEffects } from "@/hooks/useSoundEffects";
-import { useOpenTrades } from "@/hooks/useOpenTrades";
+import { useCreateTrade } from "@/features/trading/hooks/useCreateTrade";
+import { useTradeContext } from "@/features/trading/context/TradeContext";
 
 interface MobileTradingControlsProps {
   selectedAsset: {
@@ -27,16 +26,15 @@ export function MobileTradingControls({
   currentPrice
 }: MobileTradingControlsProps) {
   const { settings } = usePlatformSettings();
-  const { playSound } = useSoundEffects();
+  const { hasOpenTrade } = useTradeContext();
   
-  const [userId, setUserId] = useState<string>();
-  const { hasOpenTrade } = useOpenTrades(userId);
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) setUserId(user.id);
-    });
-  }, []);
+  const { createTrade, isCreating } = useCreateTrade({
+    selectedAsset,
+    currentPrice: currentPrice || 0,
+    isDemoMode,
+    currentBalance,
+    hasOpenTrade,
+  });
   
   // Garantir que na primeira vez em mobile, o padrão seja 1 minuto
   const getInitialDuration = () => {
@@ -77,74 +75,7 @@ export function MobileTradingControls({
   };
 
   const handleTrade = async (type: 'call' | 'put') => {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      toast.error("Você precisa estar logado");
-      return;
-    }
-
-    // Verificar se já tem operação aberta
-    if (hasOpenTrade) {
-      toast.error("Você já tem uma operação em aberto. Aguarde o fechamento para abrir outra.");
-      return;
-    }
-
-    if (amount > currentBalance) {
-      toast.error(`Saldo insuficiente: R$ ${currentBalance.toFixed(2)}`);
-      return;
-    }
-
-    // CRITICAL: ALWAYS use the current visual price from the chart
-    // This is the price the user sees when placing the trade
-    const entryPrice = currentPrice;
-    
-    // Validate that we have a valid current price
-    if (!entryPrice || entryPrice <= 0) {
-      console.error("[MobileTrade] Invalid currentPrice:", entryPrice);
-      toast.error("Aguarde o carregamento do gráfico antes de operar");
-      return;
-    }
-    
-    console.log(`[MobileTrade] Creating ${type} trade at entry price: ${entryPrice}`);
-    const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + duration);
-
-    const { data: newTrade, error } = await supabase
-      .from('trades')
-      .insert({
-        user_id: user.id,
-        asset_id: selectedAsset.id,
-        trade_type: type,
-        amount: amount,
-        // Payout deve ser APENAS o LUCRO, igual no desktop
-        payout: parseFloat(payout),
-        duration_minutes: duration,
-        expires_at: expiresAt.toISOString(),
-        is_demo: isDemoMode,
-        entry_price: entryPrice,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast.error("Erro ao criar operação");
-      return;
-    }
-
-    // Play trade open sound
-    playSound('trade-open');
-
-    // Dispatch event to notify chart
-    window.dispatchEvent(new CustomEvent('trade-created', {
-      detail: {
-        assetId: selectedAsset.id,
-        userId: user.id,
-        trade: newTrade
-      }
-    }));
-
-    toast.success(`Operação ${type === 'call' ? 'Comprar' : 'Vender'} criada!`);
+    await createTrade(type, amount, duration);
   };
 
   return (
@@ -229,7 +160,7 @@ export function MobileTradingControls({
         <Button
           className="bg-success hover:bg-success/90 h-14 text-lg font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => handleTrade('call')}
-          disabled={hasOpenTrade}
+          disabled={hasOpenTrade || isCreating}
           disableSound
         >
           <ArrowUp className="w-6 h-6" />
@@ -238,7 +169,7 @@ export function MobileTradingControls({
           variant="destructive"
           className="h-14 text-lg font-bold rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
           onClick={() => handleTrade('put')}
-          disabled={hasOpenTrade}
+            disabled={hasOpenTrade || isCreating}
           disableSound
         >
           <ArrowDown className="w-6 h-6" />
