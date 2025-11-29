@@ -351,5 +351,8 @@
   "to_reach_level": "para alcançar o nível",
   "congratulations_max_level": "Parabéns! Você alcançou o nível máximo!",
   "enjoy_vip_benefits": "Aproveite todos os benefícios exclusivos VIP",
-  "all_levels": "Todos os Níveis"
+  "all_levels": "Todos os Níveis",
+  "pending_positions": "Pendentes",
+  "user_not_authenticated": "Usuário não autenticado",
+  "error_loading_history": "Erro ao carregar histórico"
 }

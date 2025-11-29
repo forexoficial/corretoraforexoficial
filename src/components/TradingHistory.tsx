@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Trade {
   id: string;
@@ -34,6 +35,7 @@ interface TradingHistoryProps {
 }
 
 export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
+  const { t } = useTranslation();
   const [trades, setTrades] = useState<Trade[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(false);
@@ -51,7 +53,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       
       if (!user) {
-        toast.error("Usuário não autenticado");
+        toast.error(t("user_not_authenticated", "Usuário não autenticado"));
         return;
       }
 
@@ -83,7 +85,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
       setTrades(data || []);
     } catch (error) {
       console.error("Erro ao carregar histórico:", error);
-      toast.error("Erro ao carregar histórico");
+      toast.error(t("error_loading_history", "Erro ao carregar histórico"));
     } finally {
       setLoading(false);
     }
@@ -98,7 +100,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
   };
 
   const formatResult = (trade: Trade) => {
-    if (trade.result === null) return "Pendente";
+    if (trade.result === null) return t("pending", "Pendente");
     
     const isWin = trade.result > 0;
     // NEW: usar sempre o resultado LÍQUIDO vindo do banco
@@ -127,19 +129,19 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card">
         <SheetHeader className="border-b border-border p-4 pb-3">
-          <SheetTitle className="text-base font-semibold">Histórico de trading</SheetTitle>
+          <SheetTitle className="text-base font-semibold">{t("trade_history", "Histórico de trading")}</SheetTitle>
         </SheetHeader>
 
         <div className="p-4 space-y-4">
           <Select value={filter} onValueChange={setFilter}>
             <SelectTrigger className="w-full bg-background">
-              <SelectValue placeholder="Todas as posições" />
+              <SelectValue placeholder={t("all_positions", "Todas as posições")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas as posições</SelectItem>
-              <SelectItem value="won">Ganhas</SelectItem>
-              <SelectItem value="lost">Perdidas</SelectItem>
-              <SelectItem value="pending">Pendentes</SelectItem>
+              <SelectItem value="all">{t("all_positions", "Todas as posições")}</SelectItem>
+              <SelectItem value="won">{t("won_positions", "Ganhas")}</SelectItem>
+              <SelectItem value="lost">{t("lost_positions", "Perdidas")}</SelectItem>
+              <SelectItem value="pending">{t("pending_positions", "Pendentes")}</SelectItem>
             </SelectContent>
           </Select>
 
@@ -148,7 +150,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
               <LoadingSpinner size="sm" className="py-8" />
             ) : trades.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground text-sm">
-                Nenhuma operação encontrada
+                {t("no_trades_found", "Nenhuma operação encontrada")}
               </div>
             ) : (
               trades.map((trade) => (
@@ -211,7 +213,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 size="lg"
               >
-                Voltar a Negociar
+                {t("back_to_trading", "Voltar a Negociar")}
               </Button>
             </div>
           )}
