@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Timer, TrendingUp, TrendingDown, DollarSign, TrendingUpDown, Target } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TradeMarkerProps {
   trade: {
@@ -18,6 +19,7 @@ interface TradeMarkerProps {
 }
 
 export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerProps) {
+  const { t } = useTranslation();
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isVisible, setIsVisible] = useState(false);
   
@@ -219,7 +221,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
           <TrendingDown className="w-2.5 md:w-3 h-2.5 md:h-3" strokeWidth={2.5} />
         )}
         <span className="text-[9px] md:text-[10px] tracking-wide hidden md:inline">
-          {isCall ? 'COMPRA' : 'VENDA'}
+          {isCall ? t("trade_marker_buy") : t("trade_marker_sell")}
         </span>
       </div>
 
@@ -263,7 +265,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
         <span className={`text-[8px] md:text-[9px] font-medium uppercase tracking-wide hidden md:block ${
           isCriticalTime ? 'text-destructive' : 'text-muted-foreground'
         }`}>
-          {isCriticalTime ? '⚠ EXPIRANDO' : 'Tempo restante'}
+          {isCriticalTime ? t("trade_marker_expiring") : t("trade_marker_time_remaining")}
         </span>
       </div>
 
@@ -283,7 +285,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
           {formattedPrice}
         </span>
         <span className="text-[8px] text-muted-foreground font-medium uppercase tracking-wide">
-          Preço de entrada
+          {t("trade_marker_entry_price")}
         </span>
       </div>
 
@@ -306,7 +308,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
           </span>
         </div>
         <span className="text-[8px] md:text-[9px] text-muted-foreground font-medium uppercase tracking-wide hidden md:block">
-          Investimento
+          {t("trade_marker_investment")}
         </span>
       </div>
 
@@ -345,7 +347,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
             <span className={`text-[8px] md:text-[9px] font-medium uppercase tracking-wide hidden md:block ${
               pnl.isProfit ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
             }`}>
-              {pnl.isProfit ? '📈 Lucro' : '📉 Prejuízo'}
+              {pnl.isProfit ? t("trade_marker_profit") : t("trade_marker_loss")}
             </span>
           </div>
         </>
@@ -378,7 +380,7 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
           </span>
         </div>
         <span className="text-[8px] md:text-[9px] text-primary/80 font-medium uppercase tracking-wide hidden md:block">
-          🎯 Retorno {potentialReturn.percentage.toFixed(0)}%
+          {t("trade_marker_return")} {potentialReturn.percentage.toFixed(0)}%
         </span>
       </div>
     </div>
