@@ -343,5 +343,13 @@
   "save_changes": "Save Changes",
   "affiliate_panel_title": "Affiliate Panel",
   "affiliate_panel_desc": "Manage your commissions, referrals and affiliate statistics",
-  "access_panel": "Access Panel"
+  "access_panel": "Access Panel",
+  "your_level": "Your Level",
+  "total_deposited": "Total Deposited",
+  "progress_to": "Progress to",
+  "deposit_more": "Deposit",
+  "to_reach_level": "more to reach",
+  "congratulations_max_level": "Congratulations! You reached the maximum level!",
+  "enjoy_vip_benefits": "Enjoy all VIP exclusive benefits",
+  "all_levels": "All Levels"
 }
