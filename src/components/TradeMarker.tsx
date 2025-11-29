@@ -23,34 +23,8 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isVisible, setIsVisible] = useState(false);
   
-  // Refs to track previous states for sound triggers
+  // Ref to track previous P&L state for visual changes only
   const prevPnlStatusRef = useRef<boolean | null>(null);
-  const alert30PlayedRef = useRef(false);
-  const alert10PlayedRef = useRef(false);
-  
-  // Audio references
-  const alertSoundRef = useRef<HTMLAudioElement | null>(null);
-  const profitSoundRef = useRef<HTMLAudioElement | null>(null);
-  const lossSoundRef = useRef<HTMLAudioElement | null>(null);
-
-  useEffect(() => {
-    // Initialize audio objects
-    alertSoundRef.current = new Audio('/sounds/alert.mp3');
-    profitSoundRef.current = new Audio('/sounds/win.mp3');
-    lossSoundRef.current = new Audio('/sounds/loss.mp3');
-    
-    // Set volume to be subtle
-    if (alertSoundRef.current) alertSoundRef.current.volume = 0.3;
-    if (profitSoundRef.current) profitSoundRef.current.volume = 0.4;
-    if (lossSoundRef.current) lossSoundRef.current.volume = 0.4;
-    
-    return () => {
-      // Cleanup audio objects
-      alertSoundRef.current = null;
-      profitSoundRef.current = null;
-      lossSoundRef.current = null;
-    };
-  }, []);
 
   useEffect(() => {
     // Trigger entrance animation
@@ -111,49 +85,9 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
 
   const pnl = calculatePnL();
 
-  // Sound effect: Play alert when reaching 30 seconds
-  useEffect(() => {
-    const seconds = Math.floor(timeRemaining / 1000);
-    
-    if (seconds === 30 && !alert30PlayedRef.current) {
-      alertSoundRef.current?.play().catch(() => {
-        // Ignore if autoplay is blocked
-      });
-      alert30PlayedRef.current = true;
-    }
-  }, [timeRemaining]);
-
-  // Sound effect: Play alert when reaching 10 seconds
-  useEffect(() => {
-    const seconds = Math.floor(timeRemaining / 1000);
-    
-    if (seconds === 10 && !alert10PlayedRef.current) {
-      alertSoundRef.current?.play().catch(() => {
-        // Ignore if autoplay is blocked
-      });
-      alert10PlayedRef.current = true;
-    }
-  }, [timeRemaining]);
-
-  // Sound effect: Play profit/loss sound when P&L status changes
+  // Track P&L status changes for visual feedback only (no sounds)
   useEffect(() => {
     if (currentPrice > 0 && pnl.percentage > 0) {
-      // Only trigger if we have a previous state to compare
-      if (prevPnlStatusRef.current !== null && prevPnlStatusRef.current !== pnl.isProfit) {
-        if (pnl.isProfit) {
-          // Switched to profit
-          profitSoundRef.current?.play().catch(() => {
-            // Ignore if autoplay is blocked
-          });
-        } else {
-          // Switched to loss
-          lossSoundRef.current?.play().catch(() => {
-            // Ignore if autoplay is blocked
-          });
-        }
-      }
-      
-      // Update previous state
       prevPnlStatusRef.current = pnl.isProfit;
     }
   }, [pnl.isProfit, pnl.percentage, currentPrice]);
