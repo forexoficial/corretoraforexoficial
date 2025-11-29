@@ -343,5 +343,13 @@
   "save_changes": "Guardar Cambios",
   "affiliate_panel_title": "Panel de Afiliado",
   "affiliate_panel_desc": "Gestiona tus comisiones, referidos y estadísticas de afiliado",
-  "access_panel": "Acceder al Panel"
+  "access_panel": "Acceder al Panel",
+  "your_level": "Tu Nivel",
+  "total_deposited": "Total Depositado",
+  "progress_to": "Progreso hacia",
+  "deposit_more": "Deposita",
+  "to_reach_level": "más para alcanzar el nivel",
+  "congratulations_max_level": "¡Felicitaciones! ¡Alcanzaste el nivel máximo!",
+  "enjoy_vip_benefits": "Disfruta de todos los beneficios exclusivos VIP",
+  "all_levels": "Todos los Niveles"
 }

@@ -2,6 +2,7 @@ import { Crown, Star, Zap, TrendingUp } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface UserTierProgressProps {
   totalDeposited: number;
@@ -45,6 +46,7 @@ const TIERS = [
 ];
 
 export const UserTierProgress = ({ totalDeposited, currentTier }: UserTierProgressProps) => {
+  const { t } = useTranslation();
   const currentTierIndex = TIERS.findIndex(t => t.name === currentTier);
   const currentTierData = TIERS[currentTierIndex] || TIERS[0];
   const nextTierData = TIERS[currentTierIndex + 1];
@@ -79,7 +81,7 @@ export const UserTierProgress = ({ totalDeposited, currentTier }: UserTierProgre
         <div className="flex items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Seu Nível
+            {t('your_level')}
           </CardTitle>
           <Badge className={`${currentTierData.bgColor} ${currentTierData.color} border ${currentTierData.borderColor} font-bold text-sm px-3 py-1`}>
             <TierIcon className="h-4 w-4 mr-1" />
@@ -91,7 +93,7 @@ export const UserTierProgress = ({ totalDeposited, currentTier }: UserTierProgre
       <CardContent className="relative">
         {/* Total deposited display */}
         <div className="mb-4">
-          <p className="text-sm text-muted-foreground mb-1">Total Depositado</p>
+          <p className="text-sm text-muted-foreground mb-1">{t('total_deposited')}</p>
           <p className="text-3xl font-bold">{formatCurrency(totalDeposited)}</p>
         </div>
 
@@ -99,7 +101,7 @@ export const UserTierProgress = ({ totalDeposited, currentTier }: UserTierProgre
         {nextTierData && (
           <div className="space-y-3">
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground">Progresso para {nextTierData.label}</span>
+              <span className="text-muted-foreground">{t('progress_to')} {nextTierData.label}</span>
               <span className={`font-semibold ${nextTierData.color}`}>
                 {progressValue.toFixed(1)}%
               </span>
@@ -128,7 +130,7 @@ export const UserTierProgress = ({ totalDeposited, currentTier }: UserTierProgre
             {/* Amount needed */}
             <div className="p-3 bg-background/50 rounded-lg border border-border/50 mt-4">
               <p className="text-sm text-center">
-                Deposite mais <span className={`font-bold ${nextTierData.color}`}>{formatCurrency(amountToNextTier)}</span> para alcançar o nível{" "}
+                {t('deposit_more')} <span className={`font-bold ${nextTierData.color}`}>{formatCurrency(amountToNextTier)}</span> {t('to_reach_level')}{" "}
                 <span className={`font-bold ${nextTierData.color}`}>{nextTierData.label}</span>!
               </p>
             </div>
@@ -139,16 +141,16 @@ export const UserTierProgress = ({ totalDeposited, currentTier }: UserTierProgre
         {!nextTierData && (
           <div className="p-4 bg-amber-500/10 rounded-lg border border-amber-500/30 text-center">
             <Crown className="h-8 w-8 text-amber-500 mx-auto mb-2" />
-            <p className="font-semibold text-amber-500">Parabéns! Você alcançou o nível máximo!</p>
+            <p className="font-semibold text-amber-500">{t('congratulations_max_level')}</p>
             <p className="text-sm text-muted-foreground mt-1">
-              Aproveite todos os benefícios exclusivos VIP
+              {t('enjoy_vip_benefits')}
             </p>
           </div>
         )}
 
         {/* Tier benefits preview */}
         <div className="mt-6 pt-4 border-t border-border/50">
-          <p className="text-sm font-medium mb-3">Todos os Níveis</p>
+          <p className="text-sm font-medium mb-3">{t('all_levels')}</p>
           <div className="flex justify-between gap-2">
             {TIERS.map((tier, index) => {
               const Icon = tier.icon;
