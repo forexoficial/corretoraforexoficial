@@ -8,6 +8,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { StarfieldBackground } from "@/components/StarfieldBackground";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Auth() {
   const { settings, loading: settingsLoading } = usePlatformSettings();
@@ -15,17 +16,18 @@ export default function Auth() {
   const { isLoading, handleLogin, handleSignup, handleSocialLogin } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (!settingsLoading && !settings.allow_registration && !isLogin) {
       toast({
-        title: "Cadastro desativado",
-        description: "O registro de novos usuários está temporariamente desativado",
+        title: t('registration_disabled'),
+        description: t('registration_disabled_desc'),
         variant: "destructive",
       });
       setIsLogin(true);
     }
-  }, [settings.allow_registration, isLogin, settingsLoading, toast]);
+  }, [settings.allow_registration, isLogin, settingsLoading, toast, t]);
 
   const onSignupSubmit = async (formData: any) => {
     const success = await handleSignup(formData, settings.allow_registration);
@@ -53,10 +55,10 @@ export default function Auth() {
           ) : (
             <>
               <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent mb-2">
-                Criar Conta
+                {t('create_account')}
               </h1>
               <p className="text-muted-foreground">
-                Comece sua jornada conosco
+                {t('start_journey')}
               </p>
             </>
           )}
@@ -77,7 +79,7 @@ export default function Auth() {
               onClick={() => setIsLogin(!isLogin)}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
-              {isLogin ? "Não tem conta? Criar conta" : "Já tem conta? Fazer login"}
+              {isLogin ? t('no_account_create') : t('have_account_login')}
             </button>
           </div>
         )}

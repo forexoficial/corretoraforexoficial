@@ -8,6 +8,7 @@ import { User, Mail, FileText, Lock, Check, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { SignupFormData } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SignupFormProps {
   onSubmit: (formData: SignupFormData) => void;
@@ -26,6 +27,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
     password: "",
   });
   const { toast } = useToast();
+  const { t } = useTranslation();
 
   // Capture affiliate code from URL
   useEffect(() => {
@@ -33,23 +35,23 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
     if (refCode) {
       setAffiliateCode(refCode);
       toast({
-        title: "Link de afiliado detectado!",
-        description: `Você está se cadastrando através do código: ${refCode}`,
+        title: t('affiliate_link_detected'),
+        description: `${t('registering_with_code')} ${refCode}`,
       });
     }
-  }, [searchParams, toast]);
+  }, [searchParams, toast, t]);
 
   const nextStep = () => {
     if (step === 1 && !formData.fullName) {
-      toast({ title: "Preencha seu nome", variant: "destructive" });
+      toast({ title: t('fill_name'), variant: "destructive" });
       return;
     }
     if (step === 2 && !formData.email) {
-      toast({ title: "Preencha seu email", variant: "destructive" });
+      toast({ title: t('fill_email'), variant: "destructive" });
       return;
     }
     if (step === 3 && !formData.document) {
-      toast({ title: "Preencha seu documento", variant: "destructive" });
+      toast({ title: t('fill_document'), variant: "destructive" });
       return;
     }
     setStep(step + 1);
@@ -66,10 +68,10 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
   const progress = (step / 4) * 100;
 
   const stepIcons = [
-    { icon: User, label: "Nome", completed: step > 1 },
-    { icon: Mail, label: "Email", completed: step > 2 },
-    { icon: FileText, label: "Documento", completed: step > 3 },
-    { icon: Lock, label: "Senha", completed: step > 4 },
+    { icon: User, label: t('name_step'), completed: step > 1 },
+    { icon: Mail, label: t('email_step'), completed: step > 2 },
+    { icon: FileText, label: t('document_step'), completed: step > 3 },
+    { icon: Lock, label: t('password_step'), completed: step > 4 },
   ];
 
   return (
@@ -78,7 +80,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
         <Alert className="mb-6 bg-primary/10 border-primary/20">
           <Gift className="h-4 w-4 text-primary" />
           <AlertDescription className="text-sm">
-            <strong>Link de afiliado ativo:</strong> {affiliateCode}
+            <strong>{t('affiliate_link_active')}</strong> {affiliateCode}
           </AlertDescription>
         </Alert>
       )}
@@ -112,23 +114,23 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
-            <Label htmlFor="fullName">Nome Completo</Label>
+            <Label htmlFor="fullName">{t('full_name')}</Label>
             <Input
               id="fullName"
               type="text"
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              placeholder="Seu nome completo"
+              placeholder={t('your_full_name_placeholder')}
               className="mt-1"
             />
             <Button type="button" onClick={nextStep} className="w-full">
-              Próximo
+              {t('next')}
             </Button>
           </div>
         )}
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
-            <Label htmlFor="email-signup">Email</Label>
+            <Label htmlFor="email-signup">{t('email')}</Label>
             <Input
               id="email-signup"
               type="email"
@@ -144,17 +146,17 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
                 onClick={() => setStep(step - 1)}
                 className="w-full"
               >
-                Voltar
+                {t('back')}
               </Button>
               <Button type="button" onClick={nextStep} className="w-full">
-                Próximo
+                {t('next')}
               </Button>
             </div>
           </div>
         )}
         {step === 3 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
-            <Label>Tipo de Documento</Label>
+            <Label>{t('document_type')}</Label>
             <div className="flex gap-2">
               <Button
                 type="button"
@@ -189,23 +191,23 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
                 onClick={() => setStep(step - 1)}
                 className="w-full"
               >
-                Voltar
+                {t('back')}
               </Button>
               <Button type="button" onClick={nextStep} className="w-full">
-                Próximo
+                {t('next')}
               </Button>
             </div>
           </div>
         )}
         {step === 4 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
-            <Label htmlFor="password-signup">Senha</Label>
+            <Label htmlFor="password-signup">{t('password')}</Label>
             <Input
               id="password-signup"
               type="password"
               value={formData.password}
               onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="Mínimo 6 caracteres"
+              placeholder={t('password_placeholder')}
               className="mt-1"
             />
             <div className="flex gap-2">
@@ -215,10 +217,10 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
                 onClick={() => setStep(step - 1)}
                 className="w-full"
               >
-                Voltar
+                {t('back')}
               </Button>
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Criando..." : "Criar Conta"}
+                {isLoading ? t('creating') : t('create_account_button')}
               </Button>
             </div>
           </div>

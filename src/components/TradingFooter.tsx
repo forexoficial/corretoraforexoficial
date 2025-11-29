@@ -45,18 +45,18 @@ export const TradingFooter = () => {
         await document.exitFullscreen();
       }
     } catch (err) {
-      toast.error("Erro ao alternar tela cheia");
+      toast.error(t('fullscreen_error'));
     }
   };
 
   const openSettings = () => {
-    toast.info("Configurações em desenvolvimento");
+    toast.info(t('settings_development'));
   };
 
   const formatDateTime = (date: Date) => {
     const months = [
-      "JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO",
-      "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"
+      t('january'), t('february'), t('march'), t('april'), t('may'), t('june'),
+      t('july'), t('august'), t('september'), t('october'), t('november'), t('december')
     ];
     
     const day = date.getDate();
@@ -91,7 +91,7 @@ export const TradingFooter = () => {
           </a>
           
           <div className="hidden lg:block text-xs text-muted-foreground">
-            TODO DIA, A TODA HORA
+            {t('everyday_allday')}
           </div>
         </div>
 
@@ -101,7 +101,7 @@ export const TradingFooter = () => {
             size="sm" 
             className="h-6 w-6 p-0"
             onClick={toggleMute}
-            title={isMuted ? "Ativar som" : "Desativar som"}
+            title={isMuted ? t('enable_sound') : t('disable_sound')}
           >
             {isMuted ? <VolumeX className="h-3 w-3" /> : <Volume2 className="h-3 w-3" />}
           </Button>
@@ -111,7 +111,7 @@ export const TradingFooter = () => {
             size="sm" 
             className="h-6 w-6 p-0"
             onClick={openSettings}
-            title="Configurações"
+            title={t('settings_label')}
           >
             <Settings className="h-3 w-3" />
           </Button>
@@ -126,7 +126,7 @@ export const TradingFooter = () => {
             size="sm" 
             className="h-6 w-6 p-0"
             onClick={toggleFullscreen}
-            title={isFullscreen ? "Sair da tela cheia" : "Tela cheia"}
+            title={isFullscreen ? t('exit_fullscreen_label') : t('fullscreen_label')}
           >
             {isFullscreen ? <Minimize2 className="h-3 w-3" /> : <Maximize2 className="h-3 w-3" />}
           </Button>
