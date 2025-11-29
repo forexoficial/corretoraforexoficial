@@ -564,5 +564,7 @@
   "trade_marker_loss": "📉 Loss",
   "trade_marker_return": "🎯 Return",
   "entry_line_buy": "BUY",
-  "entry_line_sell": "SELL"
+  "entry_line_sell": "SELL",
+  "c_market": "B Market",
+  "v_market": "S Market"
 }
