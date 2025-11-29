@@ -564,5 +564,7 @@
   "trade_marker_loss": "📉 Prejuízo",
   "trade_marker_return": "🎯 Retorno",
   "entry_line_buy": "COMPRA",
-  "entry_line_sell": "VENDA"
+  "entry_line_sell": "VENDA",
+  "c_market": "C Mercado",
+  "v_market": "V Mercado"
 }

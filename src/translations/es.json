@@ -564,5 +564,7 @@
   "trade_marker_loss": "📉 Pérdida",
   "trade_marker_return": "🎯 Retorno",
   "entry_line_buy": "COMPRA",
-  "entry_line_sell": "VENTA"
+  "entry_line_sell": "VENTA",
+  "c_market": "C Mercado",
+  "v_market": "V Mercado"
 }
