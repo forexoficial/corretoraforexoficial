@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useTranslation } from "@/hooks/useTranslation";
 import { ArrowUp, ArrowDown, Clock } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useTradeContext } from "../context/TradeContext";
 
 export const RecentTradesList = () => {
+  const { t } = useTranslation();
   const { recentTrades, isLoadingHistory } = useTradeContext();
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -26,9 +28,9 @@ export const RecentTradesList = () => {
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'won': return 'Ganhou';
-      case 'lost': return 'Perdeu';
-      default: return 'Em aberto';
+      case 'won': return t("won", "Ganhou");
+      case 'lost': return t("lost", "Perdeu");
+      default: return t("open", "Em aberto");
     }
   };
 
@@ -38,7 +40,7 @@ export const RecentTradesList = () => {
     const expiresAtMs = new Date(expiresAt).getTime();
     const remainingMs = Math.max(0, expiresAtMs - currentTime);
     
-    if (remainingMs === 0) return 'Processando...';
+    if (remainingMs === 0) return t("processing", "Processando...");
     
     const totalSeconds = Math.floor(remainingMs / 1000);
     const minutes = Math.floor(totalSeconds / 60);
@@ -54,7 +56,7 @@ export const RecentTradesList = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-4">
-        <h3 className="font-medium">Operações Recentes</h3>
+        <h3 className="font-medium">{t("recent_trades", "Operações Recentes")}</h3>
         <div className="bg-muted px-2 py-1 rounded text-xs">{recentTrades.length}</div>
       </div>
 
@@ -62,7 +64,7 @@ export const RecentTradesList = () => {
         <div className="space-y-2 px-4">
           {recentTrades.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              Nenhuma operação recente
+              {t("no_recent_trades", "Nenhuma operação recente")}
             </div>
           ) : (
             recentTrades.map((trade) => (
@@ -85,12 +87,12 @@ export const RecentTradesList = () => {
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Investimento:</span>
+                  <span className="text-muted-foreground">{t("investment", "Investimento")}:</span>
                   <span className="font-medium">R$ {trade.amount.toFixed(2)}</span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Retorno:</span>
+                  <span className="text-muted-foreground">{t("potential_return", "Retorno")}:</span>
                   <span className={`font-medium ${getStatusColor(trade.status)}`}>
                     R$ {trade.payout.toFixed(2)}
                   </span>
