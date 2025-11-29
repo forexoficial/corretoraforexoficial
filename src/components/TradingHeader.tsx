@@ -1,3 +1,4 @@
+import { useTranslation } from "@/hooks/useTranslation";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -46,6 +47,7 @@ export const TradingHeader = ({
   onAssetSelect, 
   onAssetRemove 
 }: TradingHeaderProps) => {
+  const { t } = useTranslation();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -141,7 +143,7 @@ export const TradingHeader = ({
             <DropdownMenuTrigger className="flex items-center gap-2">
               <div className="text-right">
                 <div className="text-xs text-muted-foreground">
-                  {isDemoMode ? "Demo" : "Real"}
+                  {isDemoMode ? t("demo_mode", "Demo") : t("real_mode", "Real")}
                 </div>
                 <div className={`font-bold text-xl ${!isDemoMode ? "text-success" : ""}`}>
                   R$ {formatCurrency(currentBalance)}
@@ -179,10 +181,10 @@ export const TradingHeader = ({
                 disabled={isDemoMode}
               >
                 <Plus className="mr-2 h-4 w-4" />
-                <span>Depósito</span>
+                <span>{t("deposit", "Depósito")}</span>
                 {isDemoMode && (
                   <span className="ml-auto text-xs text-muted-foreground">
-                    Apenas modo real
+                    {t("real_mode_only", "Apenas modo real")}
                   </span>
                 )}
               </DropdownMenuItem>
@@ -191,10 +193,10 @@ export const TradingHeader = ({
                 className="cursor-pointer text-foreground"
                 disabled={isDemoMode}
               >
-                <span>Retirada</span>
+                <span>{t("withdrawal", "Retirada")}</span>
                 {isDemoMode && (
                   <span className="ml-auto text-xs text-muted-foreground">
-                    Apenas modo real
+                    {t("real_mode_only", "Apenas modo real")}
                   </span>
                 )}
               </DropdownMenuItem>
@@ -202,19 +204,19 @@ export const TradingHeader = ({
                 onClick={() => navigate('/transactions')}
                 className="cursor-pointer text-foreground"
               >
-                Transações
+                {t("transactions", "Transações")}
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => navigate('/profile')}
                 className="cursor-pointer text-foreground"
               >
                 <UserIcon className="mr-2 h-4 w-4" />
-                Perfil
+                {t("profile", "Perfil")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut} className="text-destructive cursor-pointer">
                 <LogOut className="mr-2 h-4 w-4" />
-                Sair
+                {t("logout", "Sair")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -225,7 +227,7 @@ export const TradingHeader = ({
             onClick={() => navigate('/deposit')}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Depósito
+            {t("deposit", "Depósito")}
           </Button>
 
           <ThemeToggle />

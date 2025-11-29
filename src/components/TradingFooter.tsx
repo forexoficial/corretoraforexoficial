@@ -1,3 +1,4 @@
+import { useTranslation } from "@/hooks/useTranslation";
 import { useState, useEffect } from "react";
 import { Volume2, VolumeX, Settings, Maximize2, Minimize2, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { toast } from "sonner";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 export const TradingFooter = () => {
+  const { t } = useTranslation();
   const { settings } = usePlatformSettings();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showSupportDialog, setShowSupportDialog] = useState(false);
@@ -32,7 +34,7 @@ export const TradingFooter = () => {
 
   const toggleMute = () => {
     setIsMuted(!isMuted);
-    toast.success(isMuted ? "Som ativado" : "Som desativado");
+    toast.success(isMuted ? t("sound_enabled", "Som ativado") : t("sound_disabled", "Som desativado"));
   };
 
   const toggleFullscreen = async () => {
@@ -77,7 +79,7 @@ export const TradingFooter = () => {
             onClick={() => setShowSupportDialog(true)}
           >
             <HelpCircle className="h-3 w-3" />
-            SUPORTE
+            {t("support", "SUPORTE")}
           </Button>
           
           <a 
@@ -116,7 +118,7 @@ export const TradingFooter = () => {
           
           <div className="hidden md:flex items-center gap-2 text-xs text-muted-foreground">
             <Clock className="h-3 w-3" />
-            <span className="font-mono">HORA ATUAL: {formatDateTime(currentTime)}</span>
+            <span className="font-mono">{t("current_time", "HORA ATUAL")}: {formatDateTime(currentTime)}</span>
           </div>
           
           <Button 
