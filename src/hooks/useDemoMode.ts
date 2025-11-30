@@ -67,22 +67,9 @@ export const useDemoMode = () => {
       };
     };
 
-    // Listen for manual balance refresh events
-    const handleForceRefresh = (event: any) => {
-      console.log('[useDemoMode] 🔄 Force refresh recebido:', event.detail);
-      if (event.detail) {
-        setRealBalance(parseFloat(event.detail.balance || 0));
-        setDemoBalance(parseFloat(event.detail.demo_balance || 10000));
-        setIsDemoMode(event.detail.is_demo_mode ?? true);
-      }
-    };
-
-    window.addEventListener('force-balance-refresh', handleForceRefresh);
-
     const unsubscribePromise = setupRealtimeSubscription();
 
     return () => {
-      window.removeEventListener('force-balance-refresh', handleForceRefresh);
       unsubscribePromise.then(cleanup => cleanup?.());
     };
   }, []);
