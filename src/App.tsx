@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { TradingHeader } from "@/components/TradingHeader";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { PlatformCustomizationProvider } from "@/contexts/PlatformCustomizationContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { InstallPrompt } from "@/components/InstallPrompt";
@@ -58,7 +59,8 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <LanguageProvider>
-              <PlatformCustomizationProvider>
+              <CurrencyProvider>
+                <PlatformCustomizationProvider>
                 <InstallPrompt />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
@@ -163,7 +165,8 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-              </PlatformCustomizationProvider>
+                </PlatformCustomizationProvider>
+              </CurrencyProvider>
             </LanguageProvider>
           </AuthProvider>
         </BrowserRouter>
