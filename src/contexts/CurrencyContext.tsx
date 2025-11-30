@@ -6,6 +6,7 @@ interface CurrencyContextType {
   currency: Currency;
   symbol: string;
   formatCurrency: (value: number) => string;
+  setCurrency: (currency: Currency) => void;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -23,7 +24,11 @@ interface CurrencyProviderProps {
 }
 
 export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
-  const [currency, setCurrency] = useState<Currency>(() => {
+  const [currency, setCurrencyState] = useState<Currency>(() => {
+    // Verificar se há preferência manual salva
+    const stored = localStorage.getItem('app_currency');
+    if (stored) return stored as Currency;
+    
     // Detectar país do usuário via timezone ou idioma
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const isBrazil = timezone.includes('America/Sao_Paulo') || 
@@ -40,6 +45,11 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
     return isBrazil ? 'BRL' : 'USD';
   });
 
+  const setCurrency = (newCurrency: Currency) => {
+    setCurrencyState(newCurrency);
+    localStorage.setItem('app_currency', newCurrency);
+  };
+
   const symbol = currency === 'BRL' ? 'R$' : '$';
 
   const formatCurrency = (value: number): string => {
@@ -51,7 +61,7 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
   };
 
   return (
-    <CurrencyContext.Provider value={{ currency, symbol, formatCurrency }}>
+    <CurrencyContext.Provider value={{ currency, symbol, formatCurrency, setCurrency }}>
       {children}
     </CurrencyContext.Provider>
   );

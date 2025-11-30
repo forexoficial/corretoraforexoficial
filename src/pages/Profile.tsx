@@ -2,11 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, Mail, Phone, MapPin, Calendar, TrendingUp, DollarSign, Award, Settings, LogOut, Edit2, Save, X, Copy, Check, Shield, Crown, Zap } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCurrency } from "@/hooks/useCurrency";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,7 @@ import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
 
 export default function Profile() {
   const { t } = useTranslation();
+  const { currency, setCurrency } = useCurrency();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { toast } = useToast();
@@ -640,6 +643,33 @@ export default function Profile() {
 
                 <div className="space-y-4">
                   <h3 className="font-semibold">{t('preferences_section')}</h3>
+                  
+                  <div>
+                    <Label htmlFor="currency">{t('currency_preference', 'Moeda')}</Label>
+                    <Select value={currency} onValueChange={setCurrency}>
+                      <SelectTrigger id="currency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BRL">
+                          <div className="flex items-center gap-2">
+                            <span>🇧🇷</span>
+                            <span>Real Brasileiro (R$)</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="USD">
+                          <div className="flex items-center gap-2">
+                            <span>🇺🇸</span>
+                            <span>Dólar Americano ($)</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('currency_preference_hint', 'Escolha como deseja visualizar os valores')}
+                    </p>
+                  </div>
+                  
                   <Button variant="outline" className="w-full justify-start">
                     {t('notifications_button')}
                   </Button>

@@ -616,5 +616,7 @@
   "style": "Estilo",
   "solid": "Sólida",
   "dashed": "Discontinua",
-  "dotted": "Punteada"
+  "dotted": "Punteada",
+  "currency_preference": "Moneda",
+  "currency_preference_hint": "Elija cómo desea ver los valores"
 }
