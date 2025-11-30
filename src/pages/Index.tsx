@@ -275,10 +275,10 @@ const Index = () => {
 
   // Apenas timeframes curtos para binary options
   const timeframeOptions = [
-    { value: '10s', label: '10 segundos' },
-    { value: '30s', label: '30 segundos' },
-    { value: '1m', label: '1 minuto' },
-    { value: '5m', label: '5 minutos' }
+    { value: '10s', label: t("timeframe_10s") },
+    { value: '30s', label: t("timeframe_30s") },
+    { value: '1m', label: t("timeframe_1m") },
+    { value: '5m', label: t("timeframe_5m") }
   ];
 
   const handleTimeframeSelect = (value: string) => {
