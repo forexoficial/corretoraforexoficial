@@ -18,6 +18,7 @@ import Transactions from "./pages/Transactions";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import Signup from "./pages/Signup";
+import Preloader from "./pages/Preloader";
 import NotFound from "./pages/NotFound";
 import VerifyIdentity from "./pages/VerifyIdentity";
 import Install from "./pages/Install";
@@ -66,6 +67,14 @@ const App = () => (
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/signup" element={<Signup />} />
                 <Route path="/install" element={<Install />} />
+                <Route
+                  path="/preloader"
+                  element={
+                    <ProtectedRoute>
+                      <Preloader />
+                    </ProtectedRoute>
+                  }
+                />
               <Route
                 path="/"
                 element={

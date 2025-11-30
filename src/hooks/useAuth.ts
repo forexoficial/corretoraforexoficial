@@ -40,7 +40,7 @@ export function useAuth() {
         title: "Login realizado com sucesso!",
         description: "Bem-vindo de volta!",
       });
-      navigate("/");
+      navigate("/preloader");
     } catch (error: any) {
       const errorMessage = error.message === "Invalid login credentials" 
         ? "Credenciais de login inválidas" 
@@ -90,7 +90,7 @@ export function useAuth() {
             document_type: formData.documentType,
             affiliate_code: formData.affiliateCode,
           },
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/preloader`,
         },
       });
 
@@ -152,7 +152,7 @@ export function useAuth() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: `${window.location.origin}/`,
+          redirectTo: `${window.location.origin}/preloader`,
         },
       });
       if (error) throw error;
