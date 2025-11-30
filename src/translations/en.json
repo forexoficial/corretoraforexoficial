@@ -616,5 +616,7 @@
   "style": "Style",
   "solid": "Solid",
   "dashed": "Dashed",
-  "dotted": "Dotted"
+  "dotted": "Dotted",
+  "currency_preference": "Currency",
+  "currency_preference_hint": "Choose how you want to view values"
 }
