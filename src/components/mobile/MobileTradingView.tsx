@@ -87,33 +87,11 @@ export function MobileTradingView({
             
             console.log('[MobileTradingView] 🎉 Trade FECHADO!', {
               status: trade.status,
-              result: trade.result,
-              amount: trade.amount,
-              is_demo: trade.is_demo
+              result: trade.result
             });
 
-            // Force refresh balance
-            console.log('[MobileTradingView] 🔄 Forçando refresh do saldo...');
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('balance, demo_balance, is_demo_mode')
-              .eq('user_id', user.id)
-              .single();
-
-            if (profile) {
-              console.log('[MobileTradingView] ✅ Saldos atualizados:', {
-                demo: profile.demo_balance,
-                real: profile.balance
-              });
-              
-              window.dispatchEvent(new CustomEvent('force-balance-refresh', {
-                detail: {
-                  balance: profile.balance,
-                  demo_balance: profile.demo_balance,
-                  is_demo_mode: profile.is_demo_mode
-                }
-              }));
-            }
+            // Não precisa forçar refresh - useDemoMode já tem Realtime subscription no profile
+            // O backend já atualizou o balance corretamente via trigger
             
             // Get asset name
             const { data: asset } = await supabase
