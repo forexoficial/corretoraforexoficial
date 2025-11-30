@@ -618,5 +618,10 @@
   "dashed": "Tracejada",
   "dotted": "Pontilhada",
   "currency_preference": "Moeda",
-  "currency_preference_hint": "Escolha como deseja visualizar os valores"
+  "currency_preference_hint": "Escolha como deseja visualizar os valores",
+  "loading_assets": "Carregando ativos",
+  "loading_charts": "Carregando gráficos",
+  "loading_security": "Verificando segurança",
+  "platform_ready": "Plataforma pronta",
+  "please_wait": "Aguarde um momento..."
 }
