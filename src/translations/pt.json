@@ -26,6 +26,8 @@
   "created_at": "Criada em",
   "expires_at": "Expira em",
   "asset": "Ativo",
+  "assets": "Ativos",
+  "payout": "Payout",
   "type": "Tipo",
   "status": "Status",
   "loading": "Carregando",

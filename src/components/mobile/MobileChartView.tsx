@@ -1,4 +1,4 @@
-import { TrendingUp, SlidersHorizontal, Compass, Radio, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search, Info, ChevronRight } from "lucide-react";
+import { TrendingUp, SlidersHorizontal, Compass, Radio, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -32,14 +32,6 @@ const timeframeOptions = [
 
 const chartTypeOptions = [
   { value: 'candle', labelKey: 'candles', icon: CandlestickChart },
-];
-
-const assetTabs = ['FTT', '5ST', 'DRT', 'CFD'];
-const assetCategories = [
-  { id: 'all', label: 'All' },
-  { id: 'crypto', label: 'Crypto' },
-  { id: 'currencies', label: 'Currencies' },
-  { id: 'commodities', label: 'Commodities' },
 ];
 
 // Chart preview components
@@ -185,8 +177,6 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTab, setSelectedTab] = useState('FTT');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const { withClickSound } = useClickSound();
   const { t } = useTranslation();
 
@@ -376,11 +366,11 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
 
       {/* Asset Selection Modal */}
       <Sheet open={isAssetModalOpen} onOpenChange={setIsAssetModalOpen}>
-        <SheetContent side="bottom" hideCloseButton className="h-[90vh] rounded-t-2xl bg-background border-border p-0 flex flex-col">
+        <SheetContent side="bottom" hideCloseButton className="h-[80vh] rounded-t-2xl bg-background border-border p-0 flex flex-col">
           {/* Header */}
-          <div className="px-4 pt-4 pb-2">
+          <div className="px-4 pt-4 pb-3">
             <div className="flex items-center justify-between mb-4">
-              <SheetTitle className="text-left text-foreground">Ativos</SheetTitle>
+              <SheetTitle className="text-left text-foreground">{t("assets", "Ativos")}</SheetTitle>
               <button 
                 onClick={withClickSound(() => setIsAssetModalOpen(false))}
                 className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
@@ -389,67 +379,26 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
               </button>
             </div>
 
-            {/* Tabs */}
-            <div className="flex border-b border-border">
-              {assetTabs.map((tab) => (
-                <button
-                  key={tab}
-                  onClick={withClickSound(() => setSelectedTab(tab))}
-                  className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
-                    selectedTab === tab ? 'text-primary' : 'text-muted-foreground'
-                  }`}
-                >
-                  {tab}
-                  {selectedTab === tab && (
-                    <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
-                  )}
-                </button>
-              ))}
-            </div>
-
-            {/* Stats */}
-            <div className="py-3 text-center text-sm">
-              <span className="text-muted-foreground">{assets.length} no total</span>
-              <span className="text-muted-foreground mx-2">•</span>
-              <span className="text-success">{filteredAssets.length} ativo(s)</span>
-            </div>
-
             {/* Search */}
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar"
+                placeholder={t("search", "Buscar")}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10 bg-muted/50 border-border rounded-xl"
               />
             </div>
 
-            {/* Category Filters */}
-            <div className="flex gap-2 overflow-x-auto pb-3 no-scrollbar">
-              {assetCategories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={withClickSound(() => setSelectedCategory(category.id))}
-                  className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap transition-colors ${
-                    selectedCategory === category.id
-                      ? 'bg-foreground text-background'
-                      : 'bg-muted/50 text-foreground border border-border'
-                  }`}
-                >
-                  {category.label} {category.id === 'all' ? assets.length : ''}
-                </button>
-              ))}
-              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0 self-center" />
+            {/* Stats */}
+            <div className="py-2 text-center text-sm">
+              <span className="text-success">{filteredAssets.length} {t("available", "disponíveis")}</span>
             </div>
 
             {/* Table Header */}
-            <div className="flex items-center py-2 text-xs text-muted-foreground">
-              <span className="flex-1">Ativo</span>
-              <span className="w-16 text-center flex items-center justify-center gap-1">
-                Lucro <Info className="h-3 w-3" />
-              </span>
-              <span className="w-16 text-center">Para VIP</span>
+            <div className="flex items-center py-2 text-xs text-muted-foreground border-b border-border">
+              <span className="flex-1">{t("asset", "Ativo")}</span>
+              <span className="w-20 text-center">{t("payout", "Payout")}</span>
             </div>
           </div>
 
@@ -467,21 +416,29 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
                   }`}
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    <img 
-                      src={asset.icon_url} 
-                      alt={asset.name} 
-                      className="w-8 h-8 rounded-full"
-                    />
-                    <span className="font-medium text-foreground">{asset.name}</span>
+                    {asset.icon_url && (
+                      <img 
+                        src={asset.icon_url} 
+                        alt={asset.name} 
+                        className="w-8 h-8 rounded-full object-cover"
+                      />
+                    )}
+                    <div className="flex flex-col items-start">
+                      <span className="font-medium text-foreground">{asset.name}</span>
+                      <span className="text-xs text-muted-foreground">{asset.symbol}</span>
+                    </div>
                   </div>
-                  <span className="w-16 text-center text-success text-sm">
+                  <span className="w-20 text-center text-success font-semibold">
                     {asset.payout_percentage}%
-                  </span>
-                  <span className="w-16 text-center text-success text-sm">
-                    {Math.round(asset.payout_percentage * 1.025)}%
                   </span>
                 </button>
               ))}
+              
+              {filteredAssets.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  {t("no_assets_found", "Nenhum ativo encontrado")}
+                </div>
+              )}
             </div>
           </ScrollArea>
         </SheetContent>
