@@ -681,5 +681,17 @@
   "user_already_registered": "User already registered",
   "rate_limit_exceeded": "Rate limit exceeded. Please try again later.",
   "social_login_error": "Social login error",
-  "popup_blocked": "Error opening login window. Check if popups are enabled."
+  "popup_blocked": "Error opening login window. Check if popups are enabled.",
+  "legal_information": "Legal Information",
+  "legal_description": "Legal documents, policies and bureaucratic information",
+  "company_information": "Company Information",
+  "tax_id": "Tax ID",
+  "company_name": "Company Name",
+  "address": "Address",
+  "regulatory_bodies": "Regulatory Bodies",
+  "all_rights_reserved": "All rights reserved",
+  "terms_version": "Terms Version",
+  "updated_on": "Updated on",
+  "error_loading_info": "Error loading information",
+  "document": "Document"
 }

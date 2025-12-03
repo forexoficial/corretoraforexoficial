@@ -681,5 +681,17 @@
   "user_already_registered": "Usuário já cadastrado",
   "rate_limit_exceeded": "Limite de tentativas excedido. Tente novamente mais tarde.",
   "social_login_error": "Erro no login social",
-  "popup_blocked": "Erro ao abrir janela de login. Verifique se pop-ups estão habilitados."
+  "popup_blocked": "Erro ao abrir janela de login. Verifique se pop-ups estão habilitados.",
+  "legal_information": "Informações Legais",
+  "legal_description": "Documentos jurídicos, políticas e informações burocráticas",
+  "company_information": "Informações da Empresa",
+  "tax_id": "CNPJ",
+  "company_name": "Razão Social",
+  "address": "Endereço",
+  "regulatory_bodies": "Órgãos Reguladores",
+  "all_rights_reserved": "Todos os direitos reservados",
+  "terms_version": "Versão dos Termos",
+  "updated_on": "Atualizado em",
+  "error_loading_info": "Erro ao carregar informações",
+  "document": "Documento"
 }
