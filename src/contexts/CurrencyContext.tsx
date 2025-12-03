@@ -29,20 +29,13 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
     const stored = localStorage.getItem('app_currency');
     if (stored) return stored as Currency;
     
-    // Detectar país do usuário via timezone ou idioma
-    const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    const isBrazil = timezone.includes('America/Sao_Paulo') || 
-                     timezone.includes('America/Fortaleza') || 
-                     timezone.includes('America/Recife') ||
-                     timezone.includes('America/Manaus') ||
-                     timezone.includes('America/Bahia') ||
-                     timezone.includes('America/Belem') ||
-                     timezone.includes('America/Cuiaba') ||
-                     timezone.includes('America/Porto_Velho') ||
-                     timezone.includes('America/Boa_Vista') ||
-                     timezone.includes('America/Rio_Branco');
+    // Detectar moeda baseado no idioma selecionado
+    // Português = BRL, qualquer outro idioma = USD
+    const language = localStorage.getItem('app_language') || 
+                     navigator.language.split('-')[0] || 
+                     'en';
     
-    return isBrazil ? 'BRL' : 'USD';
+    return language === 'pt' ? 'BRL' : 'USD';
   });
 
   const setCurrency = (newCurrency: Currency) => {
