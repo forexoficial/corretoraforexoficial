@@ -26,6 +26,8 @@
   "created_at": "Created at",
   "expires_at": "Expires at",
   "asset": "Asset",
+  "assets": "Assets",
+  "payout": "Payout",
   "type": "Type",
   "status": "Status",
   "loading": "Loading",
