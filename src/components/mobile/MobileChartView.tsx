@@ -30,11 +30,7 @@ const timeframeOptions = [
 ];
 
 const chartTypeOptions = [
-  { value: 'line', label: 'Linha', icon: TrendingUpIcon },
   { value: 'candle', label: 'Vela', icon: CandlestickChart },
-  { value: 'area', label: 'Montanha', icon: AreaChart },
-  { value: 'bar', label: 'Barra', icon: BarChart3 },
-  { value: 'heikin', label: 'Heikin Ashi', icon: CandlestickChart },
 ];
 
 const assetTabs = ['FTT', '5ST', 'DRT', 'CFD'];
