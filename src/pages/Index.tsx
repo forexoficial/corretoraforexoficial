@@ -204,7 +204,7 @@ const Index = () => {
       .single();
 
     if (error) {
-      toast.error("Erro ao carregar ativos");
+      toast.error(t("error_loading_assets", "Error loading assets"));
       console.error(error);
     } else if (data) {
       setSelectedAsset(data);

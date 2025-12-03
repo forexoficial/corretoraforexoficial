@@ -577,7 +577,7 @@ export default function Profile() {
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t("email", "Email")}</Label>
                     <Input
                       id="email"
                       type="email"
