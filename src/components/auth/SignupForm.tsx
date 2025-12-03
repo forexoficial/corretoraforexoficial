@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,11 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
     password: "",
   });
   const { toast } = useToast();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
+
+  // Only show document step for Brazilian users (Portuguese language)
+  const isBrazilian = language === 'pt';
+  const totalSteps = isBrazilian ? 4 : 3;
 
   // Capture affiliate code from URL
   useEffect(() => {
@@ -41,6 +45,14 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
     }
   }, [searchParams, toast, t]);
 
+  // Map current step to actual form step based on whether document step is shown
+  const getActualStep = (currentStep: number) => {
+    if (isBrazilian) return currentStep;
+    // For non-Brazilian: step 3 becomes password step (skip document)
+    if (currentStep >= 3) return currentStep + 1;
+    return currentStep;
+  };
+
   const nextStep = () => {
     if (step === 1 && !formData.fullName) {
       toast({ title: t('fill_name'), variant: "destructive" });
@@ -50,29 +62,51 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       toast({ title: t('fill_email'), variant: "destructive" });
       return;
     }
-    if (step === 3 && !formData.document) {
+    if (isBrazilian && step === 3 && !formData.document) {
       toast({ title: t('fill_document'), variant: "destructive" });
       return;
     }
     setStep(step + 1);
   };
 
+  const prevStep = () => {
+    setStep(step - 1);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit({
       ...formData,
+      // For non-Brazilian users, set default document values
+      document: isBrazilian ? formData.document : "N/A",
+      documentType: isBrazilian ? formData.documentType : "international",
       affiliateCode: affiliateCode || undefined,
     });
   };
 
-  const progress = (step / 4) * 100;
+  const progress = (step / totalSteps) * 100;
 
-  const stepIcons = [
-    { icon: User, label: t('name_step'), completed: step > 1 },
-    { icon: Mail, label: t('email_step'), completed: step > 2 },
-    { icon: FileText, label: t('document_step'), completed: step > 3 },
-    { icon: Lock, label: t('password_step'), completed: step > 4 },
-  ];
+  // Build step icons based on whether document step is needed
+  const stepIcons = useMemo(() => {
+    if (isBrazilian) {
+      return [
+        { icon: User, label: t('name_step'), completed: step > 1 },
+        { icon: Mail, label: t('email_step'), completed: step > 2 },
+        { icon: FileText, label: t('document_step'), completed: step > 3 },
+        { icon: Lock, label: t('password_step'), completed: step > 4 },
+      ];
+    }
+    return [
+      { icon: User, label: t('name_step'), completed: step > 1 },
+      { icon: Mail, label: t('email_step'), completed: step > 2 },
+      { icon: Lock, label: t('password_step'), completed: step > 3 },
+    ];
+  }, [isBrazilian, step, t]);
+
+  // Check if current step is the password step
+  const isPasswordStep = isBrazilian ? step === 4 : step === 3;
+  // Check if current step is the document step (only for Brazilian)
+  const isDocumentStep = isBrazilian && step === 3;
 
   return (
     <>
@@ -112,6 +146,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Step 1: Name */}
         {step === 1 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
             <Label htmlFor="fullName">{t('full_name')}</Label>
@@ -128,6 +163,8 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
             </Button>
           </div>
         )}
+
+        {/* Step 2: Email */}
         {step === 2 && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
             <Label htmlFor="email-signup">{t('email')}</Label>
@@ -143,7 +180,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setStep(step - 1)}
+                onClick={prevStep}
                 className="w-full"
               >
                 {t('back')}
@@ -154,7 +191,9 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
             </div>
           </div>
         )}
-        {step === 3 && (
+
+        {/* Step 3: Document (Only for Brazilian users) */}
+        {isDocumentStep && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
             <Label>{t('document_type')}</Label>
             <div className="flex gap-2">
@@ -188,7 +227,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setStep(step - 1)}
+                onClick={prevStep}
                 className="w-full"
               >
                 {t('back')}
@@ -199,7 +238,9 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
             </div>
           </div>
         )}
-        {step === 4 && (
+
+        {/* Password Step (Step 4 for Brazilian, Step 3 for others) */}
+        {isPasswordStep && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
             <Label htmlFor="password-signup">{t('password')}</Label>
             <Input
@@ -214,7 +255,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => setStep(step - 1)}
+                onClick={prevStep}
                 className="w-full"
               >
                 {t('back')}
