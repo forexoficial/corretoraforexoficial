@@ -31,7 +31,7 @@ const timeframeOptions = [
 ];
 
 const chartTypeOptions = [
-  { value: 'candle', label: 'Vela', icon: CandlestickChart },
+  { value: 'candle', labelKey: 'candles', icon: CandlestickChart },
 ];
 
 const assetTabs = ['FTT', '5ST', 'DRT', 'CFD'];
@@ -335,7 +335,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
       <Sheet open={isChartTypeModalOpen} onOpenChange={setIsChartTypeModalOpen}>
         <SheetContent side="bottom" hideCloseButton className="h-auto max-h-[85vh] rounded-t-2xl bg-background border-border">
           <SheetHeader className="flex flex-row items-center justify-between pb-4">
-            <SheetTitle className="text-left text-foreground">Tipo de gráfico</SheetTitle>
+            <SheetTitle className="text-left text-foreground">{t("chart_type", "Tipo de gráfico")}</SheetTitle>
             <button 
               onClick={withClickSound(() => setIsChartTypeModalOpen(false))}
               className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
@@ -362,7 +362,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
                 >
                   <div className="flex items-center gap-3 min-w-[100px]">
                     <Icon className="h-5 w-5 text-muted-foreground" />
-                    <span className="font-medium text-foreground">{option.label}</span>
+                    <span className="font-medium text-foreground">{t(option.labelKey)}</span>
                   </div>
                   <div className="flex-1 h-full">
                     <Preview />
