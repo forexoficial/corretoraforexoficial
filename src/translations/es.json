@@ -47,6 +47,7 @@
   "login": "Iniciar sesión",
   "signup": "Registrarse",
   "email": "Email",
+  "email_placeholder": "tu@correo.com",
   "password": "Contraseña",
   "full_name": "Nombre Completo",
   "document": "Documento",

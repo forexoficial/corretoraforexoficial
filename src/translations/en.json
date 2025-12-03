@@ -47,6 +47,7 @@
   "login": "Login",
   "signup": "Sign Up",
   "email": "Email",
+  "email_placeholder": "your@email.com",
   "password": "Password",
   "full_name": "Full Name",
   "document": "Document",

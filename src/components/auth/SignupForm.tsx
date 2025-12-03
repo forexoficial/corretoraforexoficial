@@ -136,7 +136,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              placeholder="seu@email.com"
+              placeholder={t('email_placeholder')}
               className="mt-1"
             />
             <div className="flex gap-2">
