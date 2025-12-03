@@ -623,5 +623,16 @@
   "loading_charts": "Loading charts",
   "loading_security": "Verifying security",
   "platform_ready": "Platform ready",
-  "please_wait": "Please wait a moment..."
+  "please_wait": "Please wait a moment...",
+  "secure_payment": "Secure Payment",
+  "payment_success": "Payment Successful!",
+  "payment_success_message": "Your deposit has been processed successfully.",
+  "pay": "Pay",
+  "stripe_secure_payment": "Secure payment powered by Stripe. Your information is encrypted.",
+  "international_payment": "International",
+  "instant_payment": "Instant payment",
+  "international_deposit": "International Deposit",
+  "payment_methods": "Payment Methods",
+  "currency": "Currency",
+  "continue_to_payment": "Continue to Payment"
 }
