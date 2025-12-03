@@ -18,6 +18,11 @@ export const useLanguageContext = () => {
   return context;
 };
 
+// Safe version that doesn't throw - used by useTranslation
+export const useSafeLanguageContext = () => {
+  return useContext(LanguageContext);
+};
+
 interface LanguageProviderProps {
   children: ReactNode;
 }
