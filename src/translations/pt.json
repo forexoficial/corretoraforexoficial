@@ -47,6 +47,7 @@
   "login": "Entrar",
   "signup": "Cadastrar",
   "email": "Email",
+  "email_placeholder": "seu@email.com",
   "password": "Senha",
   "full_name": "Nome Completo",
   "document": "Documento",

@@ -28,6 +28,7 @@ export function LoginForm({ onSubmit, isLoading }: LoginFormProps) {
           type="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          placeholder={t("email_placeholder")}
           required
           className="mt-1"
         />
