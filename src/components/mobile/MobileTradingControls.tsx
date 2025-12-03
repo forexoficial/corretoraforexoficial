@@ -5,6 +5,8 @@ import { toast } from "sonner";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useCreateTrade } from "@/features/trading/hooks/useCreateTrade";
 import { useTradeContext } from "@/features/trading/context/TradeContext";
+import { useTranslation } from "@/hooks/useTranslation";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface MobileTradingControlsProps {
   selectedAsset: {
@@ -27,6 +29,8 @@ export function MobileTradingControls({
 }: MobileTradingControlsProps) {
   const { settings } = usePlatformSettings();
   const { hasOpenTrade } = useTradeContext();
+  const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   
   const { createTrade, isCreating } = useCreateTrade({
     selectedAsset,
@@ -85,7 +89,7 @@ export function MobileTradingControls({
         {/* Time Control */}
         <div className="bg-muted/30 rounded-lg px-3 py-2">
           <div className="text-[10px] text-muted-foreground uppercase mb-1 text-center">
-            Hora
+            {t("time", "Tempo")}
           </div>
           <div className="flex items-center justify-between">
             <Button
@@ -111,7 +115,7 @@ export function MobileTradingControls({
         {/* Amount Control */}
         <div className="bg-muted/30 rounded-lg px-3 py-2">
           <div className="text-[10px] text-muted-foreground uppercase mb-1 text-center">
-            Valor
+            {t("amount", "Valor")}
           </div>
           <div className="flex items-center justify-between">
             <Button
@@ -122,7 +126,7 @@ export function MobileTradingControls({
             >
               <Minus className="h-3.5 w-3.5" />
             </Button>
-            <div className="text-lg font-bold">R${amount}</div>
+            <div className="text-lg font-bold">{formatCurrency(amount)}</div>
             <Button
               variant="ghost"
               size="icon"
@@ -138,10 +142,10 @@ export function MobileTradingControls({
       {/* Payout Display */}
       <div className="px-3 pb-3">
         <div className="text-center text-sm">
-          <span className="text-muted-foreground">Receita </span>
+          <span className="text-muted-foreground">{t("profit", "Lucro")} </span>
           <span className="text-success font-bold">+{selectedAsset.payout_percentage}%</span>
           <span className="ml-2 text-lg font-bold">
-            R$ {parseFloat(payout).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {formatCurrency(parseFloat(payout))}
           </span>
         </div>
       </div>
@@ -150,7 +154,7 @@ export function MobileTradingControls({
       {hasOpenTrade && (
         <div className="px-3 pb-2">
           <div className="bg-warning/10 border border-warning/30 rounded-lg p-2 text-xs text-warning text-center">
-            Você já tem uma operação aberta
+            {t("has_open_trade", "Você já tem uma operação aberta")}
           </div>
         </div>
       )}
