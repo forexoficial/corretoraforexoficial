@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -7,6 +7,13 @@ import { useCreateTrade } from "@/features/trading/hooks/useCreateTrade";
 import { useTradeContext } from "@/features/trading/context/TradeContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useCurrency } from "@/hooks/useCurrency";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 interface MobileTradingControlsProps {
   selectedAsset: {
@@ -30,7 +37,7 @@ export function MobileTradingControls({
   const { settings } = usePlatformSettings();
   const { hasOpenTrade } = useTradeContext();
   const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+  const { formatCurrency, symbol } = useCurrency();
   
   const { createTrade, isCreating } = useCreateTrade({
     selectedAsset,
@@ -52,6 +59,8 @@ export function MobileTradingControls({
   
   const [duration, setDuration] = useState(getInitialDuration());
   const [amount, setAmount] = useState(5);
+  const [showAmountModal, setShowAmountModal] = useState(false);
+  const [inputAmount, setInputAmount] = useState("");
 
   // Durations: 10s, 30s, 1m, 5m, 10m, 15m, 30m, 60m (in minutes)
   const durations = [10/60, 30/60, 1, 5, 10, 15, 30, 60];
@@ -80,6 +89,21 @@ export function MobileTradingControls({
 
   const handleTrade = async (type: 'call' | 'put') => {
     await createTrade(type, amount, duration);
+  };
+
+  const openAmountModal = () => {
+    setInputAmount(amount.toString());
+    setShowAmountModal(true);
+  };
+
+  const handleAmountSubmit = () => {
+    const newAmount = parseFloat(inputAmount);
+    if (!isNaN(newAmount) && newAmount >= settings.min_trade && newAmount <= 10000) {
+      setAmount(newAmount);
+      setShowAmountModal(false);
+    } else {
+      toast.error(t("invalid_amount", "Valor inválido"));
+    }
   };
 
   return (
@@ -126,7 +150,12 @@ export function MobileTradingControls({
             >
               <Minus className="h-3.5 w-3.5" />
             </Button>
-            <div className="text-lg font-bold">{formatCurrency(amount)}</div>
+            <button
+              onClick={openAmountModal}
+              className="text-lg font-bold hover:text-primary transition-colors cursor-pointer"
+            >
+              {formatCurrency(amount)}
+            </button>
             <Button
               variant="ghost"
               size="icon"
@@ -138,6 +167,38 @@ export function MobileTradingControls({
           </div>
         </div>
       </div>
+
+      {/* Amount Input Modal */}
+      <Dialog open={showAmountModal} onOpenChange={setShowAmountModal}>
+        <DialogContent className="w-[90%] max-w-[320px] rounded-xl">
+          <DialogHeader>
+            <DialogTitle>{t("enter_amount", "Digite o valor")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                {symbol}
+              </span>
+              <Input
+                type="number"
+                value={inputAmount}
+                onChange={(e) => setInputAmount(e.target.value)}
+                className="pl-8 text-lg h-12"
+                placeholder="0.00"
+                min={settings.min_trade}
+                max={10000}
+                autoFocus
+              />
+            </div>
+            <div className="text-xs text-muted-foreground text-center">
+              {t("min", "Mín")}: {formatCurrency(settings.min_trade)} | {t("max", "Máx")}: {formatCurrency(10000)}
+            </div>
+            <Button onClick={handleAmountSubmit} className="w-full h-12">
+              {t("confirm", "Confirmar")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Payout Display */}
       <div className="px-3 pb-3">
