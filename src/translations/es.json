@@ -621,6 +621,7 @@
   "currency_preference": "Moneda",
   "currency_preference_hint": "Elija cómo desea ver los valores",
   "loading_assets": "Cargando activos",
+  "loading_chart": "Cargando gráfico...",
   "loading_charts": "Cargando gráficos",
   "loading_security": "Verificando seguridad",
   "platform_ready": "Plataforma lista",

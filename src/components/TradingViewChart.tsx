@@ -1292,7 +1292,7 @@ export function TradingViewChart({
       
       {isLoading && (
         <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
-          <div className="text-muted-foreground">Carregando gráfico...</div>
+          <div className="text-muted-foreground">{t("loading_chart", "Loading chart...")}</div>
         </div>
       )}
       <div ref={chartContainerRef} className="w-full relative z-[1]" style={{ backgroundColor: 'transparent' }} />
