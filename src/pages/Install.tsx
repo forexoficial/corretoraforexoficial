@@ -4,10 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Download, Smartphone, Chrome, Apple, Share2, MoreVertical, CheckCircle2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Install() {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
+  const { t } = useTranslation();
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -49,31 +51,31 @@ export default function Install() {
 
     if (isIOS) {
       return {
-        title: "Instalar no iPhone/iPad",
+        title: t("install_on_ios", "Install on iPhone/iPad"),
         steps: [
-          { icon: <Safari className="h-5 w-5" />, text: "Abra este site no Safari" },
-          { icon: <Share2 className="h-5 w-5" />, text: 'Toque no ícone "Compartilhar" na parte inferior' },
-          { icon: <Download className="h-5 w-5" />, text: 'Selecione "Adicionar à Tela de Início"' },
-          { icon: <CheckCircle2 className="h-5 w-5" />, text: "Toque em Adicionar" }
+          { icon: <Safari className="h-5 w-5" />, text: t("install_ios_step1", "Open this site in Safari") },
+          { icon: <Share2 className="h-5 w-5" />, text: t("install_ios_step2", "Tap the \"Share\" icon at the bottom") },
+          { icon: <Download className="h-5 w-5" />, text: t("install_ios_step3", "Select \"Add to Home Screen\"") },
+          { icon: <CheckCircle2 className="h-5 w-5" />, text: t("install_ios_step4", "Tap Add") }
         ]
       };
     } else if (isAndroid) {
       return {
-        title: "Instalar no Android",
+        title: t("install_on_android", "Install on Android"),
         steps: [
-          { icon: <Chrome className="h-5 w-5" />, text: "Abra este site no Chrome" },
-          { icon: <MoreVertical className="h-5 w-5" />, text: 'Toque no menu (⋮) no canto superior' },
-          { icon: <Download className="h-5 w-5" />, text: 'Selecione "Instalar app" ou "Adicionar à tela inicial"' },
-          { icon: <CheckCircle2 className="h-5 w-5" />, text: "Confirme a instalação" }
+          { icon: <Chrome className="h-5 w-5" />, text: t("install_android_step1", "Open this site in Chrome") },
+          { icon: <MoreVertical className="h-5 w-5" />, text: t("install_android_step2", "Tap the menu (⋮) at the top") },
+          { icon: <Download className="h-5 w-5" />, text: t("install_android_step3", "Select \"Install app\" or \"Add to home screen\"") },
+          { icon: <CheckCircle2 className="h-5 w-5" />, text: t("install_android_step4", "Confirm installation") }
         ]
       };
     } else {
       return {
-        title: "Instalar no Desktop",
+        title: t("install_on_desktop", "Install on Desktop"),
         steps: [
-          { icon: <Chrome className="h-5 w-5" />, text: "Abra este site no Chrome, Edge ou outro navegador compatível" },
-          { icon: <Download className="h-5 w-5" />, text: 'Clique no ícone de instalação na barra de endereço' },
-          { icon: <CheckCircle2 className="h-5 w-5" />, text: "Confirme a instalação" }
+          { icon: <Chrome className="h-5 w-5" />, text: t("install_desktop_step1", "Open this site in Chrome, Edge or another compatible browser") },
+          { icon: <Download className="h-5 w-5" />, text: t("install_desktop_step2", "Click the install icon in the address bar") },
+          { icon: <CheckCircle2 className="h-5 w-5" />, text: t("install_desktop_step3", "Confirm installation") }
         ]
       };
     }
@@ -95,14 +97,14 @@ export default function Install() {
             <div className="mx-auto mb-4 h-20 w-20 rounded-full bg-green-500/20 flex items-center justify-center">
               <CheckCircle2 className="h-10 w-10 text-green-500" />
             </div>
-            <CardTitle>App Instalado!</CardTitle>
+            <CardTitle>{t("app_installed", "App Installed!")}</CardTitle>
             <CardDescription>
-              O BlackRock Broker já está instalado no seu dispositivo.
+              {t("app_installed_desc", "The app is now installed on your device.")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <Button onClick={() => navigate("/")} className="w-full">
-              Abrir App
+              {t("open_app", "Open App")}
             </Button>
           </CardContent>
         </Card>
@@ -116,11 +118,11 @@ export default function Install() {
         {/* Header */}
         <div className="text-center mb-8 pt-8">
           <div className="mx-auto mb-4 h-24 w-24">
-            <img src="/pwa-512x512.png" alt="BlackRock Logo" className="w-full h-full rounded-2xl shadow-lg" />
+            <img src="/pwa-512x512.png" alt="Logo" className="w-full h-full rounded-2xl shadow-lg" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Instale o BlackRock Broker</h1>
+          <h1 className="text-3xl font-bold mb-2">{t("install_app_page_title", "Install the App")}</h1>
           <p className="text-muted-foreground">
-            Acesse mais rápido e opere como um app nativo
+            {t("install_app_page_desc", "Access faster and trade like a native app")}
           </p>
         </div>
 
@@ -134,7 +136,7 @@ export default function Install() {
                 size="lg"
               >
                 <Download className="h-5 w-5" />
-                Instalar Agora
+                {t("install_now", "Install Now")}
               </Button>
             </CardContent>
           </Card>
@@ -143,7 +145,7 @@ export default function Install() {
         {/* Benefits */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Por que instalar?</CardTitle>
+            <CardTitle>{t("why_install", "Why install?")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-3">
@@ -151,9 +153,9 @@ export default function Install() {
                 <Smartphone className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Acesso Rápido</h3>
+                <h3 className="font-semibold mb-1">{t("quick_access", "Quick Access")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Abra diretamente da tela inicial, sem precisar do navegador
+                  {t("quick_access_desc", "Open directly from home screen, no browser needed")}
                 </p>
               </div>
             </div>
@@ -163,9 +165,9 @@ export default function Install() {
                 <CheckCircle2 className="h-5 w-5 text-accent" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Funciona Offline</h3>
+                <h3 className="font-semibold mb-1">{t("works_offline", "Works Offline")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Continue navegando mesmo sem conexão com a internet
+                  {t("works_offline_desc", "Continue browsing even without internet connection")}
                 </p>
               </div>
             </div>
@@ -175,9 +177,9 @@ export default function Install() {
                 <Download className="h-5 w-5 text-green-500" />
               </div>
               <div>
-                <h3 className="font-semibold mb-1">Menos Espaço</h3>
+                <h3 className="font-semibold mb-1">{t("less_space", "Less Space")}</h3>
                 <p className="text-sm text-muted-foreground">
-                  Ocupa muito menos espaço que um app tradicional
+                  {t("less_space_desc", "Takes up much less space than a traditional app")}
                 </p>
               </div>
             </div>
@@ -189,7 +191,7 @@ export default function Install() {
           <CardHeader>
             <CardTitle>{instructions.title}</CardTitle>
             <CardDescription>
-              Siga os passos abaixo para instalar o app no seu dispositivo
+              {t("follow_steps", "Follow the steps below to install the app on your device")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -214,7 +216,7 @@ export default function Install() {
         {/* Skip button */}
         <div className="text-center mt-6">
           <Button variant="ghost" onClick={() => navigate("/")}>
-            Pular por agora
+            {t("skip_for_now", "Skip for now")}
           </Button>
         </div>
       </div>

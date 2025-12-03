@@ -3,11 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Download, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   useEffect(() => {
     // Verificar se já foi instalado
@@ -78,9 +80,9 @@ export function InstallPrompt() {
             </div>
             
             <div className="flex-1 min-w-0">
-              <h3 className="font-semibold mb-1">Instale o App</h3>
+              <h3 className="font-semibold mb-1">{t("install_app_title", "Install the App")}</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                Acesse mais rápido e opere offline!
+                {t("install_app_desc", "Access faster and trade offline!")}
               </p>
               
               <div className="flex gap-2">
@@ -89,7 +91,7 @@ export function InstallPrompt() {
                   size="sm"
                   className="flex-1"
                 >
-                  Instalar
+                  {t("install", "Install")}
                 </Button>
                 <Button 
                   onClick={handleLearnMore}
@@ -97,7 +99,7 @@ export function InstallPrompt() {
                   size="sm"
                   className="flex-1"
                 >
-                  Saiba mais
+                  {t("learn_more", "Learn more")}
                 </Button>
               </div>
             </div>
