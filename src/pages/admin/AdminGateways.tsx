@@ -97,6 +97,9 @@ export default function AdminGateways() {
       } else if (formData.type === GatewayType.CRYPTO) {
         const cryptoProvider = formData.provider as CryptoProvider;
         providerCredentials = CRYPTO_PROVIDER_CREDENTIALS[cryptoProvider] || [];
+      } else if (formData.type === GatewayType.WORLDWIDE) {
+        const worldwideProvider = formData.provider as WorldwideProvider;
+        providerCredentials = WORLDWIDE_PROVIDER_CREDENTIALS[worldwideProvider] || [];
       }
       
       if (providerCredentials.length === 0) {
