@@ -1,4 +1,8 @@
 {
+  "enter_amount": "Enter amount",
+  "invalid_amount": "Invalid amount",
+  "min": "Min",
+  "max": "Max",
   "deposit": "Deposit",
   "withdrawal": "Withdrawal",
   "transactions": "Transactions",

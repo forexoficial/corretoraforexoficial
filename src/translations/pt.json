@@ -1,4 +1,8 @@
 {
+  "enter_amount": "Digite o valor",
+  "invalid_amount": "Valor inválido",
+  "min": "Mín",
+  "max": "Máx",
   "deposit": "Depósito",
   "withdrawal": "Saque",
   "transactions": "Transações",
