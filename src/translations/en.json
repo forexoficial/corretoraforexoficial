@@ -667,5 +667,19 @@
   "install_on_desktop": "Install on Desktop",
   "install_desktop_step1": "Open this site in Chrome, Edge or another compatible browser",
   "install_desktop_step2": "Click the install icon in the address bar",
-  "install_desktop_step3": "Confirm installation"
+  "install_desktop_step3": "Confirm installation",
+  "login_success": "Login successful!",
+  "welcome_back": "Welcome back!",
+  "invalid_credentials": "Invalid login credentials",
+  "login_error": "Login error",
+  "validation_error": "Validation error",
+  "invalid_data": "Invalid data",
+  "signup_success": "Registration complete!",
+  "signup_success_desc": "You can now login to the platform.",
+  "signup_success_affiliate": "You signed up via affiliate link. You can now login!",
+  "signup_error": "Registration error",
+  "user_already_registered": "User already registered",
+  "rate_limit_exceeded": "Rate limit exceeded. Please try again later.",
+  "social_login_error": "Social login error",
+  "popup_blocked": "Error opening login window. Check if popups are enabled."
 }

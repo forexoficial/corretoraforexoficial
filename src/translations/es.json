@@ -667,5 +667,19 @@
   "install_on_desktop": "Instalar en Escritorio",
   "install_desktop_step1": "Abre este sitio en Chrome, Edge u otro navegador compatible",
   "install_desktop_step2": "Haz clic en el ícono de instalación en la barra de direcciones",
-  "install_desktop_step3": "Confirma la instalación"
+  "install_desktop_step3": "Confirma la instalación",
+  "login_success": "¡Inicio de sesión exitoso!",
+  "welcome_back": "¡Bienvenido de vuelta!",
+  "invalid_credentials": "Credenciales de inicio de sesión inválidas",
+  "login_error": "Error de inicio de sesión",
+  "validation_error": "Error de validación",
+  "invalid_data": "Datos inválidos",
+  "signup_success": "¡Registro completado!",
+  "signup_success_desc": "Ya puedes iniciar sesión en la plataforma.",
+  "signup_success_affiliate": "Te registraste a través de un enlace de afiliado. ¡Ya puedes iniciar sesión!",
+  "signup_error": "Error de registro",
+  "user_already_registered": "Usuario ya registrado",
+  "rate_limit_exceeded": "Límite de intentos excedido. Por favor, inténtalo más tarde.",
+  "social_login_error": "Error de inicio de sesión social",
+  "popup_blocked": "Error al abrir ventana de inicio de sesión. Verifica si las ventanas emergentes están habilitadas."
 }
