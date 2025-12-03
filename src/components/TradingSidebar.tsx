@@ -37,8 +37,10 @@ export const TradingSidebar = ({
   
   return (
     <>
-    <aside className={`${isMobileSheet ? 'flex w-full flex-col gap-0 p-0' : 'hidden md:flex md:w-20 py-4 pb-16 gap-4'} bg-sidebar md:border-r border-border flex-col items-center`}>
-      <button 
+    <aside className={`${isMobileSheet ? 'flex w-full flex-col gap-0 p-0' : 'hidden md:flex md:w-20 py-4 pb-16'} bg-sidebar md:border-r border-border flex-col items-center h-full overflow-hidden`}>
+      <ScrollArea className={`${isMobileSheet ? 'w-full' : 'w-full h-full'}`}>
+        <div className={`flex flex-col ${isMobileSheet ? 'gap-0' : 'gap-4'} items-center`}>
+      <button
         className={`flex ${isMobileSheet ? 'flex-row justify-start px-6 py-4 border-b border-border/50' : 'flex-col'} items-center gap-${isMobileSheet ? '4' : '1'} p-2 hover:bg-sidebar-accent transition-colors w-full`}
         onClick={() => setShowHistory(true)}
       >
@@ -120,6 +122,8 @@ export const TradingSidebar = ({
         <MoreHorizontal className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
         <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("legal", "Legal")}</span>
       </button>
+        </div>
+      </ScrollArea>
     </aside>
 
     <SupportDialog open={showSupportDialog} onOpenChange={setShowSupportDialog} />
