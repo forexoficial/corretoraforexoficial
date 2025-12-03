@@ -695,21 +695,5 @@
   "terms_version": "Terms Version",
   "updated_on": "Updated on",
   "error_loading_info": "Error loading information",
-  "document": "Document",
-  "select_image": "Select Image",
-  "choose_image_device": "Choose an image from your device",
-  "uploading": "Uploading...",
-  "save_photo": "Save Photo",
-  "no_assets_found": "No assets found",
-  "no_trades_yet": "No trades completed yet. Start trading to see your statistics!",
-  "insufficient_balance": "Insufficient balance",
-  "enter_pix_key_error": "Enter the PIX key",
-  "verify_identity_first": "You need to verify your identity before making withdrawals",
-  "min_withdrawal_error": "Minimum withdrawal amount is",
-  "max_withdrawal_error": "Maximum withdrawal amount is",
-  "withdrawal_error": "Error processing withdrawal. Please try again.",
-  "balance_update_error": "Error updating balance. Please contact support.",
-  "withdrawal_success": "Withdrawal request submitted successfully!",
-  "error_loading_transactions": "Error loading transactions",
-  "error_loading_assets": "Error loading assets"
+  "document": "Document"
 }

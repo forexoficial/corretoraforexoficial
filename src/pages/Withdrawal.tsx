@@ -105,28 +105,28 @@ export default function Withdrawal() {
         .single();
 
       if (profile?.verification_status !== "approved") {
-        toast.error(t("verify_identity_first", "You need to verify your identity before making withdrawals"));
+        toast.error("Você precisa verificar sua identidade antes de fazer saques");
         navigate("/verify-identity");
         return;
       }
 
       if (!pixKey.trim()) {
-        toast.error(t("enter_pix_key_error", "Enter the PIX key"));
+        toast.error("Digite a chave PIX");
         return;
       }
       
       const withdrawalAmount = parseFloat(amount);
       
       if (!amount || withdrawalAmount < settings.min_withdrawal) {
-        toast.error(`${t("min_withdrawal_error", "Minimum withdrawal amount is")} R$ ${settings.min_withdrawal.toFixed(2)}`);
+        toast.error(`Valor mínimo de retirada é R$ ${settings.min_withdrawal.toFixed(2)}`);
         return;
       }
       if (withdrawalAmount > settings.max_withdrawal) {
-        toast.error(`${t("max_withdrawal_error", "Maximum withdrawal amount is")} R$ ${settings.max_withdrawal.toFixed(2)}`);
+        toast.error(`Valor máximo de retirada é R$ ${settings.max_withdrawal.toFixed(2)}`);
         return;
       }
       if (withdrawalAmount > balances[accountType]) {
-        toast.error(t("insufficient_balance", "Insufficient balance"));
+        toast.error("Saldo insuficiente");
         return;
       }
 
@@ -144,7 +144,7 @@ export default function Withdrawal() {
 
       if (transactionError) {
         console.error("Error creating withdrawal transaction:", transactionError);
-        toast.error(t("withdrawal_error", "Error processing withdrawal. Please try again."));
+        toast.error("Erro ao processar saque. Tente novamente.");
         return;
       }
 
@@ -157,11 +157,11 @@ export default function Withdrawal() {
 
       if (updateError) {
         console.error("Error updating balance:", updateError);
-        toast.error(t("balance_update_error", "Error updating balance. Please contact support."));
+        toast.error("Erro ao atualizar saldo. Entre em contato com o suporte.");
         return;
       }
 
-      toast.success(t("withdrawal_success", "Withdrawal request submitted successfully!"));
+      toast.success("Solicitação de saque enviada com sucesso!");
       setAmount("");
       setPixKey("");
       
@@ -171,7 +171,7 @@ export default function Withdrawal() {
       }, 1500);
     } catch (error) {
       console.error("Error processing withdrawal:", error);
-      toast.error(t("withdrawal_error", "Error processing withdrawal. Please try again."));
+      toast.error("Erro ao processar saque. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }

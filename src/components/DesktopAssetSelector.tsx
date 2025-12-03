@@ -3,7 +3,6 @@ import { Plus, Search, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
-import { useTranslation } from "@/hooks/useTranslation";
 
 interface Asset {
   id: string;
@@ -26,7 +25,6 @@ export const DesktopAssetSelector = ({
   onAssetSelect,
   onAssetRemove,
 }: DesktopAssetSelectorProps) => {
-  const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -222,7 +220,7 @@ export const DesktopAssetSelector = ({
             {filteredAssets.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <Search className="h-12 w-12 text-muted-foreground/50 mb-3" />
-                <p className="text-sm text-muted-foreground">{t("no_assets_found", "No assets found")}</p>
+                <p className="text-sm text-muted-foreground">Nenhum ativo encontrado</p>
               </div>
             ) : (
               <>

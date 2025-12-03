@@ -50,7 +50,7 @@ export default function Transactions() {
       if (error) throw error;
       setTransactions((data as Transaction[]) || []);
     } catch (error: any) {
-      toast.error(t("error_loading_transactions", "Error loading transactions") + ": " + error.message);
+      toast.error("Erro ao carregar transações: " + error.message);
     } finally {
       setLoading(false);
     }

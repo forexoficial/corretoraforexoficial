@@ -177,10 +177,10 @@ export function AvatarUploadDialog({ open, onOpenChange, userId, onUploadComplet
                 className="hidden"
               />
               <Button onClick={() => fileInputRef.current?.click()}>
-                {t("select_image", "Select Image")}
+                Selecionar Imagem
               </Button>
               <p className="text-sm text-muted-foreground mt-2">
-                {t("choose_image_device", "Choose an image from your device")}
+                Escolha uma imagem do seu dispositivo
               </p>
             </div>
           ) : (
@@ -215,11 +215,11 @@ export function AvatarUploadDialog({ open, onOpenChange, userId, onUploadComplet
                 }}
                 disabled={uploading}
               >
-                {t("back", "Back")}
+                Voltar
               </Button>
               <Button onClick={handleUpload} disabled={uploading}>
                 {uploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {uploading ? t("uploading", "Uploading...") : t("save_photo", "Save Photo")}
+                {uploading ? "Enviando..." : "Salvar Foto"}
               </Button>
             </>
           )}
