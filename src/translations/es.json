@@ -695,5 +695,21 @@
   "terms_version": "Versión de Términos",
   "updated_on": "Actualizado el",
   "error_loading_info": "Error al cargar información",
-  "document": "Documento"
+  "document": "Documento",
+  "select_image": "Seleccionar Imagen",
+  "choose_image_device": "Elige una imagen de tu dispositivo",
+  "uploading": "Subiendo...",
+  "save_photo": "Guardar Foto",
+  "no_assets_found": "No se encontraron activos",
+  "no_trades_yet": "Ninguna operación finalizada aún. ¡Comienza a operar para ver tus estadísticas!",
+  "insufficient_balance": "Saldo insuficiente",
+  "enter_pix_key_error": "Ingresa la clave PIX",
+  "verify_identity_first": "Necesitas verificar tu identidad antes de hacer retiros",
+  "min_withdrawal_error": "El monto mínimo de retiro es",
+  "max_withdrawal_error": "El monto máximo de retiro es",
+  "withdrawal_error": "Error al procesar el retiro. Por favor, inténtalo de nuevo.",
+  "balance_update_error": "Error al actualizar el saldo. Por favor, contacta con soporte.",
+  "withdrawal_success": "¡Solicitud de retiro enviada con éxito!",
+  "error_loading_transactions": "Error al cargar transacciones",
+  "error_loading_assets": "Error al cargar activos"
 }

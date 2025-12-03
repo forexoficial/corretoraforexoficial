@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Target, Zap, DollarSign, Award, BarChart3, Activity } from "lucide-react";
 import { useTradeAnalytics } from "@/hooks/useTradeAnalytics";
 import { LoadingSpinner } from "./LoadingSpinner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface TradeAnalyticsDashboardProps {
   userId: string | undefined;
@@ -10,6 +11,7 @@ interface TradeAnalyticsDashboardProps {
 
 export function TradeAnalyticsDashboard({ userId, isDemoMode }: TradeAnalyticsDashboardProps) {
   const stats = useTradeAnalytics(userId, isDemoMode);
+  const { t } = useTranslation();
 
   if (stats.loading) {
     return (
@@ -24,7 +26,7 @@ export function TradeAnalyticsDashboard({ userId, isDemoMode }: TradeAnalyticsDa
       <div className="text-center p-8">
         <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
         <p className="text-muted-foreground">
-          Nenhuma operação finalizada ainda. Comece a negociar para ver suas estatísticas!
+          {t("no_trades_yet", "No trades completed yet. Start trading to see your statistics!")}
         </p>
       </div>
     );
