@@ -11,6 +11,7 @@ import { FileText, Shield, Cookie, Info, Mail, BookOpen, Scale, Lock } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface LegalMenuProps {
   open: boolean;
@@ -39,6 +40,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
   const [documents, setDocuments] = useState<LegalDocument[]>([]);
   const [companyInfo, setCompanyInfo] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (open) {
@@ -69,7 +71,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
       });
       setCompanyInfo(infoMap);
     } catch (error: any) {
-      toast.error("Erro ao carregar informações: " + error.message);
+      toast.error(t("error_loading_info", "Error loading information") + ": " + error.message);
     } finally {
       setLoading(false);
     }
@@ -79,7 +81,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
     // Here you could navigate to a dedicated page with the full content
     console.log("Open document:", doc.slug);
     // For now, just show a toast
-    toast.info("Documento: " + doc.title);
+    toast.info(t("document", "Document") + ": " + doc.title);
   };
 
   const getIconComponent = (iconName: string) => {
@@ -102,10 +104,10 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
         <SheetHeader className="p-6 pb-4">
           <SheetTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />
-            Informações Legais
+            {t("legal_information", "Legal Information")}
           </SheetTitle>
           <SheetDescription>
-            Documentos jurídicos, políticas e informações burocráticas
+            {t("legal_description", "Legal documents, policies and bureaucratic information")}
           </SheetDescription>
         </SheetHeader>
         
@@ -114,7 +116,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
         <ScrollArea className="h-[calc(100vh-120px)]">
           {loading ? (
             <div className="p-6 text-center text-muted-foreground">
-              Carregando...
+              {t("loading", "Loading...")}
             </div>
           ) : (
             <>
@@ -149,19 +151,19 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
                 <div className="bg-muted/30 rounded-lg p-4 border border-border">
                   <h4 className="font-semibold text-sm mb-2 flex items-center gap-2">
                     <Info className="w-4 h-4 text-primary" />
-                    Informações da Empresa
+                    {t("company_information", "Company Information")}
                   </h4>
                   <div className="space-y-2 text-xs text-muted-foreground">
-                    <p><strong>CNPJ:</strong> {companyInfo.cnpj || "N/A"}</p>
-                    <p><strong>Razão Social:</strong> {companyInfo.razao_social || "N/A"}</p>
-                    <p><strong>Endereço:</strong> {companyInfo.endereco || "N/A"}</p>
-                    <p><strong>Email:</strong> {companyInfo.email_juridico || "N/A"}</p>
+                    <p><strong>{t("tax_id", "Tax ID")}:</strong> {companyInfo.cnpj || "N/A"}</p>
+                    <p><strong>{t("company_name", "Company Name")}:</strong> {companyInfo.razao_social || "N/A"}</p>
+                    <p><strong>{t("address", "Address")}:</strong> {companyInfo.endereco || "N/A"}</p>
+                    <p><strong>{t("email", "Email")}:</strong> {companyInfo.email_juridico || "N/A"}</p>
                   </div>
                 </div>
                 
                 <div className="bg-muted/30 rounded-lg p-4 border border-border">
                   <h4 className="font-semibold text-sm mb-2">
-                    Órgãos Reguladores
+                    {t("regulatory_bodies", "Regulatory Bodies")}
                   </h4>
                   <div className="space-y-1 text-xs text-muted-foreground">
                     {companyInfo.orgao_regulador_1 && <p>• {companyInfo.orgao_regulador_1}</p>}
@@ -171,9 +173,9 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
                 </div>
                 
                 <div className="text-center text-xs text-muted-foreground pt-4">
-                  <p>© 2025 Todos os direitos reservados</p>
+                  <p>© 2025 {t("all_rights_reserved", "All rights reserved")}</p>
                   <p className="mt-1">
-                    Versão dos Termos: {companyInfo.versao_termos || "1.0"} | Atualizado em {companyInfo.data_atualizacao_termos || "Janeiro/2025"}
+                    {t("terms_version", "Terms Version")}: {companyInfo.versao_termos || "1.0"} | {t("updated_on", "Updated on")} {companyInfo.data_atualizacao_termos || "January/2025"}
                   </p>
                 </div>
               </div>

@@ -681,5 +681,17 @@
   "user_already_registered": "Usuario ya registrado",
   "rate_limit_exceeded": "Límite de intentos excedido. Por favor, inténtalo más tarde.",
   "social_login_error": "Error de inicio de sesión social",
-  "popup_blocked": "Error al abrir ventana de inicio de sesión. Verifica si las ventanas emergentes están habilitadas."
+  "popup_blocked": "Error al abrir ventana de inicio de sesión. Verifica si las ventanas emergentes están habilitadas.",
+  "legal_information": "Información Legal",
+  "legal_description": "Documentos legales, políticas e información burocrática",
+  "company_information": "Información de la Empresa",
+  "tax_id": "Identificación Fiscal",
+  "company_name": "Razón Social",
+  "address": "Dirección",
+  "regulatory_bodies": "Órganos Reguladores",
+  "all_rights_reserved": "Todos los derechos reservados",
+  "terms_version": "Versión de Términos",
+  "updated_on": "Actualizado el",
+  "error_loading_info": "Error al cargar información",
+  "document": "Documento"
 }
