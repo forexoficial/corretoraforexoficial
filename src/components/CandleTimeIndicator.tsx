@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { IChartApi } from "lightweight-charts";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface CandleTimeIndicatorProps {
   chartRef: React.RefObject<IChartApi | null>;
@@ -25,6 +26,7 @@ export function CandleTimeIndicator({
   currentCandleTime
 }: CandleTimeIndicatorProps) {
   const svgRef = useRef<SVGSVGElement | null>(null);
+  const { t } = useTranslation();
 
   // Create and attach SVG overlay once
   useEffect(() => {
@@ -140,7 +142,7 @@ export function CandleTimeIndicator({
       label.setAttribute("font-size", "9");
       label.setAttribute("transform", `rotate(-90 ${x + 12} 150)`);
       label.style.transition = "x 0.3s ease-out, transform 0.3s ease-out";
-      label.textContent = "tempo restante";
+      label.textContent = t("trade_marker_time_remaining", "time remaining");
       svgEl.appendChild(label);
 
       // Price marker on candle - NO DELAY, must be glued to price
