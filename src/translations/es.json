@@ -568,6 +568,7 @@
   "entry_line_sell": "VENTA",
   "c_market": "C Mercado",
   "v_market": "V Mercado",
+  "timeframe": "Plazo",
   "select_timeframe": "Seleccionar Marco Temporal",
   "timeframe_10s": "10 segundos",
   "timeframe_30s": "30 segundos",
