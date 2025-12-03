@@ -395,7 +395,7 @@ const Index = () => {
           
           <div className="fixed bottom-8 left-0 right-0 border-t border-border bg-card z-20">
             <div className="flex items-center justify-between px-4 py-1">
-              <h3 className="text-xs font-semibold">Operações Recentes</h3>
+              <h3 className="text-xs font-semibold">{t("recent_trades", "Recent Trades")}</h3>
               <Button
                 variant="ghost"
                 size="sm"

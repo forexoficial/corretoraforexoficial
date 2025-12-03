@@ -143,7 +143,7 @@ export const TradesList = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between px-4">
-        <h3 className="font-medium">Operações Recentes</h3>
+        <h3 className="font-medium">{t("recent_trades", "Recent Trades")}</h3>
         <div className="bg-muted px-2 py-1 rounded text-xs">{trades.length}</div>
       </div>
 
@@ -151,7 +151,7 @@ export const TradesList = () => {
         <div className="space-y-2 px-4">
           {trades.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
-              Nenhuma operação recente
+              {t("no_recent_trades", "No recent trades")}
             </div>
           ) : (
             trades.map((trade) => (
