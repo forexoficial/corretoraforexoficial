@@ -9,12 +9,14 @@ import { StarfieldBackground } from "@/components/StarfieldBackground";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { useTranslation } from "@/hooks/useTranslation";
 
 export default function Signup() {
   const { settings } = usePlatformSettings();
   const { customization } = usePlatformCustomization();
   const { isLoading, handleSignup, handleSocialLogin } = useAuth();
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const onSignupSubmit = async (formData: any) => {
     const success = await handleSignup(formData, settings.allow_registration);
@@ -50,10 +52,10 @@ export default function Signup() {
             </div>
           )}
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent mb-2">
-            Criar Conta
+            {t("create_account", "Create Account")}
           </h1>
           <p className="text-muted-foreground">
-            Comece sua jornada conosco
+            {t("start_journey", "Start your journey with us")}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export default function Signup() {
             onClick={() => navigate("/auth")}
             className="text-sm text-muted-foreground hover:text-primary transition-colors"
           >
-            Já tem conta? Fazer login
+            {t("have_account_login", "Already have an account? Login")}
           </button>
         </div>
       </Card>
