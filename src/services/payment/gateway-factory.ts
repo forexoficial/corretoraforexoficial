@@ -1,4 +1,4 @@
-import { IPaymentGateway, PixProvider, CryptoProvider } from "@/types/payment-gateway";
+import { IPaymentGateway, PixProvider, CryptoProvider, WorldwideProvider } from "@/types/payment-gateway";
 import { MercadoPagoGateway } from "./mercado-pago-gateway";
 import { PixUpGateway } from "./pixup-gateway";
 
@@ -11,7 +11,7 @@ export class PaymentGatewayFactory {
    * Create a payment gateway instance based on provider
    */
   static createGateway(
-    provider: string, // Can be PixProvider or CryptoProvider
+    provider: string, // Can be PixProvider, CryptoProvider, or WorldwideProvider
     config: Record<string, any>,
     credentials: Record<string, string>
   ): IPaymentGateway {
@@ -28,6 +28,15 @@ export class PaymentGatewayFactory {
       case CryptoProvider.CUSTOM_CRYPTO:
         throw new Error("Custom crypto gateway requires implementation");
       
+      case WorldwideProvider.STRIPE:
+        throw new Error("Stripe gateway requires implementation");
+      
+      case WorldwideProvider.PAYPAL:
+        throw new Error("PayPal gateway requires implementation");
+      
+      case WorldwideProvider.CUSTOM_WORLDWIDE:
+        throw new Error("Custom worldwide gateway requires implementation");
+      
       default:
         throw new Error(`Unknown payment gateway provider: ${provider}`);
     }
@@ -40,7 +49,8 @@ export class PaymentGatewayFactory {
     return [
       PixProvider.MERCADO_PAGO,
       PixProvider.PIXUP,
-      // Add more as implemented
+      // WorldwideProvider.STRIPE, // Coming soon
+      // WorldwideProvider.PAYPAL, // Coming soon
     ];
   }
 

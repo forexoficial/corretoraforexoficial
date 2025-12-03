@@ -3,7 +3,8 @@ import { z } from "zod";
 // ===== ENUMS =====
 export enum GatewayType {
   PIX = "pix",
-  CRYPTO = "crypto"
+  CRYPTO = "crypto",
+  WORLDWIDE = "worldwide"
 }
 
 export enum PaymentStatus {
@@ -27,8 +28,15 @@ export enum CryptoProvider {
   CUSTOM_CRYPTO = "custom_crypto"
 }
 
+// Provedores Worldwide (Internacionais)
+export enum WorldwideProvider {
+  STRIPE = "stripe",
+  PAYPAL = "paypal",
+  CUSTOM_WORLDWIDE = "custom_worldwide"
+}
+
 // Union type for backward compatibility
-export type GatewayProvider = PixProvider | CryptoProvider;
+export type GatewayProvider = PixProvider | CryptoProvider | WorldwideProvider;
 
 // ===== CREDENTIAL DEFINITIONS =====
 export interface CredentialField {
@@ -124,6 +132,80 @@ export const CRYPTO_PROVIDER_CREDENTIALS: Record<CryptoProvider, CredentialField
       description: "Secret do provedor (se necessário)",
       required: false,
       type: "password"
+    }
+  ]
+};
+
+// Credenciais para provedores Worldwide (Internacionais)
+export const WORLDWIDE_PROVIDER_CREDENTIALS: Record<WorldwideProvider, CredentialField[]> = {
+  [WorldwideProvider.STRIPE]: [
+    {
+      name: "SECRET_KEY",
+      label: "Secret Key",
+      placeholder: "sk_live_xxxx ou sk_test_xxxx",
+      description: "Obtenha em: Stripe Dashboard → Developers → API Keys",
+      required: true,
+      type: "password"
+    },
+    {
+      name: "PUBLISHABLE_KEY",
+      label: "Publishable Key",
+      placeholder: "pk_live_xxxx ou pk_test_xxxx",
+      description: "Chave pública para integrações frontend",
+      required: false,
+      type: "text"
+    },
+    {
+      name: "WEBHOOK_SECRET",
+      label: "Webhook Secret",
+      placeholder: "whsec_xxxx",
+      description: "Secret para validar webhooks do Stripe",
+      required: false,
+      type: "password"
+    }
+  ],
+  [WorldwideProvider.PAYPAL]: [
+    {
+      name: "CLIENT_ID",
+      label: "Client ID",
+      placeholder: "Seu Client ID do PayPal",
+      description: "Obtenha em: PayPal Developer → My Apps & Credentials",
+      required: true,
+      type: "text"
+    },
+    {
+      name: "CLIENT_SECRET",
+      label: "Client Secret",
+      placeholder: "Seu Client Secret do PayPal",
+      description: "Secret do app PayPal",
+      required: true,
+      type: "password"
+    }
+  ],
+  [WorldwideProvider.CUSTOM_WORLDWIDE]: [
+    {
+      name: "API_KEY",
+      label: "API Key",
+      placeholder: "Chave da API do gateway",
+      description: "Chave de autenticação do provedor",
+      required: true,
+      type: "password"
+    },
+    {
+      name: "API_SECRET",
+      label: "API Secret",
+      placeholder: "Secret da API",
+      description: "Secret do provedor (se necessário)",
+      required: false,
+      type: "password"
+    },
+    {
+      name: "MERCHANT_ID",
+      label: "Merchant ID",
+      placeholder: "ID do comerciante",
+      description: "Identificador do comerciante (se necessário)",
+      required: false,
+      type: "text"
     }
   ]
 };
