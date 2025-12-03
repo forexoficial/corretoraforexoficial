@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { TradingViewChart } from "@/components/TradingViewChart";
 import { useClickSound } from "@/hooks/useClickSound";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface Asset {
   id: string;
@@ -23,10 +24,10 @@ interface MobileChartViewProps {
 
 // Apenas timeframes curtos para binary options
 const timeframeOptions = [
-  { value: '10s', label: '10 segundos' },
-  { value: '30s', label: '30 segundos' },
-  { value: '1m', label: '1 minuto' },
-  { value: '5m', label: '5 minutos' }
+  { value: '10s', labelKey: 'timeframe_10s' },
+  { value: '30s', labelKey: 'timeframe_30s' },
+  { value: '1m', labelKey: 'timeframe_1m' },
+  { value: '5m', labelKey: 'timeframe_5m' }
 ];
 
 const chartTypeOptions = [
@@ -187,6 +188,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const [selectedTab, setSelectedTab] = useState('FTT');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const { withClickSound } = useClickSound();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -300,7 +302,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
       <Sheet open={isTimeframeModalOpen} onOpenChange={setIsTimeframeModalOpen}>
         <SheetContent side="bottom" hideCloseButton className="h-auto max-h-[70vh] rounded-t-2xl bg-background border-border">
           <SheetHeader className="flex flex-row items-center justify-between pb-4">
-            <SheetTitle className="text-left text-foreground">Prazo</SheetTitle>
+            <SheetTitle className="text-left text-foreground">{t("timeframe", "Prazo")}</SheetTitle>
             <button 
               onClick={withClickSound(() => setIsTimeframeModalOpen(false))}
               className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
@@ -322,7 +324,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
                   }
                 `}
               >
-                {option.label}
+                {t(option.labelKey)}
               </button>
             ))}
           </div>

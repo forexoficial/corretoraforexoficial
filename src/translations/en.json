@@ -568,6 +568,7 @@
   "entry_line_sell": "SELL",
   "c_market": "B Market",
   "v_market": "S Market",
+  "timeframe": "Timeframe",
   "select_timeframe": "Select Timeframe",
   "timeframe_10s": "10 seconds",
   "timeframe_30s": "30 seconds",
