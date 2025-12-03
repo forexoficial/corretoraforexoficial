@@ -34,9 +34,11 @@ import {
   GatewayType,
   PixProvider,
   CryptoProvider,
+  WorldwideProvider,
   gatewayFormSchema,
   PIX_PROVIDER_CREDENTIALS,
-  CRYPTO_PROVIDER_CREDENTIALS
+  CRYPTO_PROVIDER_CREDENTIALS,
+  WORLDWIDE_PROVIDER_CREDENTIALS
 } from "@/types/payment-gateway";
 import type { Gateway, CredentialField, GatewayProvider } from "@/types/payment-gateway";
 
@@ -45,6 +47,7 @@ export default function AdminGateways() {
   const [loading, setLoading] = useState(true);
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
   const [cryptoDialogOpen, setCryptoDialogOpen] = useState(false);
+  const [worldwideDialogOpen, setWorldwideDialogOpen] = useState(false);
   const [editingGateway, setEditingGateway] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -171,6 +174,7 @@ export default function AdminGateways() {
 
       setPixDialogOpen(false);
       setCryptoDialogOpen(false);
+      setWorldwideDialogOpen(false);
       resetForm();
       fetchGateways();
     } catch (error: any) {
@@ -221,6 +225,8 @@ export default function AdminGateways() {
     });
     if (gateway.type === GatewayType.PIX || gateway.type === "pix") {
       setPixDialogOpen(true);
+    } else if (gateway.type === GatewayType.WORLDWIDE || gateway.type === "worldwide") {
+      setWorldwideDialogOpen(true);
     } else {
       setCryptoDialogOpen(true);
     }
@@ -246,8 +252,16 @@ export default function AdminGateways() {
         return <Wallet className="h-4 w-4 text-blue-500" />;
       case PixProvider.CUSTOM_PIX:
         return <Key className="h-4 w-4 text-purple-500" />;
+      case PixProvider.PIXUP:
+        return <Wallet className="h-4 w-4 text-green-500" />;
       case CryptoProvider.CUSTOM_CRYPTO:
         return <Key className="h-4 w-4 text-amber-500" />;
+      case WorldwideProvider.STRIPE:
+        return <Wallet className="h-4 w-4 text-indigo-500" />;
+      case WorldwideProvider.PAYPAL:
+        return <Wallet className="h-4 w-4 text-blue-600" />;
+      case WorldwideProvider.CUSTOM_WORLDWIDE:
+        return <Key className="h-4 w-4 text-cyan-500" />;
       default:
         return <Key className="h-4 w-4 text-gray-500" />;
     }
@@ -257,6 +271,8 @@ export default function AdminGateways() {
   const getAvailableProviders = () => {
     if (formData.type === GatewayType.PIX) {
       return Object.values(PixProvider);
+    } else if (formData.type === GatewayType.WORLDWIDE) {
+      return Object.values(WorldwideProvider);
     } else {
       return Object.values(CryptoProvider);
     }
@@ -266,6 +282,8 @@ export default function AdminGateways() {
   const getCurrentCredentials = (): CredentialField[] => {
     if (formData.type === GatewayType.PIX) {
       return PIX_PROVIDER_CREDENTIALS[formData.provider as PixProvider] || [];
+    } else if (formData.type === GatewayType.WORLDWIDE) {
+      return WORLDWIDE_PROVIDER_CREDENTIALS[formData.provider as WorldwideProvider] || [];
     } else {
       return CRYPTO_PROVIDER_CREDENTIALS[formData.provider as CryptoProvider] || [];
     }
@@ -301,6 +319,21 @@ export default function AdminGateways() {
     setCryptoDialogOpen(true);
   };
 
+  const openWorldwideDialog = () => {
+    resetForm();
+    setFormData({
+      name: "",
+      type: GatewayType.WORLDWIDE,
+      provider: WorldwideProvider.STRIPE,
+      secretName: "STRIPE_SECRET_KEY",
+      credentials: {},
+      webhookUrl: "",
+      config: JSON.stringify({ provider: "stripe" }, null, 2),
+      isActive: true,
+    });
+    setWorldwideDialogOpen(true);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -318,7 +351,7 @@ export default function AdminGateways() {
             Configure os gateways de pagamento com segurança usando Supabase Secrets
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button onClick={openPixDialog} variant="default">
             <Plus className="h-4 w-4 mr-2" />
             Novo Gateway PIX
@@ -326,6 +359,10 @@ export default function AdminGateways() {
           <Button onClick={openCryptoDialog} variant="outline">
             <Plus className="h-4 w-4 mr-2" />
             Novo Gateway USDT
+          </Button>
+          <Button onClick={openWorldwideDialog} variant="secondary">
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Gateway Worldwide
           </Button>
         </div>
       </div>
@@ -536,6 +573,124 @@ export default function AdminGateways() {
         </DialogContent>
       </Dialog>
 
+      {/* Worldwide Dialog */}
+      <Dialog open={worldwideDialogOpen} onOpenChange={setWorldwideDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingGateway && formData.type === GatewayType.WORLDWIDE ? "Editar Gateway Worldwide" : "Novo Gateway Worldwide"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-blue-900 dark:text-blue-300">🌍 Gateways Internacionais</p>
+                  <p className="text-blue-700 dark:text-blue-400 mt-1">
+                    Configure gateways para aceitar pagamentos internacionais via cartão, PayPal, etc.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Nome do Gateway <span className="text-destructive">*</span></Label>
+              <Input
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Ex: Stripe - Cartão Internacional"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Provedor</Label>
+              <Select
+                value={formData.provider}
+                onValueChange={(value) => {
+                  const secretMap: Record<string, string> = {
+                    [WorldwideProvider.STRIPE]: "STRIPE_SECRET_KEY",
+                    [WorldwideProvider.PAYPAL]: "PAYPAL_CLIENT_ID",
+                    [WorldwideProvider.CUSTOM_WORLDWIDE]: "CUSTOM_WORLDWIDE_API_KEY",
+                  };
+                  setFormData({ 
+                    ...formData, 
+                    provider: value,
+                    secretName: secretMap[value] || "CUSTOM_API_KEY",
+                    config: JSON.stringify({ provider: value }, null, 2),
+                    credentials: {}
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={WorldwideProvider.STRIPE}>Stripe</SelectItem>
+                  <SelectItem value={WorldwideProvider.PAYPAL}>PayPal</SelectItem>
+                  <SelectItem value={WorldwideProvider.CUSTOM_WORLDWIDE}>Gateway Personalizado</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
+              <div className="flex items-center gap-2 mb-2">
+                <Key className="h-4 w-4" />
+                <Label className="text-base font-semibold">
+                  {editingGateway ? "Atualizar Credenciais" : "Credenciais do Gateway"}
+                </Label>
+              </div>
+              {WORLDWIDE_PROVIDER_CREDENTIALS[formData.provider as WorldwideProvider]?.map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <Label>
+                    {field.label} {field.required && <span className="text-destructive">*</span>}
+                  </Label>
+                  <Input
+                    type={field.type || "text"}
+                    value={formData.credentials[field.name] || ""}
+                    onChange={(e) =>
+                      setFormData({ 
+                        ...formData, 
+                        credentials: {
+                          ...formData.credentials,
+                          [field.name]: e.target.value
+                        }
+                      })
+                    }
+                    placeholder={field.placeholder}
+                  />
+                  {field.description && (
+                    <p className="text-xs text-muted-foreground">{field.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <Label>Webhook URL (opcional)</Label>
+              <Input
+                value={formData.webhookUrl}
+                onChange={(e) => setFormData({ ...formData, webhookUrl: e.target.value })}
+                placeholder="https://xhmisqcngalyjapkdwvh.supabase.co/functions/v1/payment-webhook"
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label>Gateway Ativo</Label>
+              <Switch
+                checked={formData.isActive}
+                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+              />
+            </div>
+
+            <Button onClick={handleSave} className="w-full">
+              {editingGateway ? "Atualizar" : "Criar"} Gateway Worldwide
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       <div className="space-y-8">
         {/* PIX Section */}
         <div className="space-y-4">
@@ -665,6 +820,96 @@ export default function AdminGateways() {
                 </TableHeader>
                 <TableBody>
                   {gateways.filter(g => g.type === GatewayType.CRYPTO || g.type === "crypto" || g.type === "usdt").map((gateway) => (
+                    <TableRow key={gateway.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {getProviderIcon(gateway.config?.provider)}
+                          {gateway.name}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm capitalize">
+                        {(gateway.config?.provider || "N/A").replace(/_/g, " ")}
+                      </TableCell>
+                      <TableCell>
+                        {gateway.is_active ? (
+                          <div className="flex items-center gap-1 text-green-600">
+                            <CheckCircle className="h-4 w-4" />
+                            <span className="text-xs">Ativo</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-red-600">
+                            <XCircle className="h-4 w-4" />
+                            <span className="text-xs">Inativo</span>
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
+                        {gateway.webhook_url || "—"}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(gateway)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(gateway.id, gateway.config?.secretName)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
+        </div>
+
+        {/* Worldwide Section */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between border-b pb-3">
+            <div>
+              <h2 className="text-2xl font-bold">Gateways Worldwide</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Configure gateways para pagamentos internacionais (Stripe, PayPal, etc.)
+              </p>
+            </div>
+          </div>
+          {gateways.filter(g => g.type === GatewayType.WORLDWIDE || g.type === "worldwide").length === 0 ? (
+            <Card className="p-8 text-center">
+              <Wallet className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">
+                Nenhum gateway internacional configurado
+              </h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Configure um gateway para aceitar pagamentos internacionais
+              </p>
+              <Button onClick={openWorldwideDialog} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Gateway Worldwide
+              </Button>
+            </Card>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Gateway</TableHead>
+                    <TableHead>Provedor</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Webhook</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {gateways.filter(g => g.type === GatewayType.WORLDWIDE || g.type === "worldwide").map((gateway) => (
                     <TableRow key={gateway.id}>
                       <TableCell className="font-medium">
                         <div className="flex items-center gap-2">
