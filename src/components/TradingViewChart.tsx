@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import { createChart, IChartApi, CandlestickData, Time, CandlestickSeries, IPriceLine, LineSeries, HistogramSeries } from "lightweight-charts";
 import { supabase } from "@/integrations/supabase/client";
 import { TradeMarker } from "./TradeMarker";
@@ -14,6 +14,7 @@ import { useChartDrawing, DrawingTool } from "@/hooks/useChartDrawing";
 import type { PriceLineConfig } from "./PriceLineSettings";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "@/hooks/useTranslation";
+import { candleCache, deduplicateRequest } from "@/utils/requestOptimization";
 
 interface TradingViewChartProps {
   assetId: string;
@@ -391,103 +392,115 @@ export function TradingViewChart({
     };
   }, [assetId, timeframe, height, userId, appearanceSettings, theme, chartTextColor, gridVertColor, gridHorzColor, candleUpColor, candleDownColor, priceScaleBorderColor, timeScaleBorderColor, priceLineConfig]);
 
+  // Função para processar candles carregados (do cache ou DB)
+  const processLoadedCandles = useCallback((candles: any[]) => {
+    if (!candles || candles.length === 0 || !candleSeriesRef.current) return;
+
+    // Garantir que os candles estejam em ordem cronológica crescente
+    const sortedCandles = [...candles].sort((a, b) =>
+      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+    );
+
+    const chartData: CandlestickData<Time>[] = sortedCandles.map((c) => {
+      const timestamp = new Date(c.timestamp).getTime() / 1000;
+      return {
+        time: timestamp as Time,
+        open: Number(c.open),
+        high: Number(c.high),
+        low: Number(c.low),
+        close: Number(c.close),
+      };
+    });
+
+    candleSeriesRef.current.setData(chartData);
+    
+    // Notify parent of current price and update internal state
+    if (chartData.length > 0) {
+      const lastCandle = chartData[chartData.length - 1];
+      setCurrentPrice(lastCandle.close);
+      if (onCurrentPriceUpdate) {
+        onCurrentPriceUpdate(lastCandle.close);
+      }
+    }
+    
+    // Render technical indicators if enabled
+    if (indicatorSettings && chartRef.current) {
+      renderIndicators(chartData);
+    }
+    
+    // Set initial zoom to focus on recent candles with right padding
+    if (chartRef.current && chartData.length > 0) {
+      const visibleCandles = getVisibleCandlesForTimeframe(timeframe);
+      const from = Math.max(0, chartData.length - visibleCandles);
+      const to = chartData.length - 1;
+      
+      setTimeout(() => {
+        chartRef.current?.timeScale().setVisibleLogicalRange({ from, to });
+        chartRef.current?.timeScale().scrollToPosition(3, false);
+      }, 100);
+    }
+    
+    // Start animation for the most recent candle
+    const lastCandle = sortedCandles[sortedCandles.length - 1];
+    startSmoothAnimation(lastCandle, timeframe);
+    
+    // Load active trades after candles are loaded
+    if (userId) {
+      setTimeout(() => loadActiveTrades(), 200);
+    }
+  }, [timeframe, userId, indicatorSettings, onCurrentPriceUpdate]);
+
   const loadCandles = async () => {
     setIsLoading(true);
+    const cacheKey = `candles-${assetId}-${timeframe}`;
+    
     try {
+      // Verificar cache primeiro
+      const cachedCandles = candleCache.get(cacheKey);
+      if (cachedCandles && cachedCandles.length > 0) {
+        console.log('[LoadCandles] Usando cache:', cacheKey);
+        processLoadedCandles(cachedCandles);
+        setIsLoading(false);
+        return;
+      }
+
       // Carregar quantidade otimizada de candles para cada timeframe
-      // Foco em histórico recente relevante para binary options
       const candleLimitMap: Record<string, number> = {
-        '10s': 60,   // ~10 minutos de histórico
-        '30s': 60,   // ~30 minutos de histórico
-        '1m': 60,    // ~1 hora de histórico
-        '5m': 36     // ~3 horas de histórico (reduzido para melhor visualização)
+        '10s': 60,
+        '30s': 60,
+        '1m': 60,
+        '5m': 36
       };
       const candleLimit = candleLimitMap[timeframe] || 60;
 
-      const { data: candles, error } = await supabase
-        .from('candles')
-        .select('*')
-        .eq('asset_id', assetId)
-        .eq('timeframe', timeframe)
-        .order('timestamp', { ascending: false })
-        .limit(candleLimit);
+      // Deduplicate concurrent requests
+      const result = await deduplicateRequest(
+        cacheKey,
+        async () => {
+          const response = await supabase
+            .from('candles')
+            .select('*')
+            .eq('asset_id', assetId)
+            .eq('timeframe', timeframe)
+            .order('timestamp', { ascending: false })
+            .limit(candleLimit);
+          return response;
+        }
+      );
+      
+      const { data: candles, error } = result as any;
 
       if (error) {
         console.error('Error loading candles:', error);
-        // If no data exists, generate initial candles
         await generateInitialCandles();
         return;
       }
 
-      if (candles && candles.length > 0 && candleSeriesRef.current) {
-        // Garantir que os candles estejam em ordem cronológica crescente
-        const sortedCandles = [...candles].sort((a, b) =>
-          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-        );
-
-        const chartData: CandlestickData<Time>[] = sortedCandles.map((c) => {
-          // Timestamps já estão em UTC no banco, converter para Unix timestamp (segundos)
-          const timestamp = new Date(c.timestamp).getTime() / 1000;
-          return {
-            time: timestamp as Time,
-            open: Number(c.open),
-            high: Number(c.high),
-            low: Number(c.low),
-            close: Number(c.close),
-          };
-        });
-
-        candleSeriesRef.current.setData(chartData);
-        
-        // Notify parent of current price and update internal state
-        if (chartData.length > 0) {
-          const lastCandle = chartData[chartData.length - 1];
-          setCurrentPrice(lastCandle.close);
-          if (onCurrentPriceUpdate) {
-            onCurrentPriceUpdate(lastCandle.close);
-          }
-        }
-        
-        // Render technical indicators if enabled
-        if (indicatorSettings && chartRef.current) {
-          renderIndicators(chartData);
-        }
-        
-        // Set initial zoom to focus on recent candles with right padding
-        if (chartRef.current && chartData.length > 0) {
-          // Calculate how many candles to show based on timeframe
-          const visibleCandles = getVisibleCandlesForTimeframe(timeframe);
-          
-          // Position the last candle in the center-right area
-          const from = Math.max(0, chartData.length - visibleCandles);
-          const to = chartData.length - 1;
-          
-          // Set visible range with a small delay to ensure chart is ready
-          setTimeout(() => {
-            chartRef.current?.timeScale().setVisibleLogicalRange({
-              from,
-              to
-            });
-            // Scroll slightly to position last candle more centered
-            chartRef.current?.timeScale().scrollToPosition(3, false);
-          }, 100);
-        }
-        
-        // Start animation for the most recent candle
-        const lastCandle = candles[candles.length - 1];
-        startSmoothAnimation(lastCandle, timeframe);
-        
-        // CRITICAL: Load active trades after candles are loaded
-        // This ensures trade lines are drawn after page refresh
-        console.log('[LoadCandles] Velas carregadas, carregando trades ativos...');
-        if (userId) {
-          // Small delay to ensure chart is fully ready
-          setTimeout(() => {
-            loadActiveTrades();
-          }, 200);
-        }
+      if (candles && candles.length > 0) {
+        // Salvar no cache
+        candleCache.set(cacheKey, candles);
+        processLoadedCandles(candles);
       } else {
-        // No candles exist, generate initial data
         await generateInitialCandles();
       }
     } catch (error) {
@@ -677,36 +690,47 @@ export function TradingViewChart({
         }
       }, timeframeMs);
 
-      // Setup active candle checking - verifica a cada 3 segundos se há um novo candle
+      // Setup active candle checking - verifica a cada 5 segundos (otimizado de 3s)
+      let lastCandleCheckTime = 0;
       candleCheckIntervalRef.current = setInterval(async () => {
         if (!currentCandleRef.current) return;
         
-        const currentCandleTimestamp = currentCandleRef.current.timestamp;
+        // Rate limiting: não verificar mais de uma vez a cada 5 segundos
         const now = Date.now();
+        if (now - lastCandleCheckTime < 5000) return;
+        lastCandleCheckTime = now;
+        
+        const currentCandleTimestamp = currentCandleRef.current.timestamp;
         const candleEndTime = new Date(currentCandleTimestamp).getTime() + timeframeMs;
         
         // Se o candle expirou (passou o tempo), busca o próximo
         if (now >= candleEndTime) {
-          console.log('[Candle Check] Candle expirado, buscando próximo...');
+          const cacheKey = `candle-check-${assetId}-${timeframe}`;
           try {
-            const { data: newCandles, error } = await supabase
-              .from('candles')
-              .select('*')
-              .eq('asset_id', assetId)
-              .eq('timeframe', timeframe)
-              .gt('timestamp', currentCandleTimestamp)
-              .order('timestamp', { ascending: false })
-              .limit(1);
+            const result = await deduplicateRequest(
+              cacheKey,
+              async () => {
+                const response = await supabase
+                  .from('candles')
+                  .select('*')
+                  .eq('asset_id', assetId)
+                  .eq('timeframe', timeframe)
+                  .gt('timestamp', currentCandleTimestamp)
+                  .order('timestamp', { ascending: false })
+                  .limit(1);
+                return response;
+              }
+            );
+            
+            const { data: newCandles, error } = result as any;
 
             if (error) {
-              console.error('[Candle Check] Erro ao buscar novo candle:', error);
+              console.error('[Candle Check] Erro:', error);
               return;
             }
 
             if (newCandles && newCandles.length > 0) {
               const newCandle = newCandles[0];
-              
-              // Adiciona o novo candle ao gráfico
               const timestamp = new Date(newCandle.timestamp).getTime() / 1000;
               const candleData: CandlestickData<Time> = {
                 time: timestamp as Time,
@@ -719,23 +743,20 @@ export function TradingViewChart({
               if (candleSeriesRef.current) {
                 try {
                   candleSeriesRef.current.update(candleData);
-                  
-                  // Notifica o parent sobre a atualização de preço
                   if (onCurrentPriceUpdate) {
                     onCurrentPriceUpdate(Number(newCandle.close));
                   }
-                  
                   startSmoothAnimation(newCandle, timeframe);
                 } catch (error) {
-                  console.warn('[Candle Check] Erro ao atualizar candle:', error);
+                  // Silently ignore update errors
                 }
               }
             }
           } catch (error) {
-            console.error('[Candle Check] Erro na verificação:', error);
+            console.error('[Candle Check] Erro:', error);
           }
         }
-      }, 3000); // Verifica a cada 3 segundos
+      }, 5000); // Verifica a cada 5 segundos (otimizado de 3s)
 
       console.log(`Auto-generation enabled: generating every ${timeframeMs}ms`);
     } catch (error) {
