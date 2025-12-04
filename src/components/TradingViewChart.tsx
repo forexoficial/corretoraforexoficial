@@ -269,16 +269,14 @@ export function TradingViewChart({
     }
   }, [drawingStyle, drawing]);
 
-  // Handle clear drawings command
+  // Handle clear drawings command - always set up the handler
   useEffect(() => {
-    if (onClearDrawings) {
-      const clearHandler = () => {
-        drawing.clearAllDrawings();
-      };
-      // Store the handler so it can be called from parent
-      (window as any).__clearChartDrawings = clearHandler;
-    }
-  }, [onClearDrawings, drawing]);
+    const clearHandler = () => {
+      drawing.clearAllDrawings();
+    };
+    // Store the handler so it can be called from parent
+    (window as any).__clearChartDrawings = clearHandler;
+  }, [drawing]);
 
   useEffect(() => {
     if (!chartContainerRef.current || !appearanceSettings) return;
