@@ -69,6 +69,54 @@ All colors MUST be HSL.
     --sidebar-ring: 45 100% 50%;
   }
 
+  .light {
+    --background: 0 0% 98%;
+    --foreground: 0 0% 10%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 10%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 10%;
+
+    --primary: 45 100% 45%;
+    --primary-foreground: 0 0% 0%;
+
+    --secondary: 45 10% 92%;
+    --secondary-foreground: 0 0% 10%;
+
+    --muted: 45 10% 92%;
+    --muted-foreground: 0 0% 45%;
+
+    --accent: 38 100% 50%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 3 84% 52%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 0%;
+
+    --border: 45 10% 85%;
+    --input: 45 10% 85%;
+    --ring: 45 100% 45%;
+    
+    --chart-bg: 0 0% 100%;
+    --panel-bg: 0 0% 98%;
+    
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 0 0% 10%;
+    --sidebar-primary: 45 100% 45%;
+    --sidebar-primary-foreground: 0 0% 0%;
+    --sidebar-accent: 45 10% 92%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 45 10% 85%;
+    --sidebar-ring: 45 100% 45%;
+  }
+
   .dark {
     --background: 45 10% 8%;
     --foreground: 0 0% 100%;

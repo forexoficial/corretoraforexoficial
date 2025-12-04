@@ -92,7 +92,7 @@ export function ChartDrawingTools({
           {currentTool && <currentTool.icon className="h-4 w-4" />}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="start">
+      <PopoverContent className="w-80 p-0 bg-popover border-border" align="start">
         <div className="p-4 border-b">
           <div className="flex items-center justify-between">
             <h4 className="font-semibold">{t("drawing_tools")}</h4>
