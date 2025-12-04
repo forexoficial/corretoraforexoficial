@@ -8,6 +8,7 @@ import { TradingViewChart } from "@/components/TradingViewChart";
 import { useClickSound } from "@/hooks/useClickSound";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTradeContext } from "@/features/trading/context/TradeContext";
+import { useChartAppearance } from "@/hooks/useChartAppearance";
 
 interface Asset {
   id: string;
@@ -182,6 +183,10 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const { withClickSound } = useClickSound();
   const { t } = useTranslation();
   const { activeTrade } = useTradeContext();
+  const { settings: appearanceSettings } = useChartAppearance();
+  
+  // Get dynamic chart height from settings
+  const mobileChartHeight = appearanceSettings?.chart_height_mobile || 350;
 
   // Track trade progress
   useEffect(() => {
@@ -301,13 +306,13 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
       </div>
 
       {/* Chart Area */}
-      <div className="flex-1 relative w-full h-full min-h-[450px]">
+      <div className="flex-1 relative w-full h-full" style={{ minHeight: `${mobileChartHeight}px` }}>
         <div className="w-full h-full">
           <TradingViewChart
             assetId={selectedAsset.id}
             assetName={selectedAsset.name}
             timeframe={selectedTimeframe}
-            height={500}
+            height={mobileChartHeight}
             onCurrentPriceUpdate={onCurrentPriceUpdate}
           />
         </div>

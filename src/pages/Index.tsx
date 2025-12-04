@@ -26,6 +26,7 @@ import { MobileTradingView } from "@/components/mobile/MobileTradingView";
 import { usePersistentPlatformState } from "@/hooks/usePersistentPlatformState";
 import { useFullscreen } from "@/hooks/useFullscreen";
 import { PriceLineSettings, PriceLineConfig } from "@/components/PriceLineSettings";
+import { useChartAppearance } from "@/hooks/useChartAppearance";
 import { useTranslation } from "@/hooks/useTranslation";
 
 interface Asset {
@@ -39,11 +40,15 @@ interface Asset {
 const Index = () => {
   const { t } = useTranslation();
   const { settings, loading: settingsLoading } = usePlatformSettings();
+  const { settings: chartAppearanceSettings } = useChartAppearance();
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [isTradesListOpen, setIsTradesListOpen] = useState(false);
   const { isDemoMode, currentBalance } = useDemoMode();
   const isMobile = useIsMobile();
+  
+  // Get dynamic chart height from settings
+  const desktopChartHeight = chartAppearanceSettings?.chart_height_desktop || 600;
   const [selectedTimeframe, setSelectedTimeframe] = useState('1m');
   const [isTimeframeDialogOpen, setIsTimeframeDialogOpen] = useState(false);
   const [selectedChartType, setSelectedChartType] = useState('candle');
@@ -380,7 +385,7 @@ const Index = () => {
                 assetId={selectedAsset.id}
                 assetName={selectedAsset.name}
                 timeframe={selectedTimeframe}
-                height={isFullscreen ? window.innerHeight - 96 : 600}
+                height={isFullscreen ? window.innerHeight - 96 : desktopChartHeight}
                 onAssetChange={setCurrentAssetId}
                 onCurrentPriceUpdate={setCurrentPrice}
                 indicatorSettings={indicatorSettings}

@@ -86,6 +86,33 @@ export function TradingViewChart({
   // Determine which color set to use based on theme
   const isDarkMode = theme === 'dark' || theme === 'system';
   
+  // Calculate effective chart height based on settings
+  const effectiveHeight = useMemo(() => {
+    if (!appearanceSettings) return height;
+    return isMobile 
+      ? (appearanceSettings.chart_height_mobile || 350)
+      : (appearanceSettings.chart_height_desktop || height);
+  }, [isMobile, appearanceSettings, height]);
+
+  // Calculate width percentage
+  const widthPercentage = useMemo(() => {
+    if (!appearanceSettings) return 100;
+    return isMobile 
+      ? (appearanceSettings.chart_width_percentage_mobile || 100)
+      : (appearanceSettings.chart_width_percentage_desktop || 100);
+  }, [isMobile, appearanceSettings]);
+
+  // Calculate aspect ratio
+  const aspectRatio = useMemo(() => {
+    if (!appearanceSettings) return null;
+    const ratio = isMobile 
+      ? appearanceSettings.chart_aspect_ratio_mobile
+      : appearanceSettings.chart_aspect_ratio_desktop;
+    if (!ratio || ratio === 'auto') return null;
+    const [w, h] = ratio.split(':').map(Number);
+    return w / h;
+  }, [isMobile, appearanceSettings]);
+  
   // Get theme-specific colors
   const getThemeColor = (lightColor: string, darkColor: string) => {
     return isDarkMode ? darkColor : lightColor;
@@ -193,8 +220,8 @@ export function TradingViewChart({
 
     // Create chart with dynamic settings based on theme
     const chart = createChart(chartContainerRef.current, {
-      width: chartContainerRef.current.clientWidth,
-      height: height,
+      width: chartContainerRef.current.clientWidth * (widthPercentage / 100),
+      height: effectiveHeight,
       layout: {
         background: { color: 'transparent' },
         textColor: chartTextColor,
@@ -390,7 +417,7 @@ export function TradingViewChart({
       // Clear trade lines
       tradeLinesRef.current.clear();
     };
-  }, [assetId, timeframe, height, userId, appearanceSettings, theme, chartTextColor, gridVertColor, gridHorzColor, candleUpColor, candleDownColor, priceScaleBorderColor, timeScaleBorderColor, priceLineConfig]);
+  }, [assetId, timeframe, effectiveHeight, widthPercentage, userId, appearanceSettings, theme, chartTextColor, gridVertColor, gridHorzColor, candleUpColor, candleDownColor, priceScaleBorderColor, timeScaleBorderColor, priceLineConfig]);
 
   // Função para processar candles carregados (do cache ou DB)
   const processLoadedCandles = useCallback((candles: any[]) => {
@@ -1291,8 +1318,25 @@ export function TradingViewChart({
     }, 50);
   }, [timeframe]);
 
+  // Calculate container style based on settings
+  const containerStyle = useMemo(() => {
+    const style: React.CSSProperties = {
+      backgroundColor: chartBgColor,
+      width: `${widthPercentage}%`,
+      margin: widthPercentage < 100 ? '0 auto' : undefined,
+    };
+    
+    if (aspectRatio) {
+      style.aspectRatio = `${aspectRatio}`;
+    } else {
+      style.height = `${effectiveHeight}px`;
+    }
+    
+    return style;
+  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight]);
+
   return (
-    <div className="relative w-full h-full" style={{ backgroundColor: chartBgColor }}>
+    <div className="relative" style={containerStyle}>
       {/* World Map Background */}
       {appearanceSettings?.map_enabled && (
         <WorldMapBackground 
@@ -1312,7 +1356,7 @@ export function TradingViewChart({
           <div className="text-muted-foreground">{t("loading_chart", "Loading chart...")}</div>
         </div>
       )}
-      <div ref={chartContainerRef} className="w-full relative z-[1]" style={{ backgroundColor: 'transparent' }} />
+      <div ref={chartContainerRef} className="w-full h-full relative z-[1]" style={{ backgroundColor: 'transparent' }} />
       
       {/* Candle Time Indicator */}
       <CandleTimeIndicator 
