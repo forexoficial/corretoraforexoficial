@@ -9,6 +9,7 @@ export const useDemoMode = () => {
   const [demoBalance, setDemoBalance] = useState(10000);
   const [realBalance, setRealBalance] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [balanceUpdating, setBalanceUpdating] = useState(false);
   const [showFirstDepositDialog, setShowFirstDepositDialog] = useState(false);
 
   useEffect(() => {
@@ -46,9 +47,16 @@ export const useDemoMode = () => {
                 mode: demoMode ? 'DEMO' : 'REAL'
               });
               
+              // Show loading animation briefly
+              setBalanceUpdating(true);
+              
+              // Update values immediately
               setRealBalance(realBal);
               setDemoBalance(demoBal);
               setIsDemoMode(demoMode);
+              
+              // Hide loading after brief delay for visual feedback
+              setTimeout(() => setBalanceUpdating(false), 500);
             }
           }
         )
@@ -196,6 +204,7 @@ export const useDemoMode = () => {
     realBalance,
     currentBalance: getCurrentBalance(),
     loading,
+    balanceUpdating,
     toggleDemoMode,
     resetDemoBalance,
     refreshBalances: fetchBalances,

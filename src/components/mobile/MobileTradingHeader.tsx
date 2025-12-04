@@ -28,7 +28,7 @@ interface MobileTradingHeaderProps {
 export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps) {
   const { t } = useTranslation();
   const { customization } = usePlatformCustomization();
-  const { isDemoMode, currentBalance, toggleDemoMode } = useDemoMode();
+  const { isDemoMode, currentBalance, balanceUpdating, toggleDemoMode } = useDemoMode();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
@@ -121,7 +121,7 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
               </DropdownMenuContent>
             </DropdownMenu>
 
-            <div className={`text-base font-bold leading-tight ${!isDemoMode ? 'text-green-500' : ''}`}>
+            <div className={`text-base font-bold leading-tight ${!isDemoMode ? 'text-green-500' : ''} ${balanceUpdating ? 'animate-pulse' : ''} transition-all duration-300`}>
               R$ {currentBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
