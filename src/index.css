@@ -170,4 +170,9 @@ input, select, textarea, button {
   overflow: hidden;
   height: 100vh;
 }
+
+/* Hide TradingView attribution logo */
+#tv-attr-logo {
+  display: none !important;
+}
 }
