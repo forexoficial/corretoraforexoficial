@@ -14,14 +14,15 @@ export const useDemoMode = () => {
   useEffect(() => {
     fetchBalances();
 
-    // Subscribe to real-time balance updates from Supabase
+    // Subscribe to real-time updates
     const setupRealtimeSubscription = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('[useDemoMode] 🎯 Configurando subscription para profile:', user.id);
+      console.log('[useDemoMode] 🎯 Configurando subscriptions para user:', user.id);
 
-      const channel = supabase
+      // Subscribe to profile changes
+      const profileChannel = supabase
         .channel('profile-balance-realtime')
         .on(
           'postgres_changes',
@@ -39,11 +40,10 @@ export const useDemoMode = () => {
               const demoBal = parseFloat(payload.new.demo_balance || 10000);
               const demoMode = payload.new.is_demo_mode ?? true;
               
-              console.log('[useDemoMode] 💰 Atualizando saldos:', {
+              console.log('[useDemoMode] 💰 Atualizando saldos via profile:', {
                 real: realBal,
                 demo: demoBal,
-                mode: demoMode ? 'DEMO' : 'REAL',
-                currentBalance: demoMode ? demoBal : realBal
+                mode: demoMode ? 'DEMO' : 'REAL'
               });
               
               setRealBalance(realBal);
@@ -52,18 +52,38 @@ export const useDemoMode = () => {
             }
           }
         )
-        .subscribe((status) => {
-          console.log('[useDemoMode] 📊 Subscription status:', status);
-          if (status === 'SUBSCRIBED') {
-            console.log('[useDemoMode] ✅ Subscription ativa!');
-          } else if (status === 'CHANNEL_ERROR') {
-            console.error('[useDemoMode] ❌ Erro na subscription!');
+        .subscribe();
+
+      // Subscribe to trade closures to refresh balance
+      const tradesChannel = supabase
+        .channel('trades-balance-refresh')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'trades',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            // When a trade closes (status changes to won/lost), refresh balance
+            if (payload.new && (payload.new.status === 'won' || payload.new.status === 'lost')) {
+              console.log('[useDemoMode] 🎯 Trade fechado, refreshing balance:', payload.new.status);
+              // Small delay to ensure DB trigger completed
+              setTimeout(() => {
+                fetchBalances();
+              }, 300);
+            }
           }
+        )
+        .subscribe((status) => {
+          console.log('[useDemoMode] 📊 Trades subscription status:', status);
         });
 
       return () => {
-        console.log('[useDemoMode] 🔌 Removendo subscription');
-        supabase.removeChannel(channel);
+        console.log('[useDemoMode] 🔌 Removendo subscriptions');
+        supabase.removeChannel(profileChannel);
+        supabase.removeChannel(tradesChannel);
       };
     };
 
