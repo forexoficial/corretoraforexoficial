@@ -24,63 +24,34 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   const { t } = useTranslation();
 
   useEffect(() => {
-    console.log('[TradeResultPopup] 🎯 Props recebidas:', {
-      has_trade: !!trade,
-      trade_id: trade?.id,
-      status: trade?.status,
-      result: trade?.result,
-      amount: trade?.amount
-    });
-
     if (!trade) {
-      console.log('[TradeResultPopup] ℹ️ Nenhum trade para exibir, escondendo popup');
       setIsVisible(false);
       return;
     }
 
-    console.log('[TradeResultPopup] ✅ Trade recebido, exibindo popup:', {
-      id: trade.id,
-      status: trade.status,
-      result: trade.result,
-      amount: trade.amount,
-      asset_name: trade.asset_name
-    });
+    console.log('[TradeResultPopup] Trade recebido:', trade.id, trade.status);
     
     setIsVisible(true);
     
     const soundType = trade.status === 'won' ? 'trade-win' : 'trade-loss';
-    console.log(`[TradeResultPopup] 🔊 Tocando som: ${soundType}`);
-    
-    // Tocar o som uma única vez por operação
     playSound(soundType);
 
     // Fechar automaticamente após 5 segundos
     const timer = setTimeout(() => {
-      console.log('[TradeResultPopup] ⏰ Auto-fechando após 5 segundos');
       handleClose();
     }, 5000);
 
-    return () => {
-      console.log('[TradeResultPopup] 🧹 Limpando timer');
-      clearTimeout(timer);
-    };
+    return () => clearTimeout(timer);
   }, [trade, playSound]);
 
   const handleClose = () => {
-    console.log('[TradeResultPopup] 🚪 Fechando popup manualmente');
     setIsVisible(false);
-    setTimeout(() => {
-      console.log('[TradeResultPopup] 🔄 Chamando onClose callback');
-      onClose();
-    }, 300);
+    setTimeout(() => onClose(), 300);
   };
 
   if (!trade) {
-    console.log('[TradeResultPopup] 🚫 Sem trade para renderizar, retornando null');
     return null;
   }
-
-  console.log('[TradeResultPopup] 🎬 Renderizando popup com isVisible:', isVisible);
 
   const isWin = trade.status === 'won';
   // Mostrar apenas o payout fixo (não calcular porcentagem dinamicamente)

@@ -4,16 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 export const useTradeExpiration = (userId: string | undefined) => {
   const checkIntervalRef = useRef<NodeJS.Timeout>();
   const isProcessingRef = useRef(false);
+  const lastCheckRef = useRef<number>(0);
 
   useEffect(() => {
     if (!userId) return;
 
     const checkExpiredTrades = async () => {
       // Prevenir múltiplas chamadas simultâneas
-      if (isProcessingRef.current) {
-        console.log('[Trade Expiration] Já está processando, aguardando...');
-        return;
-      }
+      if (isProcessingRef.current) return;
+
+      // Rate limit: não verificar mais de uma vez a cada 2 segundos
+      const now = Date.now();
+      if (now - lastCheckRef.current < 2000) return;
+      lastCheckRef.current = now;
 
       try {
         isProcessingRef.current = true;
@@ -21,45 +24,33 @@ export const useTradeExpiration = (userId: string | undefined) => {
         // Buscar trades em aberto que já expiraram
         const { data: expiredTrades, error } = await supabase
           .from('trades')
-          .select('id, expires_at, asset_id, amount, trade_type')
+          .select('id, expires_at')
           .eq('user_id', userId)
           .eq('status', 'open')
           .lte('expires_at', new Date().toISOString());
 
         if (error) {
-          console.error('[Trade Expiration] Erro ao verificar trades expirados:', error);
+          console.error('[Trade Expiration] Erro:', error);
           return;
         }
 
         if (expiredTrades && expiredTrades.length > 0) {
-          console.log(`[Trade Expiration] ${expiredTrades.length} trades expirados detectados:`, expiredTrades.map(t => ({ id: t.id, expires_at: t.expires_at })));
+          console.log(`[Trade Expiration] ${expiredTrades.length} trades expirados`);
           
           // Chamar edge function para processar
-          const { data, error: functionError } = await supabase.functions.invoke(
-            'process-expired-trades',
-            {
-              body: { 
-                continuous: false,
-                specificUserId: userId 
-              }
-            }
-          );
-
-          if (functionError) {
-            console.error('[Trade Expiration] Erro ao processar trades expirados:', functionError);
-          } else {
-            console.log('[Trade Expiration] ✅ Trades processados com sucesso:', data);
-          }
+          await supabase.functions.invoke('process-expired-trades', {
+            body: { continuous: false, specificUserId: userId }
+          });
         }
       } catch (error) {
-        console.error('[Trade Expiration] Erro no processamento de trades expirados:', error);
+        console.error('[Trade Expiration] Erro:', error);
       } finally {
         isProcessingRef.current = false;
       }
     };
 
-    // Verificar a cada 1 segundo para garantir processamento rápido
-    checkIntervalRef.current = setInterval(checkExpiredTrades, 1000);
+    // Verificar a cada 2 segundos (otimizado de 1 segundo)
+    checkIntervalRef.current = setInterval(checkExpiredTrades, 2000);
 
     // Verificar imediatamente ao montar
     checkExpiredTrades();
