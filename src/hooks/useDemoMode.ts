@@ -19,11 +19,11 @@ export const useDemoMode = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      console.log('[useDemoMode] 🎯 Configurando subscriptions para user:', user.id);
+      console.log('[useDemoMode] 🎯 Configurando subscription para user:', user.id);
 
-      // Subscribe to profile changes
+      // Single subscription to profile changes - this will capture balance updates from trade triggers
       const profileChannel = supabase
-        .channel('profile-balance-realtime')
+        .channel(`profile-balance-${user.id}`)
         .on(
           'postgres_changes',
           {
@@ -40,7 +40,7 @@ export const useDemoMode = () => {
               const demoBal = parseFloat(payload.new.demo_balance || 10000);
               const demoMode = payload.new.is_demo_mode ?? true;
               
-              console.log('[useDemoMode] 💰 Atualizando saldos via profile:', {
+              console.log('[useDemoMode] 💰 Atualizando saldos IMEDIATAMENTE:', {
                 real: realBal,
                 demo: demoBal,
                 mode: demoMode ? 'DEMO' : 'REAL'
@@ -52,71 +52,13 @@ export const useDemoMode = () => {
             }
           }
         )
-        .subscribe();
-
-      // Subscribe to trade closures to refresh balance
-      const tradesChannel = supabase
-        .channel('trades-balance-refresh')
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'trades',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            // When a trade closes (status changes to won/lost), refresh balance
-            if (payload.new && (payload.new.status === 'won' || payload.new.status === 'lost')) {
-              console.log('[useDemoMode] 🎯 Trade fechado, refreshing balance:', payload.new.status);
-              // Delay to ensure DB trigger completed - then fetch multiple times to ensure update
-              setTimeout(() => {
-                console.log('[useDemoMode] ⏰ Primeiro refresh após trade fechado');
-                fetchBalances();
-              }, 500);
-              // Second fetch as backup
-              setTimeout(() => {
-                console.log('[useDemoMode] ⏰ Segundo refresh após trade fechado');
-                fetchBalances();
-              }, 1500);
-            }
-          }
-        )
         .subscribe((status) => {
-          console.log('[useDemoMode] 📊 Trades subscription status:', status);
+          console.log('[useDemoMode] 📊 Profile subscription status:', status);
         });
 
-      // Also subscribe directly to profile balance changes (backup)
-      const profileBalanceChannel = supabase
-        .channel('profile-balance-direct')
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            if (payload.new) {
-              const newBalance = parseFloat(payload.new.balance || 0);
-              const newDemoBalance = parseFloat(payload.new.demo_balance || 10000);
-              console.log('[useDemoMode] 💵 Profile balance update direto:', {
-                balance: newBalance,
-                demo_balance: newDemoBalance
-              });
-              setRealBalance(newBalance);
-              setDemoBalance(newDemoBalance);
-            }
-          }
-        )
-        .subscribe();
-
       return () => {
-        console.log('[useDemoMode] 🔌 Removendo subscriptions');
+        console.log('[useDemoMode] 🔌 Removendo subscription');
         supabase.removeChannel(profileChannel);
-        supabase.removeChannel(tradesChannel);
-        supabase.removeChannel(profileBalanceChannel);
       };
     };
 
