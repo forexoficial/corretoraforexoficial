@@ -464,14 +464,14 @@ export function TradingViewChart({
         return;
       }
 
-      // Carregar quantidade otimizada de candles para cada timeframe
+      // Carregar quantidade padrão de 300 candles para todos os timeframes
       const candleLimitMap: Record<string, number> = {
-        '10s': 60,
-        '30s': 60,
-        '1m': 60,
-        '5m': 36
+        '10s': 300,
+        '30s': 300,
+        '1m': 300,
+        '5m': 300
       };
-      const candleLimit = candleLimitMap[timeframe] || 60;
+      const candleLimit = candleLimitMap[timeframe] || 300;
 
       // Deduplicate concurrent requests
       const result = await deduplicateRequest(
@@ -775,14 +775,14 @@ export function TradingViewChart({
   };
 
   const getVisibleCandlesForTimeframe = (tf: string): number => {
-    // Quantidade otimizada de candles visíveis para cada timeframe
+    // Quantidade de candles visíveis inicialmente para cada timeframe
     const map: Record<string, number> = {
-      '10s': 40,  // Show last 40 candles (~6-7 minutes) - melhor visualização
-      '30s': 35,  // Show last 35 candles (~17 minutes)
-      '1m': 30,   // Show last 30 candles (~30 minutes)
-      '5m': 20    // Show last 20 candles (~1h 40min) - otimizado para visibilidade
+      '10s': 80,  // Show last 80 candles (~13 minutes)
+      '30s': 70,  // Show last 70 candles (~35 minutes)
+      '1m': 60,   // Show last 60 candles (~1 hour)
+      '5m': 50    // Show last 50 candles (~4 hours)
     };
-    return map[tf] || 30;
+    return map[tf] || 60;
   };
 
   const renderIndicators = (chartData: CandlestickData<Time>[]) => {

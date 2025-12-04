@@ -17,7 +17,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { assetId, timeframe = '1m', count = 200 } = await req.json()
+    const { assetId, timeframe = '1m', count = 300 } = await req.json()
 
     if (!assetId) {
       throw new Error('Asset ID is required')
