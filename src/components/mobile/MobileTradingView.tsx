@@ -5,6 +5,7 @@ import { MobileTradingControls } from "./MobileTradingControls";
 import PlatformPopup from "@/components/PlatformPopup";
 import { TradeResultPopup } from "@/components/TradeResultPopup";
 import { supabase } from "@/integrations/supabase/client";
+import { useDemoMode } from "@/hooks/useDemoMode";
 
 interface Asset {
   id: string;
@@ -27,6 +28,7 @@ export function MobileTradingView({
   currentBalance,
   onAssetChange
 }: MobileTradingViewProps) {
+  const { triggerBalanceLoading } = useDemoMode();
   const [selectedAsset, setSelectedAsset] = useState<Asset>(initialAsset);
   const [currentPrice, setCurrentPrice] = useState<number>(0);
   const [finishedTrade, setFinishedTrade] = useState<{
@@ -90,8 +92,8 @@ export function MobileTradingView({
               result: trade.result
             });
 
-            // Não precisa forçar refresh - useDemoMode já tem Realtime subscription no profile
-            // O backend já atualizou o balance corretamente via trigger
+            // Trigger loading indicator immediately for better UX
+            triggerBalanceLoading();
             
             // Get asset name
             const { data: asset } = await supabase
