@@ -88,9 +88,32 @@ export function TradingViewChart({
   // Determine which color set to use based on theme
   const isDarkMode = theme === 'dark' || theme === 'system';
   
+  // Check if responsive mode is enabled
+  const isResponsiveMode = useMemo(() => {
+    if (!appearanceSettings) return { desktop: false, mobile: true, fullscreen: true };
+    return {
+      desktop: appearanceSettings.chart_responsive_desktop ?? false,
+      mobile: appearanceSettings.chart_responsive_mobile ?? true,
+      fullscreen: appearanceSettings.chart_responsive_fullscreen ?? true,
+    };
+  }, [appearanceSettings]);
+
   // Calculate effective chart height based on settings (mobile, desktop, or fullscreen)
   const effectiveHeight = useMemo(() => {
     if (!appearanceSettings) return height;
+    
+    // If responsive mode is enabled, return null to let CSS handle it
+    if (isMobile && isResponsiveMode.mobile) {
+      return null; // Will use flex-grow
+    }
+    if (isFullscreen && isResponsiveMode.fullscreen) {
+      return null; // Will use flex-grow
+    }
+    if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
+      return null; // Will use flex-grow
+    }
+    
+    // Fixed height mode
     if (isMobile) {
       return appearanceSettings.chart_height_mobile || 350;
     }
@@ -98,11 +121,17 @@ export function TradingViewChart({
       return appearanceSettings.chart_height_fullscreen || 800;
     }
     return appearanceSettings.chart_height_desktop || height;
-  }, [isMobile, isFullscreen, appearanceSettings, height]);
+  }, [isMobile, isFullscreen, appearanceSettings, height, isResponsiveMode]);
 
   // Calculate width percentage
   const widthPercentage = useMemo(() => {
     if (!appearanceSettings) return 100;
+    
+    // Responsive mode always uses 100%
+    if (isMobile && isResponsiveMode.mobile) return 100;
+    if (isFullscreen && isResponsiveMode.fullscreen) return 100;
+    if (!isMobile && !isFullscreen && isResponsiveMode.desktop) return 100;
+    
     if (isMobile) {
       return appearanceSettings.chart_width_percentage_mobile || 100;
     }
@@ -110,11 +139,17 @@ export function TradingViewChart({
       return appearanceSettings.chart_width_percentage_fullscreen || 100;
     }
     return appearanceSettings.chart_width_percentage_desktop || 100;
-  }, [isMobile, isFullscreen, appearanceSettings]);
+  }, [isMobile, isFullscreen, appearanceSettings, isResponsiveMode]);
 
   // Calculate aspect ratio
   const aspectRatio = useMemo(() => {
     if (!appearanceSettings) return null;
+    
+    // Responsive mode doesn't use fixed aspect ratio
+    if (isMobile && isResponsiveMode.mobile) return null;
+    if (isFullscreen && isResponsiveMode.fullscreen) return null;
+    if (!isMobile && !isFullscreen && isResponsiveMode.desktop) return null;
+    
     let ratio: string | null = null;
     if (isMobile) {
       ratio = appearanceSettings.chart_aspect_ratio_mobile;
@@ -126,7 +161,14 @@ export function TradingViewChart({
     if (!ratio || ratio === 'auto') return null;
     const [w, h] = ratio.split(':').map(Number);
     return w / h;
-  }, [isMobile, isFullscreen, appearanceSettings]);
+  }, [isMobile, isFullscreen, appearanceSettings, isResponsiveMode]);
+
+  // Check if current mode uses responsive
+  const useResponsive = useMemo(() => {
+    if (isMobile) return isResponsiveMode.mobile;
+    if (isFullscreen) return isResponsiveMode.fullscreen;
+    return isResponsiveMode.desktop;
+  }, [isMobile, isFullscreen, isResponsiveMode]);
   
   // Get theme-specific colors
   const getThemeColor = (lightColor: string, darkColor: string) => {
@@ -241,10 +283,13 @@ export function TradingViewChart({
   useEffect(() => {
     if (!chartContainerRef.current || !appearanceSettings) return;
 
+    // Determine chart height - use container height for responsive mode
+    const chartHeight = effectiveHeight ?? (chartContainerRef.current.clientHeight || 400);
+
     // Create chart with dynamic settings based on theme
     const chart = createChart(chartContainerRef.current, {
       width: chartContainerRef.current.clientWidth * (widthPercentage / 100),
-      height: effectiveHeight,
+      height: chartHeight,
       layout: {
         background: { color: 'transparent' },
         textColor: chartTextColor,
@@ -384,14 +429,34 @@ export function TradingViewChart({
 
     window.addEventListener('keydown', handleKeyDown);
 
-    // Handle resize
+    // Handle resize with ResizeObserver for responsive mode
+    let resizeObserver: ResizeObserver | null = null;
+    
     const handleResize = () => {
       if (chartContainerRef.current && chartRef.current) {
+        const newWidth = chartContainerRef.current.clientWidth;
+        const newHeight = useResponsive 
+          ? chartContainerRef.current.clientHeight || chartHeight
+          : chartHeight;
+        
         chartRef.current.applyOptions({
-          width: chartContainerRef.current.clientWidth,
+          width: newWidth,
+          height: newHeight,
         });
       }
     };
+
+    // Use ResizeObserver for responsive mode
+    if (useResponsive && chartContainerRef.current) {
+      resizeObserver = new ResizeObserver((entries) => {
+        for (const entry of entries) {
+          if (entry.target === chartContainerRef.current) {
+            handleResize();
+          }
+        }
+      });
+      resizeObserver.observe(chartContainerRef.current);
+    }
 
     window.addEventListener('resize', handleResize);
 
@@ -424,6 +489,9 @@ export function TradingViewChart({
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       chart.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
@@ -440,7 +508,7 @@ export function TradingViewChart({
       // Clear trade lines
       tradeLinesRef.current.clear();
     };
-  }, [assetId, timeframe, effectiveHeight, widthPercentage, userId, appearanceSettings, theme, chartTextColor, gridVertColor, gridHorzColor, candleUpColor, candleDownColor, priceScaleBorderColor, timeScaleBorderColor, priceLineConfig]);
+  }, [assetId, timeframe, effectiveHeight, widthPercentage, userId, appearanceSettings, theme, chartTextColor, gridVertColor, gridHorzColor, candleUpColor, candleDownColor, priceScaleBorderColor, timeScaleBorderColor, priceLineConfig, useResponsive]);
 
   // Função para processar candles carregados (do cache ou DB)
   const processLoadedCandles = useCallback((candles: any[]) => {
@@ -1371,14 +1439,21 @@ export function TradingViewChart({
       margin: widthPercentage < 100 ? '0 auto' : undefined,
     };
     
-    if (aspectRatio) {
+    // Responsive mode: use flex-grow to fill available space
+    if (useResponsive) {
+      style.flex = '1 1 auto';
+      style.minHeight = isMobile ? '200px' : '300px';
+      style.height = '100%';
+    } else if (aspectRatio) {
       style.aspectRatio = `${aspectRatio}`;
-    } else {
+    } else if (effectiveHeight) {
       style.height = `${effectiveHeight}px`;
+    } else {
+      style.height = `${height}px`;
     }
     
     return style;
-  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight]);
+  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, height]);
 
   return (
     <div className="relative" style={containerStyle}>

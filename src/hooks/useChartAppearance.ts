@@ -76,6 +76,10 @@ interface ChartAppearanceSettings {
   chart_height_fullscreen: number;
   chart_width_percentage_fullscreen: number;
   chart_aspect_ratio_fullscreen: string;
+  // Responsive modes
+  chart_responsive_desktop: boolean;
+  chart_responsive_mobile: boolean;
+  chart_responsive_fullscreen: boolean;
   // TradingView attribution
   show_tradingview_logo: boolean;
 }
