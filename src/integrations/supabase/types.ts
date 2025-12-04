@@ -256,12 +256,18 @@ export type Database = {
           candle_up_color: string
           candle_up_color_dark: string | null
           candle_up_color_light: string | null
+          chart_aspect_ratio_desktop: string | null
+          chart_aspect_ratio_mobile: string | null
           chart_bg_color: string
           chart_bg_color_dark: string | null
           chart_bg_color_light: string | null
+          chart_height_desktop: number | null
+          chart_height_mobile: number | null
           chart_text_color: string
           chart_text_color_dark: string | null
           chart_text_color_light: string | null
+          chart_width_percentage_desktop: number | null
+          chart_width_percentage_mobile: number | null
           created_at: string
           crosshair_color: string
           crosshair_color_dark: string | null
@@ -318,12 +324,18 @@ export type Database = {
           candle_up_color?: string
           candle_up_color_dark?: string | null
           candle_up_color_light?: string | null
+          chart_aspect_ratio_desktop?: string | null
+          chart_aspect_ratio_mobile?: string | null
           chart_bg_color?: string
           chart_bg_color_dark?: string | null
           chart_bg_color_light?: string | null
+          chart_height_desktop?: number | null
+          chart_height_mobile?: number | null
           chart_text_color?: string
           chart_text_color_dark?: string | null
           chart_text_color_light?: string | null
+          chart_width_percentage_desktop?: number | null
+          chart_width_percentage_mobile?: number | null
           created_at?: string
           crosshair_color?: string
           crosshair_color_dark?: string | null
@@ -380,12 +392,18 @@ export type Database = {
           candle_up_color?: string
           candle_up_color_dark?: string | null
           candle_up_color_light?: string | null
+          chart_aspect_ratio_desktop?: string | null
+          chart_aspect_ratio_mobile?: string | null
           chart_bg_color?: string
           chart_bg_color_dark?: string | null
           chart_bg_color_light?: string | null
+          chart_height_desktop?: number | null
+          chart_height_mobile?: number | null
           chart_text_color?: string
           chart_text_color_dark?: string | null
           chart_text_color_light?: string | null
+          chart_width_percentage_desktop?: number | null
+          chart_width_percentage_mobile?: number | null
           created_at?: string
           crosshair_color?: string
           crosshair_color_dark?: string | null

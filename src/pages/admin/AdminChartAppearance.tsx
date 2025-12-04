@@ -72,6 +72,13 @@ interface ChartAppearanceSettings {
   trade_line_width: number;
   trade_line_style: number;
   trade_line_show_label: boolean;
+  // Chart dimensions
+  chart_height_desktop: number;
+  chart_height_mobile: number;
+  chart_width_percentage_desktop: number;
+  chart_width_percentage_mobile: number;
+  chart_aspect_ratio_desktop: string;
+  chart_aspect_ratio_mobile: string;
 }
 
 const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
@@ -135,6 +142,13 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   trade_line_width: 12,
   trade_line_style: 2,
   trade_line_show_label: true,
+  // Chart dimensions defaults
+  chart_height_desktop: 600,
+  chart_height_mobile: 350,
+  chart_width_percentage_desktop: 100,
+  chart_width_percentage_mobile: 100,
+  chart_aspect_ratio_desktop: '16:9',
+  chart_aspect_ratio_mobile: '4:3',
 };
 
 export default function AdminChartAppearance() {
@@ -1527,6 +1541,151 @@ export default function AdminChartAppearance() {
               />
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Chart Dimensions Configuration */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Grid3x3 className="h-5 w-5 text-primary" />
+            <CardTitle>Dimensões do Gráfico</CardTitle>
+          </div>
+          <CardDescription>
+            Configure as proporções e tamanhos do gráfico para desktop e mobile
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Desktop Settings */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              🖥️ Desktop
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="chart_height_desktop">Altura do Gráfico (px)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="chart_height_desktop"
+                    type="range"
+                    min="300"
+                    max="1000"
+                    step="10"
+                    value={settings.chart_height_desktop}
+                    onChange={(e) => setSettings({ ...settings, chart_height_desktop: parseInt(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={settings.chart_height_desktop}
+                    onChange={(e) => setSettings({ ...settings, chart_height_desktop: parseInt(e.target.value) || 600 })}
+                    className="w-20"
+                    min="300"
+                    max="1000"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chart_width_percentage_desktop">Largura (%)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="chart_width_percentage_desktop"
+                    type="range"
+                    min="50"
+                    max="100"
+                    value={settings.chart_width_percentage_desktop}
+                    onChange={(e) => setSettings({ ...settings, chart_width_percentage_desktop: parseInt(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-mono w-12 text-center">{settings.chart_width_percentage_desktop}%</span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="chart_aspect_ratio_desktop">Proporção</Label>
+              <select
+                id="chart_aspect_ratio_desktop"
+                value={settings.chart_aspect_ratio_desktop}
+                onChange={(e) => setSettings({ ...settings, chart_aspect_ratio_desktop: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="auto">Automático (usa altura fixa)</option>
+                <option value="21:9">21:9 (Ultra-wide)</option>
+                <option value="16:9">16:9 (Widescreen)</option>
+                <option value="16:10">16:10</option>
+                <option value="4:3">4:3</option>
+                <option value="1:1">1:1 (Quadrado)</option>
+              </select>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Mobile Settings */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              📱 Mobile
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="chart_height_mobile">Altura do Gráfico (px)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="chart_height_mobile"
+                    type="range"
+                    min="200"
+                    max="600"
+                    step="10"
+                    value={settings.chart_height_mobile}
+                    onChange={(e) => setSettings({ ...settings, chart_height_mobile: parseInt(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={settings.chart_height_mobile}
+                    onChange={(e) => setSettings({ ...settings, chart_height_mobile: parseInt(e.target.value) || 350 })}
+                    className="w-20"
+                    min="200"
+                    max="600"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chart_width_percentage_mobile">Largura (%)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="chart_width_percentage_mobile"
+                    type="range"
+                    min="50"
+                    max="100"
+                    value={settings.chart_width_percentage_mobile}
+                    onChange={(e) => setSettings({ ...settings, chart_width_percentage_mobile: parseInt(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-mono w-12 text-center">{settings.chart_width_percentage_mobile}%</span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="chart_aspect_ratio_mobile">Proporção</Label>
+              <select
+                id="chart_aspect_ratio_mobile"
+                value={settings.chart_aspect_ratio_mobile}
+                onChange={(e) => setSettings({ ...settings, chart_aspect_ratio_mobile: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="auto">Automático (usa altura fixa)</option>
+                <option value="16:9">16:9 (Widescreen)</option>
+                <option value="4:3">4:3</option>
+                <option value="3:2">3:2</option>
+                <option value="1:1">1:1 (Quadrado)</option>
+              </select>
+            </div>
+          </div>
+
+          <p className="text-xs text-muted-foreground">
+            💡 Dica: Use "Automático" para controlar apenas pela altura em pixels, ou escolha uma proporção fixa para manter a relação largura/altura consistente.
+          </p>
         </CardContent>
       </Card>
 

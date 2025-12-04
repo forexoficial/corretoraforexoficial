@@ -65,6 +65,13 @@ interface ChartAppearanceSettings {
   trade_line_width: number;
   trade_line_style: number;
   trade_line_show_label: boolean;
+  // Chart dimensions
+  chart_height_desktop: number;
+  chart_height_mobile: number;
+  chart_width_percentage_desktop: number;
+  chart_width_percentage_mobile: number;
+  chart_aspect_ratio_desktop: string;
+  chart_aspect_ratio_mobile: string;
 }
 
 export function useChartAppearance() {
