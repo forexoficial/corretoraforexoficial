@@ -67,7 +67,7 @@ export default function AdminCharts() {
         body: {
           assetId: selectedAsset.id,
           timeframe,
-          count: 200
+          count: 300
         }
       });
 
