@@ -169,6 +169,14 @@ export function TradingViewChart({
     ? getThemeColor(appearanceSettings.crosshair_color_light, appearanceSettings.crosshair_color_dark)
     : (isDarkMode ? '#758696' : '#6b7280');
 
+  // Control TradingView logo visibility based on settings
+  useEffect(() => {
+    const tvLogo = document.getElementById('tv-attr-logo');
+    if (tvLogo) {
+      tvLogo.style.display = appearanceSettings?.show_tradingview_logo ? 'block' : 'none';
+    }
+  }, [appearanceSettings?.show_tradingview_logo]);
+
   // Get user ID on mount
   useEffect(() => {
     const getUserId = async () => {
