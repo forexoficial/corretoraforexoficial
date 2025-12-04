@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -12,99 +12,7 @@ export const useDemoMode = () => {
   const [balanceUpdating, setBalanceUpdating] = useState(false);
   const [showFirstDepositDialog, setShowFirstDepositDialog] = useState(false);
 
-  useEffect(() => {
-    fetchBalances();
-
-    // Subscribe to real-time updates
-    const setupRealtimeSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      console.log('[useDemoMode] 🎯 Configurando subscription para user:', user.id);
-
-      // Single subscription to profile changes - this will capture balance updates from trade triggers
-      const profileChannel = supabase
-        .channel(`profile-balance-${user.id}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            console.log('[useDemoMode] 📡 Profile UPDATE detectado:', payload);
-            
-            if (payload.new) {
-              const realBal = parseFloat(payload.new.balance || 0);
-              const demoBal = parseFloat(payload.new.demo_balance || 10000);
-              const demoMode = payload.new.is_demo_mode ?? true;
-              
-              console.log('[useDemoMode] 💰 Atualizando saldos IMEDIATAMENTE:', {
-                real: realBal,
-                demo: demoBal,
-                mode: demoMode ? 'DEMO' : 'REAL'
-              });
-              
-              // Show loading animation briefly
-              setBalanceUpdating(true);
-              
-              // Update values immediately
-              setRealBalance(realBal);
-              setDemoBalance(demoBal);
-              setIsDemoMode(demoMode);
-              
-              // Hide loading after brief delay for visual feedback
-              setTimeout(() => setBalanceUpdating(false), 500);
-            }
-          }
-        )
-        .subscribe((status) => {
-          console.log('[useDemoMode] 📊 Profile subscription status:', status);
-        });
-
-      return () => {
-        console.log('[useDemoMode] 🔌 Removendo subscription');
-        supabase.removeChannel(profileChannel);
-      };
-    };
-
-    const unsubscribePromise = setupRealtimeSubscription();
-
-    return () => {
-      unsubscribePromise.then(cleanup => cleanup?.());
-    };
-  }, []);
-
-  const checkIfFirstDeposit = async (): Promise<boolean> => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
-
-      // Check if user has any completed deposits
-      const { data: deposits, error } = await supabase
-        .from('transactions')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('type', 'deposit')
-        .eq('status', 'completed')
-        .limit(1);
-
-      if (error) {
-        console.error('Error checking deposits:', error);
-        return false;
-      }
-
-      // If no completed deposits found, it's a first time user
-      return !deposits || deposits.length === 0;
-    } catch (error) {
-      console.error('Error in checkIfFirstDeposit:', error);
-      return false;
-    }
-  };
-
-  const fetchBalances = async () => {
+  const fetchBalances = useCallback(async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -116,24 +24,101 @@ export const useDemoMode = () => {
         .single();
 
       if (profile) {
-        const realBal = profile.balance || 0;
-        const demoBal = profile.demo_balance || 10000;
-        const demoMode = profile.is_demo_mode ?? true;
-        
-        console.log('[useDemoMode] Saldos carregados:', {
-          real: realBal,
-          demo: demoBal,
-          mode: demoMode ? 'DEMO' : 'REAL'
-        });
-        
-        setRealBalance(realBal);
-        setDemoBalance(demoBal);
-        setIsDemoMode(demoMode);
+        setRealBalance(profile.balance || 0);
+        setDemoBalance(profile.demo_balance || 10000);
+        setIsDemoMode(profile.is_demo_mode ?? true);
       }
     } catch (error) {
-      console.error('Error fetching balances:', error);
+      console.error('[useDemoMode] Error fetching balances:', error);
     } finally {
       setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    let isMounted = true;
+
+    const init = async () => {
+      // First fetch balances
+      await fetchBalances();
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user || !isMounted) return;
+
+      // Setup realtime subscription
+      channel = supabase
+        .channel(`balance-updates-${user.id}-${Date.now()}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            if (!isMounted) return;
+            
+            console.log('[useDemoMode] Balance update received:', payload.new);
+            
+            const newProfile = payload.new as {
+              balance?: number;
+              demo_balance?: number;
+              is_demo_mode?: boolean;
+            };
+            
+            // Show loading animation
+            setBalanceUpdating(true);
+            
+            // Update state
+            if (newProfile.balance !== undefined) {
+              setRealBalance(newProfile.balance);
+            }
+            if (newProfile.demo_balance !== undefined) {
+              setDemoBalance(newProfile.demo_balance);
+            }
+            if (newProfile.is_demo_mode !== undefined) {
+              setIsDemoMode(newProfile.is_demo_mode);
+            }
+            
+            // Hide loading after animation
+            setTimeout(() => {
+              if (isMounted) setBalanceUpdating(false);
+            }, 500);
+          }
+        )
+        .subscribe((status) => {
+          console.log('[useDemoMode] Subscription status:', status);
+        });
+    };
+
+    init();
+
+    return () => {
+      isMounted = false;
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
+  }, [fetchBalances]);
+
+  const checkIfFirstDeposit = async (): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      const { data: deposits } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('type', 'deposit')
+        .eq('status', 'completed')
+        .limit(1);
+
+      return !deposits || deposits.length === 0;
+    } catch {
+      return false;
     }
   };
 
@@ -156,20 +141,15 @@ export const useDemoMode = () => {
       if (newMode) {
         toast.success(t("toast_demo_mode_activated"));
       } else {
-        // Switching to Real Mode
         toast.success(t("toast_real_mode_activated"));
         
-        // Check if this is the first time switching to real mode and no deposits made
         const isFirstDeposit = await checkIfFirstDeposit();
         if (isFirstDeposit) {
-          // Show dialog after a short delay to let the toast appear first
-          setTimeout(() => {
-            setShowFirstDepositDialog(true);
-          }, 800);
+          setTimeout(() => setShowFirstDepositDialog(true), 800);
         }
       }
     } catch (error) {
-      console.error('Error toggling demo mode:', error);
+      console.error('[useDemoMode] Error toggling mode:', error);
       toast.error(t("toast_mode_switch_error"));
     }
   };
@@ -189,20 +169,18 @@ export const useDemoMode = () => {
       setDemoBalance(10000);
       toast.success(t("toast_demo_balance_reset"));
     } catch (error) {
-      console.error('Error resetting demo balance:', error);
+      console.error('[useDemoMode] Error resetting demo:', error);
       toast.error(t("toast_demo_reset_error"));
     }
   };
 
-  const getCurrentBalance = () => {
-    return isDemoMode ? demoBalance : realBalance;
-  };
+  const currentBalance = isDemoMode ? demoBalance : realBalance;
 
   return {
     isDemoMode,
     demoBalance,
     realBalance,
-    currentBalance: getCurrentBalance(),
+    currentBalance,
     loading,
     balanceUpdating,
     toggleDemoMode,
