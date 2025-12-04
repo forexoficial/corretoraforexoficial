@@ -54,14 +54,9 @@ export const RecentTradesList = () => {
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between px-4">
-        <h3 className="font-medium">{t("recent_trades", "Operações Recentes")}</h3>
-        <div className="bg-muted px-2 py-1 rounded text-xs">{recentTrades.length}</div>
-      </div>
-
-      <ScrollArea className="h-[400px]">
-        <div className="space-y-2 px-4">
+    <div className="space-y-2">
+      <ScrollArea className="h-[180px]">
+        <div className="space-y-2 px-2">
           {recentTrades.length === 0 ? (
             <div className="text-center text-muted-foreground py-8">
               {t("no_recent_trades", "Nenhuma operação recente")}
