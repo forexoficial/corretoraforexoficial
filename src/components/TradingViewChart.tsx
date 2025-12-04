@@ -592,7 +592,11 @@ export function TradingViewChart({
       currentCandleRef.current.high = newHigh;
       currentCandleRef.current.low = newLow;
       
-      candleSeriesRef.current.update(updatedCandle);
+      try {
+        candleSeriesRef.current.update(updatedCandle);
+      } catch (error) {
+        // Silently ignore update errors during animation
+      }
       
       // CRITICAL: Notify parent with smooth price updates for accurate P&L
       setCurrentPrice(currentPrice);
@@ -608,21 +612,29 @@ export function TradingViewChart({
     // Security check: only process candles for the current timeframe
     const candle = payload.new;
     if (candle.timeframe !== timeframe) {
-      console.warn('[CandleUpdate] Ignorando candle de timeframe diferente:', candle.timeframe, 'esperado:', timeframe);
       return;
     }
 
-    if (payload.eventType === 'INSERT') {
-      // New candle - start animation
-      const timestamp = new Date(candle.timestamp).getTime() / 1000;
-      const candleData: CandlestickData<Time> = {
-        time: timestamp as Time,
-        open: Number(candle.open),
-        high: Number(candle.high),
-        low: Number(candle.low),
-        close: Number(candle.close),
-      };
+    const newTimestamp = new Date(candle.timestamp).getTime() / 1000;
+    
+    // CRITICAL: Check if this candle is newer than current to prevent "Cannot update oldest data" error
+    if (currentCandleRef.current) {
+      const currentTimestamp = new Date(currentCandleRef.current.timestamp).getTime() / 1000;
+      if (newTimestamp < currentTimestamp) {
+        console.log('[CandleUpdate] Ignorando candle antigo:', newTimestamp, 'atual:', currentTimestamp);
+        return;
+      }
+    }
 
+    const candleData: CandlestickData<Time> = {
+      time: newTimestamp as Time,
+      open: Number(candle.open),
+      high: Number(candle.high),
+      low: Number(candle.low),
+      close: Number(candle.close),
+    };
+
+    try {
       candleSeriesRef.current.update(candleData);
       
       // Notify parent of price update
@@ -631,25 +643,8 @@ export function TradingViewChart({
       }
       
       startSmoothAnimation(candle, timeframe);
-    } else if (payload.eventType === 'UPDATE') {
-      // Update from backend - reset animation with new data
-      const timestamp = new Date(candle.timestamp).getTime() / 1000;
-      const candleData: CandlestickData<Time> = {
-        time: timestamp as Time,
-        open: Number(candle.open),
-        high: Number(candle.high),
-        low: Number(candle.low),
-        close: Number(candle.close),
-      };
-
-      candleSeriesRef.current.update(candleData);
-      
-      // Notify parent of price update  
-      if (onCurrentPriceUpdate) {
-        onCurrentPriceUpdate(Number(candle.close));
-      }
-      
-      startSmoothAnimation(candle, timeframe);
+    } catch (error) {
+      console.warn('[CandleUpdate] Erro ao atualizar candle (provavelmente ordem temporal):', error);
     }
   };
 
@@ -709,7 +704,6 @@ export function TradingViewChart({
             }
 
             if (newCandles && newCandles.length > 0) {
-              console.log('[Candle Check] Novo candle encontrado, atualizando gráfico');
               const newCandle = newCandles[0];
               
               // Adiciona o novo candle ao gráfico
@@ -723,17 +717,19 @@ export function TradingViewChart({
               };
 
               if (candleSeriesRef.current) {
-                candleSeriesRef.current.update(candleData);
-                
-                // Notifica o parent sobre a atualização de preço
-                if (onCurrentPriceUpdate) {
-                  onCurrentPriceUpdate(Number(newCandle.close));
+                try {
+                  candleSeriesRef.current.update(candleData);
+                  
+                  // Notifica o parent sobre a atualização de preço
+                  if (onCurrentPriceUpdate) {
+                    onCurrentPriceUpdate(Number(newCandle.close));
+                  }
+                  
+                  startSmoothAnimation(newCandle, timeframe);
+                } catch (error) {
+                  console.warn('[Candle Check] Erro ao atualizar candle:', error);
                 }
-                
-                startSmoothAnimation(newCandle, timeframe);
               }
-            } else {
-              console.log('[Candle Check] Nenhum candle novo encontrado ainda');
             }
           } catch (error) {
             console.error('[Candle Check] Erro na verificação:', error);
