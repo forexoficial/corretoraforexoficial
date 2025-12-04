@@ -1276,30 +1276,52 @@ export function TradingViewChart({
     });
   }, [activeTrades, timeframe]);
 
-  // Zoom control functions
+  // Zoom control functions - fixed on current (rightmost) candle
   const handleZoomIn = useCallback(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !candleSeriesRef.current) return;
     const timeScale = chartRef.current.timeScale();
     const logicalRange = timeScale.getVisibleLogicalRange();
     if (!logicalRange) return;
     
-    const delta = (logicalRange.to - logicalRange.from) * 0.2;
-    timeScale.setVisibleLogicalRange({
-      from: logicalRange.from + delta,
-      to: logicalRange.to - delta
-    });
+    const data = candleSeriesRef.current.data();
+    if (!data || data.length === 0) return;
+    
+    // Calculate zoom delta (20% of visible range)
+    const visibleRange = logicalRange.to - logicalRange.from;
+    const delta = visibleRange * 0.3;
+    
+    // Minimum visible candles
+    const minCandles = 10;
+    const newFrom = logicalRange.from + delta;
+    
+    // Ensure we don't zoom in too much
+    if (logicalRange.to - newFrom >= minCandles) {
+      timeScale.setVisibleLogicalRange({
+        from: newFrom,
+        to: logicalRange.to // Keep right edge fixed
+      });
+    }
   }, []);
 
   const handleZoomOut = useCallback(() => {
-    if (!chartRef.current) return;
+    if (!chartRef.current || !candleSeriesRef.current) return;
     const timeScale = chartRef.current.timeScale();
     const logicalRange = timeScale.getVisibleLogicalRange();
     if (!logicalRange) return;
     
-    const delta = (logicalRange.to - logicalRange.from) * 0.2;
+    const data = candleSeriesRef.current.data();
+    if (!data || data.length === 0) return;
+    
+    // Calculate zoom delta (30% of visible range)
+    const visibleRange = logicalRange.to - logicalRange.from;
+    const delta = visibleRange * 0.3;
+    
+    // Don't go beyond available data
+    const newFrom = Math.max(0, logicalRange.from - delta);
+    
     timeScale.setVisibleLogicalRange({
-      from: logicalRange.from - delta,
-      to: logicalRange.to + delta
+      from: newFrom,
+      to: logicalRange.to // Keep right edge fixed
     });
   }, []);
 
