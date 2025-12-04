@@ -44,7 +44,7 @@ const Index = () => {
   const [selectedAsset, setSelectedAsset] = useState<Asset | null>(null);
   const [selectedAssets, setSelectedAssets] = useState<Asset[]>([]);
   const [isTradesListOpen, setIsTradesListOpen] = useState(false);
-  const { isDemoMode, currentBalance } = useDemoMode();
+  const { isDemoMode, currentBalance, triggerBalanceLoading } = useDemoMode();
   const isMobile = useIsMobile();
   
   // Get dynamic chart height from settings
@@ -158,8 +158,8 @@ const Index = () => {
             result: trade.result
           });
           
-          // Não precisa forçar refresh - useDemoMode já tem Realtime subscription no profile
-          // O backend já atualizou o balance corretamente via trigger
+          // Trigger loading indicator immediately for better UX
+          triggerBalanceLoading();
         }
       )
       .subscribe();

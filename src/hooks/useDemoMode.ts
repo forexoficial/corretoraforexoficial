@@ -176,6 +176,13 @@ export const useDemoMode = () => {
 
   const currentBalance = isDemoMode ? demoBalance : realBalance;
 
+  // Trigger balance loading indicator immediately (call when trade closes)
+  const triggerBalanceLoading = useCallback(() => {
+    setBalanceUpdating(true);
+    // Auto-reset after longer time in case realtime doesn't fire
+    setTimeout(() => setBalanceUpdating(false), 3000);
+  }, []);
+
   return {
     isDemoMode,
     demoBalance,
@@ -188,5 +195,6 @@ export const useDemoMode = () => {
     refreshBalances: fetchBalances,
     showFirstDepositDialog,
     setShowFirstDepositDialog,
+    triggerBalanceLoading,
   };
 };
