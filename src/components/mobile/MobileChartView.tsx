@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { TradingViewChart } from "@/components/TradingViewChart";
 import { useClickSound } from "@/hooks/useClickSound";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useTradeContext } from "@/features/trading/context/TradeContext";
 
 interface Asset {
   id: string;
@@ -177,8 +178,35 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [tradeProgress, setTradeProgress] = useState(0);
   const { withClickSound } = useClickSound();
   const { t } = useTranslation();
+  const { activeTrade } = useTradeContext();
+
+  // Track trade progress
+  useEffect(() => {
+    if (!activeTrade || activeTrade.status !== 'open') {
+      setTradeProgress(0);
+      return;
+    }
+
+    const updateProgress = () => {
+      const createdAt = new Date(activeTrade.created_at).getTime();
+      const expiresAt = new Date(activeTrade.expires_at).getTime();
+      const now = Date.now();
+      
+      const totalDuration = expiresAt - createdAt;
+      const elapsed = now - createdAt;
+      const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+      
+      setTradeProgress(progress);
+    };
+
+    updateProgress();
+    const interval = setInterval(updateProgress, 100);
+
+    return () => clearInterval(interval);
+  }, [activeTrade]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -235,17 +263,41 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
     <div className="flex-1 bg-[hsl(var(--chart-bg))] relative flex flex-col">
       {/* Asset Selector Row */}
       <div className="px-3 py-2.5">
-        <button 
-          onClick={withClickSound(() => setIsAssetModalOpen(true))}
-          className="inline-flex items-center gap-2 bg-card/80 hover:bg-card border border-border rounded-full pl-2 pr-4 py-1.5 transition-colors"
-        >
-          <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted/50">
-            <ChevronLeft className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <img src={selectedAsset.icon_url} alt={selectedAsset.name} className="w-6 h-6 rounded-full" />
-          <span className="font-medium text-sm text-foreground">{selectedAsset.name}</span>
-          <span className="text-sm font-medium text-primary">{selectedAsset.payout_percentage}%</span>
-        </button>
+        {(() => {
+          const hasActiveTrade = activeTrade && activeTrade.status === 'open' && activeTrade.asset_id === selectedAsset.id;
+          
+          return (
+            <button 
+              onClick={withClickSound(() => setIsAssetModalOpen(true))}
+              className={`relative inline-flex items-center gap-2 bg-card/80 hover:bg-card border rounded-full pl-2 pr-4 py-1.5 transition-colors overflow-hidden ${
+                hasActiveTrade ? 'border-primary ring-2 ring-primary/40' : 'border-border'
+              }`}
+            >
+              {/* Progress bar for active trade */}
+              {hasActiveTrade && (
+                <div className="absolute bottom-0 left-0 right-0 h-1 bg-muted/50 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary transition-all duration-100 ease-linear relative"
+                    style={{ width: `${tradeProgress}%` }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                  </div>
+                  <div 
+                    className="absolute top-0 bottom-0 w-2 bg-primary/80 blur-sm transition-all duration-100"
+                    style={{ left: `calc(${tradeProgress}% - 4px)` }}
+                  />
+                </div>
+              )}
+              
+              <div className="flex items-center justify-center h-7 w-7 rounded-full bg-muted/50">
+                <ChevronLeft className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <img src={selectedAsset.icon_url} alt={selectedAsset.name} className="w-6 h-6 rounded-full" />
+              <span className="font-medium text-sm text-foreground">{selectedAsset.name}</span>
+              <span className="text-sm font-medium text-primary">{selectedAsset.payout_percentage}%</span>
+            </button>
+          );
+        })()}
       </div>
 
       {/* Chart Area */}
