@@ -293,6 +293,7 @@ export type Database = {
           price_scale_border_color: string
           price_scale_border_color_dark: string | null
           price_scale_border_color_light: string | null
+          show_tradingview_logo: boolean | null
           time_scale_border_color: string
           time_scale_border_color_dark: string | null
           time_scale_border_color_light: string | null
@@ -364,6 +365,7 @@ export type Database = {
           price_scale_border_color?: string
           price_scale_border_color_dark?: string | null
           price_scale_border_color_light?: string | null
+          show_tradingview_logo?: boolean | null
           time_scale_border_color?: string
           time_scale_border_color_dark?: string | null
           time_scale_border_color_light?: string | null
@@ -435,6 +437,7 @@ export type Database = {
           price_scale_border_color?: string
           price_scale_border_color_dark?: string | null
           price_scale_border_color_light?: string | null
+          show_tradingview_logo?: boolean | null
           time_scale_border_color?: string
           time_scale_border_color_dark?: string | null
           time_scale_border_color_light?: string | null

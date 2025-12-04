@@ -83,6 +83,8 @@ interface ChartAppearanceSettings {
   chart_height_fullscreen: number;
   chart_width_percentage_fullscreen: number;
   chart_aspect_ratio_fullscreen: string;
+  // TradingView attribution
+  show_tradingview_logo: boolean;
 }
 
 const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
@@ -157,6 +159,8 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   chart_height_fullscreen: 800,
   chart_width_percentage_fullscreen: 100,
   chart_aspect_ratio_fullscreen: '21:9',
+  // TradingView attribution
+  show_tradingview_logo: false,
 };
 
 export default function AdminChartAppearance() {
@@ -1549,6 +1553,22 @@ export default function AdminChartAppearance() {
               />
             </div>
           )}
+
+          <Separator />
+
+          <div className="flex items-center justify-between">
+            <div className="space-y-0.5">
+              <Label htmlFor="show_tradingview_logo">Logo TradingView</Label>
+              <p className="text-sm text-muted-foreground">
+                Exibe o logo de atribuição do TradingView no gráfico
+              </p>
+            </div>
+            <Switch
+              id="show_tradingview_logo"
+              checked={settings.show_tradingview_logo || false}
+              onCheckedChange={(checked) => setSettings({ ...settings, show_tradingview_logo: checked })}
+            />
+          </div>
         </CardContent>
       </Card>
 

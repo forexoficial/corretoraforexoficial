@@ -76,6 +76,8 @@ interface ChartAppearanceSettings {
   chart_height_fullscreen: number;
   chart_width_percentage_fullscreen: number;
   chart_aspect_ratio_fullscreen: string;
+  // TradingView attribution
+  show_tradingview_logo: boolean;
 }
 
 export function useChartAppearance() {

@@ -171,8 +171,8 @@ input, select, textarea, button {
   height: 100vh;
 }
 
-/* Hide TradingView attribution logo */
+/* TradingView attribution logo - hidden by default, controlled by admin settings */
 #tv-attr-logo {
-  display: none !important;
+  display: none;
 }
 }
