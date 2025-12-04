@@ -265,6 +265,9 @@ export type Database = {
           chart_height_desktop: number | null
           chart_height_fullscreen: number | null
           chart_height_mobile: number | null
+          chart_responsive_desktop: boolean | null
+          chart_responsive_fullscreen: boolean | null
+          chart_responsive_mobile: boolean | null
           chart_text_color: string
           chart_text_color_dark: string | null
           chart_text_color_light: string | null
@@ -337,6 +340,9 @@ export type Database = {
           chart_height_desktop?: number | null
           chart_height_fullscreen?: number | null
           chart_height_mobile?: number | null
+          chart_responsive_desktop?: boolean | null
+          chart_responsive_fullscreen?: boolean | null
+          chart_responsive_mobile?: boolean | null
           chart_text_color?: string
           chart_text_color_dark?: string | null
           chart_text_color_light?: string | null
@@ -409,6 +415,9 @@ export type Database = {
           chart_height_desktop?: number | null
           chart_height_fullscreen?: number | null
           chart_height_mobile?: number | null
+          chart_responsive_desktop?: boolean | null
+          chart_responsive_fullscreen?: boolean | null
+          chart_responsive_mobile?: boolean | null
           chart_text_color?: string
           chart_text_color_dark?: string | null
           chart_text_color_light?: string | null
