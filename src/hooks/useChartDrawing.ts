@@ -183,6 +183,10 @@ export function useChartDrawing(
   // Start drawing
   const startDrawing = useCallback((type: DrawingObject["type"], point: { price: number; time: number }) => {
     console.log('[Drawing] Starting drawing:', { type, point });
+    // Update refs immediately for synchronous access
+    isDrawingRef.current = true;
+    currentPointsRef.current = [point];
+    // Also update state for React reactivity
     setIsDrawing(true);
     setCurrentPoints([point]);
   }, []);
@@ -190,20 +194,26 @@ export function useChartDrawing(
   // Add point to current drawing
   const addPoint = useCallback((point: { price: number; time: number }) => {
     console.log('[Drawing] Adding point:', point);
-    setCurrentPoints(prev => {
-      const newPoints = [...prev, point];
-      console.log('[Drawing] Total points now:', newPoints.length);
-      return newPoints;
-    });
+    // Update ref immediately for synchronous access
+    const newPoints = [...currentPointsRef.current, point];
+    currentPointsRef.current = newPoints;
+    console.log('[Drawing] Total points now:', newPoints.length);
+    // Also update state for React reactivity
+    setCurrentPoints(newPoints);
   }, []);
 
-  // Complete drawing
+  // Complete drawing - using refs to avoid stale closure issues with setTimeout
   const completeDrawing = useCallback((type: DrawingObject["type"]) => {
+    // Use ref for immediate access (avoids stale closure from setTimeout)
+    const points = currentPointsRef.current;
+    
     // For horizontal and vertical lines, only 1 point is needed
     const minPoints = (type === 'horizontal' || type === 'vertical') ? 1 : 2;
     
-    if (currentPoints.length < minPoints) {
-      console.log(`[Drawing] Not enough points: ${currentPoints.length} < ${minPoints}`);
+    console.log(`[Drawing] CompleteDrawing called - type: ${type}, points: ${points.length}, minPoints: ${minPoints}`);
+    
+    if (points.length < minPoints) {
+      console.log(`[Drawing] Not enough points: ${points.length} < ${minPoints}`);
       setIsDrawing(false);
       setCurrentPoints([]);
       return;
@@ -212,7 +222,7 @@ export function useChartDrawing(
     const newDrawing: DrawingObject = {
       id: `drawing-${Date.now()}`,
       type,
-      points: currentPoints,
+      points: [...points], // Clone the array
       color: currentStyle.color,
       lineWidth: currentStyle.lineWidth,
       style: currentStyle.lineStyle
@@ -224,7 +234,7 @@ export function useChartDrawing(
     setIsDrawing(false);
     setCurrentPoints([]);
     toast.success('Desenho adicionado');
-  }, [currentPoints, currentStyle]);
+  }, [currentStyle]);
 
   // Cancel drawing
   const cancelDrawing = useCallback(() => {
