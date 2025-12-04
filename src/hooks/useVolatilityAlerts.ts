@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { candleCache, deduplicateRequest } from "@/utils/requestOptimization";
 
 interface VolatilityAlert {
   assetId: string;
@@ -11,7 +12,7 @@ interface VolatilityAlert {
 }
 
 const VOLATILITY_THRESHOLD = 2; // 2% change triggers alert
-const CHECK_INTERVAL = 5000; // Check every 5 seconds
+const CHECK_INTERVAL = 10000; // Check every 10 seconds (optimized from 5s)
 const ALERT_COOLDOWN = 60000; // 1 minute cooldown between alerts for same asset
 
 export function useVolatilityAlerts(currentAssetId: string | null) {
@@ -31,14 +32,24 @@ export function useVolatilityAlerts(currentAssetId: string | null) {
 
     const checkVolatility = async () => {
       try {
-        // Get latest candle for current asset
-        const { data: candles, error } = await supabase
-          .from('candles')
-          .select('asset_id, close, assets(symbol)')
-          .eq('asset_id', currentAssetId)
-          .eq('timeframe', '30s')
-          .order('timestamp', { ascending: false })
-          .limit(1);
+        const cacheKey = `volatility-${currentAssetId}`;
+        
+        // Deduplicate concurrent requests
+        const result = await deduplicateRequest(
+          cacheKey,
+          async () => {
+            const response = await supabase
+              .from('candles')
+              .select('asset_id, close, assets(symbol)')
+              .eq('asset_id', currentAssetId)
+              .eq('timeframe', '30s')
+              .order('timestamp', { ascending: false })
+              .limit(1);
+            return response;
+          }
+        );
+        
+        const { data: candles, error } = result as any;
 
         if (error || !candles || candles.length === 0) return;
 
