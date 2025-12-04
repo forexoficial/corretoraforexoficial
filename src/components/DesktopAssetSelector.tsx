@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useTradeContext } from "@/features/trading/context/TradeContext";
 
 interface Asset {
   id: string;
@@ -26,10 +27,37 @@ export const DesktopAssetSelector = ({
   onAssetSelect,
   onAssetRemove,
 }: DesktopAssetSelectorProps) => {
+  const { activeTrade } = useTradeContext();
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [tradeProgress, setTradeProgress] = useState(0);
+
+  // Track trade progress
+  useEffect(() => {
+    if (!activeTrade || activeTrade.status !== 'open') {
+      setTradeProgress(0);
+      return;
+    }
+
+    const updateProgress = () => {
+      const createdAt = new Date(activeTrade.created_at).getTime();
+      const expiresAt = new Date(activeTrade.expires_at).getTime();
+      const now = Date.now();
+      
+      const totalDuration = expiresAt - createdAt;
+      const elapsed = now - createdAt;
+      const progress = Math.min(100, Math.max(0, (elapsed / totalDuration) * 100));
+      
+      setTradeProgress(progress);
+    };
+
+    updateProgress();
+    const interval = setInterval(updateProgress, 100); // Update every 100ms for smooth animation
+
+    return () => clearInterval(interval);
+  }, [activeTrade]);
 
   useEffect(() => {
     if (isModalOpen) {
@@ -113,6 +141,8 @@ export const DesktopAssetSelector = ({
         {/* Regular visible assets (first 4) */}
         {visibleAssets.map((asset) => {
           const isCurrentAsset = asset.id === currentAssetId;
+          const hasActiveTrade = activeTrade && activeTrade.status === 'open' && activeTrade.asset_id === asset.id;
+          
           return (
             <div
               key={asset.id}
@@ -120,12 +150,30 @@ export const DesktopAssetSelector = ({
                 isCurrentAsset
                   ? "bg-gradient-to-br from-primary/20 to-primary/10 border-primary/50 shadow-[0_0_20px_hsl(var(--primary)/0.3),0_4px_12px_-2px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.15)] scale-105"
                   : "bg-gradient-to-br from-card to-card/80 border-border/50 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.1)] hover:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.4),inset_0_1px_0_0_rgba(255,255,255,0.15)] hover:scale-[1.02]"
-              }`}
+              } ${hasActiveTrade ? "ring-2 ring-primary/60 ring-offset-1 ring-offset-background" : ""}`}
             >
-              {/* Bottom accent bar - enhanced for current asset */}
-              <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 ${
-                isCurrentAsset ? "h-1 shadow-[0_0_10px_rgba(251,146,60,0.5)]" : ""
-              }`} />
+              {/* Progress bar for active trade */}
+              {hasActiveTrade ? (
+                <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-muted/50 overflow-hidden">
+                  <div 
+                    className="h-full bg-gradient-to-r from-primary via-primary/80 to-primary transition-all duration-100 ease-linear relative"
+                    style={{ width: `${tradeProgress}%` }}
+                  >
+                    {/* Animated shine effect */}
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-[shimmer_2s_infinite]" />
+                  </div>
+                  {/* Glow effect at the progress edge */}
+                  <div 
+                    className="absolute top-0 bottom-0 w-2 bg-primary/80 blur-sm transition-all duration-100"
+                    style={{ left: `calc(${tradeProgress}% - 4px)` }}
+                  />
+                </div>
+              ) : (
+                /* Bottom accent bar - enhanced for current asset */
+                <div className={`absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 ${
+                  isCurrentAsset ? "h-1 shadow-[0_0_10px_rgba(251,146,60,0.5)]" : ""
+                }`} />
+              )}
             
             <button
               onClick={() => onAssetSelect(asset)}
