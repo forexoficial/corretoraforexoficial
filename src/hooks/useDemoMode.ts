@@ -69,10 +69,16 @@ export const useDemoMode = () => {
             // When a trade closes (status changes to won/lost), refresh balance
             if (payload.new && (payload.new.status === 'won' || payload.new.status === 'lost')) {
               console.log('[useDemoMode] 🎯 Trade fechado, refreshing balance:', payload.new.status);
-              // Small delay to ensure DB trigger completed
+              // Delay to ensure DB trigger completed - then fetch multiple times to ensure update
               setTimeout(() => {
+                console.log('[useDemoMode] ⏰ Primeiro refresh após trade fechado');
                 fetchBalances();
-              }, 300);
+              }, 500);
+              // Second fetch as backup
+              setTimeout(() => {
+                console.log('[useDemoMode] ⏰ Segundo refresh após trade fechado');
+                fetchBalances();
+              }, 1500);
             }
           }
         )
@@ -80,10 +86,37 @@ export const useDemoMode = () => {
           console.log('[useDemoMode] 📊 Trades subscription status:', status);
         });
 
+      // Also subscribe directly to profile balance changes (backup)
+      const profileBalanceChannel = supabase
+        .channel('profile-balance-direct')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            if (payload.new) {
+              const newBalance = parseFloat(payload.new.balance || 0);
+              const newDemoBalance = parseFloat(payload.new.demo_balance || 10000);
+              console.log('[useDemoMode] 💵 Profile balance update direto:', {
+                balance: newBalance,
+                demo_balance: newDemoBalance
+              });
+              setRealBalance(newBalance);
+              setDemoBalance(newDemoBalance);
+            }
+          }
+        )
+        .subscribe();
+
       return () => {
         console.log('[useDemoMode] 🔌 Removendo subscriptions');
         supabase.removeChannel(profileChannel);
         supabase.removeChannel(tradesChannel);
+        supabase.removeChannel(profileBalanceChannel);
       };
     };
 
