@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Trophy, TrendingDown, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,6 +22,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   const [isVisible, setIsVisible] = useState(false);
   const { playSound } = useSoundEffects();
   const { t } = useTranslation();
+  const lastPlayedTradeRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!trade) {
@@ -33,8 +34,12 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
     
     setIsVisible(true);
     
-    const soundType = trade.status === 'won' ? 'trade-win' : 'trade-loss';
-    playSound(soundType);
+    // Tocar som apenas uma vez por trade
+    if (lastPlayedTradeRef.current !== trade.id) {
+      lastPlayedTradeRef.current = trade.id;
+      const soundType = trade.status === 'won' ? 'trade-win' : 'trade-loss';
+      playSound(soundType);
+    }
 
     // Fechar automaticamente após 5 segundos
     const timer = setTimeout(() => {

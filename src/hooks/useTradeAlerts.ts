@@ -77,12 +77,18 @@ export function useTradeAlerts(userId: string | undefined, isDemoMode: boolean) 
         const timeUntilExpiry = expiresAt.getTime() - now.getTime();
         const secondsUntilExpiry = Math.floor(timeUntilExpiry / 1000);
 
-        // Alert 10 seconds before expiration
+        // Alert 10 seconds before expiration (only once per trade)
         if (secondsUntilExpiry <= 10 && secondsUntilExpiry > 0 && !alertedTrades.current.has(trade.id)) {
           alertedTrades.current.add(trade.id);
           
-          // Play alert sound
-          alertSound.current?.play().catch(err => console.error('Error playing alert sound:', err));
+          // Play alert sound only if not already playing
+          if (alertSound.current) {
+            // Impedir múltiplas reproduções simultâneas
+            if (alertSound.current.paused || alertSound.current.ended) {
+              alertSound.current.currentTime = 0;
+              alertSound.current.play().catch(err => console.error('Error playing alert sound:', err));
+            }
+          }
 
           // Show toast notification
           toast({
