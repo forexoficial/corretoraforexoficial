@@ -9,6 +9,14 @@ export function useSoundEffects() {
     'trade-loss': null,
     'click': null,
   });
+  
+  // Track last play time to prevent rapid duplicate plays
+  const lastPlayTimeRef = useRef<Record<SoundType, number>>({
+    'trade-open': 0,
+    'trade-win': 0,
+    'trade-loss': 0,
+    'click': 0,
+  });
 
   useEffect(() => {
     // Initialize all audio objects with correct file extensions
@@ -40,15 +48,26 @@ export function useSoundEffects() {
 
   const playSound = useCallback((type: SoundType) => {
     const audio = soundsRef.current[type];
-    if (audio) {
-      // Reset audio to start if already playing
-      audio.currentTime = 0;
-      audio.play().catch((error) => {
-        console.warn(`[Sound] Erro ao reproduzir ${type}:`, error.message);
-      });
-    } else {
+    if (!audio) {
       console.warn(`[Sound] Audio não encontrado para tipo: ${type}`);
+      return;
     }
+
+    // Prevent duplicate plays within 500ms (except for click sounds)
+    const now = Date.now();
+    const minInterval = type === 'click' ? 50 : 500;
+    if (now - lastPlayTimeRef.current[type] < minInterval) {
+      console.log(`[Sound] Som ${type} ignorado - tocado há menos de ${minInterval}ms`);
+      return;
+    }
+    
+    lastPlayTimeRef.current[type] = now;
+    
+    // Reset and play
+    audio.currentTime = 0;
+    audio.play().catch((error) => {
+      console.warn(`[Sound] Erro ao reproduzir ${type}:`, error.message);
+    });
   }, []);
 
   return { playSound };
