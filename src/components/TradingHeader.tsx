@@ -58,6 +58,7 @@ export const TradingHeader = ({
     currentBalance, 
     demoBalance, 
     realBalance,
+    balanceUpdating,
     toggleDemoMode, 
     resetDemoBalance,
     showFirstDepositDialog,
@@ -145,7 +146,7 @@ export const TradingHeader = ({
                 <div className="text-xs text-muted-foreground">
                   {isDemoMode ? t("demo_mode", "Demo") : t("real_mode", "Real")}
                 </div>
-                <div className={`font-bold text-xl ${!isDemoMode ? "text-success" : ""}`}>
+                <div className={`font-bold text-xl ${!isDemoMode ? "text-success" : ""} ${balanceUpdating ? "animate-pulse" : ""} transition-all duration-300`}>
                   R$ {formatCurrency(currentBalance)}
                 </div>
               </div>
