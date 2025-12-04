@@ -15,6 +15,7 @@ import type { PriceLineConfig } from "./PriceLineSettings";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "@/hooks/useTranslation";
 import { candleCache, deduplicateRequest } from "@/utils/requestOptimization";
+import { useFullscreen } from "@/hooks/useFullscreen";
 
 interface TradingViewChartProps {
   assetId: string;
@@ -65,6 +66,7 @@ export function TradingViewChart({
   const { settings: appearanceSettings } = useChartAppearance();
   const { theme } = useTheme();
   const isMobile = useIsMobile();
+  const isFullscreen = useFullscreen();
   const { t } = useTranslation();
   
   // Drawing tools
@@ -86,32 +88,45 @@ export function TradingViewChart({
   // Determine which color set to use based on theme
   const isDarkMode = theme === 'dark' || theme === 'system';
   
-  // Calculate effective chart height based on settings
+  // Calculate effective chart height based on settings (mobile, desktop, or fullscreen)
   const effectiveHeight = useMemo(() => {
     if (!appearanceSettings) return height;
-    return isMobile 
-      ? (appearanceSettings.chart_height_mobile || 350)
-      : (appearanceSettings.chart_height_desktop || height);
-  }, [isMobile, appearanceSettings, height]);
+    if (isMobile) {
+      return appearanceSettings.chart_height_mobile || 350;
+    }
+    if (isFullscreen) {
+      return appearanceSettings.chart_height_fullscreen || 800;
+    }
+    return appearanceSettings.chart_height_desktop || height;
+  }, [isMobile, isFullscreen, appearanceSettings, height]);
 
   // Calculate width percentage
   const widthPercentage = useMemo(() => {
     if (!appearanceSettings) return 100;
-    return isMobile 
-      ? (appearanceSettings.chart_width_percentage_mobile || 100)
-      : (appearanceSettings.chart_width_percentage_desktop || 100);
-  }, [isMobile, appearanceSettings]);
+    if (isMobile) {
+      return appearanceSettings.chart_width_percentage_mobile || 100;
+    }
+    if (isFullscreen) {
+      return appearanceSettings.chart_width_percentage_fullscreen || 100;
+    }
+    return appearanceSettings.chart_width_percentage_desktop || 100;
+  }, [isMobile, isFullscreen, appearanceSettings]);
 
   // Calculate aspect ratio
   const aspectRatio = useMemo(() => {
     if (!appearanceSettings) return null;
-    const ratio = isMobile 
-      ? appearanceSettings.chart_aspect_ratio_mobile
-      : appearanceSettings.chart_aspect_ratio_desktop;
+    let ratio: string | null = null;
+    if (isMobile) {
+      ratio = appearanceSettings.chart_aspect_ratio_mobile;
+    } else if (isFullscreen) {
+      ratio = appearanceSettings.chart_aspect_ratio_fullscreen;
+    } else {
+      ratio = appearanceSettings.chart_aspect_ratio_desktop;
+    }
     if (!ratio || ratio === 'auto') return null;
     const [w, h] = ratio.split(':').map(Number);
     return w / h;
-  }, [isMobile, appearanceSettings]);
+  }, [isMobile, isFullscreen, appearanceSettings]);
   
   // Get theme-specific colors
   const getThemeColor = (lightColor: string, darkColor: string) => {

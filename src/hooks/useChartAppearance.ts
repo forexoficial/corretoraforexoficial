@@ -72,6 +72,10 @@ interface ChartAppearanceSettings {
   chart_width_percentage_mobile: number;
   chart_aspect_ratio_desktop: string;
   chart_aspect_ratio_mobile: string;
+  // Fullscreen settings
+  chart_height_fullscreen: number;
+  chart_width_percentage_fullscreen: number;
+  chart_aspect_ratio_fullscreen: string;
 }
 
 export function useChartAppearance() {

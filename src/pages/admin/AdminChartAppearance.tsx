@@ -79,6 +79,10 @@ interface ChartAppearanceSettings {
   chart_width_percentage_mobile: number;
   chart_aspect_ratio_desktop: string;
   chart_aspect_ratio_mobile: string;
+  // Fullscreen settings
+  chart_height_fullscreen: number;
+  chart_width_percentage_fullscreen: number;
+  chart_aspect_ratio_fullscreen: string;
 }
 
 const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
@@ -149,6 +153,10 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   chart_width_percentage_mobile: 100,
   chart_aspect_ratio_desktop: '16:9',
   chart_aspect_ratio_mobile: '4:3',
+  // Fullscreen defaults
+  chart_height_fullscreen: 800,
+  chart_width_percentage_fullscreen: 100,
+  chart_aspect_ratio_fullscreen: '21:9',
 };
 
 export default function AdminChartAppearance() {
@@ -1678,6 +1686,74 @@ export default function AdminChartAppearance() {
                 <option value="16:9">16:9 (Widescreen)</option>
                 <option value="4:3">4:3</option>
                 <option value="3:2">3:2</option>
+                <option value="1:1">1:1 (Quadrado)</option>
+              </select>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Fullscreen Settings */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold flex items-center gap-2">
+              🖥️ Desktop Tela Cheia
+            </h3>
+            <p className="text-xs text-muted-foreground">
+              Configurações aplicadas quando o usuário está em modo tela cheia no desktop
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="chart_height_fullscreen">Altura do Gráfico (px)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="chart_height_fullscreen"
+                    type="range"
+                    min="400"
+                    max="1200"
+                    step="10"
+                    value={settings.chart_height_fullscreen || 800}
+                    onChange={(e) => setSettings({ ...settings, chart_height_fullscreen: parseInt(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <Input
+                    type="number"
+                    value={settings.chart_height_fullscreen || 800}
+                    onChange={(e) => setSettings({ ...settings, chart_height_fullscreen: parseInt(e.target.value) || 800 })}
+                    className="w-20"
+                    min="400"
+                    max="1200"
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="chart_width_percentage_fullscreen">Largura (%)</Label>
+                <div className="flex items-center gap-4">
+                  <input
+                    id="chart_width_percentage_fullscreen"
+                    type="range"
+                    min="50"
+                    max="100"
+                    value={settings.chart_width_percentage_fullscreen || 100}
+                    onChange={(e) => setSettings({ ...settings, chart_width_percentage_fullscreen: parseInt(e.target.value) })}
+                    className="flex-1"
+                  />
+                  <span className="text-sm font-mono w-12 text-center">{settings.chart_width_percentage_fullscreen || 100}%</span>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="chart_aspect_ratio_fullscreen">Proporção</Label>
+              <select
+                id="chart_aspect_ratio_fullscreen"
+                value={settings.chart_aspect_ratio_fullscreen || '21:9'}
+                onChange={(e) => setSettings({ ...settings, chart_aspect_ratio_fullscreen: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="auto">Automático (usa altura fixa)</option>
+                <option value="21:9">21:9 (Ultra-wide)</option>
+                <option value="16:9">16:9 (Widescreen)</option>
+                <option value="16:10">16:10</option>
+                <option value="4:3">4:3</option>
                 <option value="1:1">1:1 (Quadrado)</option>
               </select>
             </div>
