@@ -1437,11 +1437,11 @@ export function TradingViewChart({
       margin: widthPercentage < 100 ? '0 auto' : undefined,
     };
     
-    // Responsive mode: use flex-grow to fill all available space
+    // Responsive mode: use flex-grow to fill all available space with proper constraints
     if (useResponsive) {
       style.flex = '1 1 0';
       style.minHeight = isMobile ? '200px' : '400px';
-      style.height = '100%';
+      style.maxHeight = isMobile ? 'calc(100vh - 280px)' : isFullscreen ? 'calc(100vh - 160px)' : 'calc(100vh - 380px)';
       style.overflow = 'hidden';
     } else if (aspectRatio) {
       style.aspectRatio = `${aspectRatio}`;
