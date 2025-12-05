@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePlatformCustomization } from "@/contexts/PlatformCustomizationContext";
+import { useTranslation } from "@/hooks/useTranslation";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -24,17 +25,10 @@ import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { CameraCapture } from "@/components/CameraCapture";
 
-const STEPS = [
-  { id: 1, name: "Tipo de Conta", icon: User },
-  { id: 2, name: "Documento", icon: FileText },
-  { id: 3, name: "Frente", icon: ImageIcon },
-  { id: 4, name: "Verso", icon: ImageIcon },
-  { id: 5, name: "Selfie", icon: Camera },
-];
-
 export default function VerifyIdentity() {
   const { user } = useAuth();
   const { customization } = usePlatformCustomization();
+  const { t, language } = useTranslation();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
@@ -47,7 +41,22 @@ export default function VerifyIdentity() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraMode, setCameraMode] = useState<"front" | "back" | "selfie" | null>(null);
 
-  const maxSteps = entityType === "business" ? 6 : 5;
+  // Check if user is Brazilian (Portuguese language)
+  const isBrazilian = language === 'pt';
+
+  // For non-Brazilian users, force individual account type
+  const effectiveEntityType = isBrazilian ? entityType : "individual";
+  
+  // Dynamic steps based on language and entity type
+  const STEPS = [
+    { id: 1, name: t('kyc_step_account'), icon: User },
+    { id: 2, name: t('kyc_step_document'), icon: FileText },
+    { id: 3, name: t('kyc_step_front'), icon: ImageIcon },
+    { id: 4, name: t('kyc_step_back'), icon: ImageIcon },
+    { id: 5, name: t('kyc_step_selfie'), icon: Camera },
+  ];
+
+  const maxSteps = (isBrazilian && effectiveEntityType === "business") ? 6 : 5;
   const progress = (currentStep / maxSteps) * 100;
 
   const handleFileUpload = async (file: File, type: string): Promise<string> => {
@@ -68,28 +77,28 @@ export default function VerifyIdentity() {
   };
 
   const handleNext = () => {
-    if (currentStep === 1 && !entityType) {
-      toast.error("Selecione o tipo de conta");
+    if (currentStep === 1 && !effectiveEntityType) {
+      toast.error(t('kyc_select_account_type'));
       return;
     }
     if (currentStep === 2 && !documentType) {
-      toast.error("Selecione o tipo de documento");
+      toast.error(t('kyc_select_document_type'));
       return;
     }
     if (currentStep === 3 && !documentFront) {
-      toast.error("Envie a frente do documento");
+      toast.error(t('kyc_upload_front'));
       return;
     }
     if (currentStep === 4 && !documentBack) {
-      toast.error("Envie o verso do documento");
+      toast.error(t('kyc_upload_back'));
       return;
     }
     if (currentStep === 5 && !selfie) {
-      toast.error("Envie uma selfie com o documento");
+      toast.error(t('kyc_upload_selfie'));
       return;
     }
-    if (currentStep === 6 && entityType === "business" && !businessDoc) {
-      toast.error("Envie o comprovante CNPJ");
+    if (currentStep === 6 && effectiveEntityType === "business" && !businessDoc) {
+      toast.error(t('kyc_upload_business_doc'));
       return;
     }
 
@@ -118,7 +127,7 @@ export default function VerifyIdentity() {
         .from("verification_requests")
         .insert({
           user_id: user!.id,
-          entity_type: entityType,
+          entity_type: effectiveEntityType,
           document_type: documentType,
           document_front_url: frontUrl,
           document_back_url: backUrl,
@@ -139,14 +148,22 @@ export default function VerifyIdentity() {
 
       if (profileError) throw profileError;
 
-      toast.success("Documentos enviados com sucesso! Aguarde a análise.");
+      toast.success(t('kyc_success'));
       navigate("/profile");
     } catch (error: any) {
       console.error("Verification error:", error);
-      toast.error("Erro ao enviar documentos: " + error.message);
+      toast.error(t('kyc_error') + ": " + error.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Get document type display name based on language
+  const getDocumentTypeName = () => {
+    if (isBrazilian) {
+      return documentType === 'rg' ? 'RG' : 'CNH';
+    }
+    return documentType === 'rg' ? t('kyc_id_card') : t('kyc_drivers_license');
   };
 
   const renderStepContent = () => {
@@ -158,37 +175,40 @@ export default function VerifyIdentity() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                 <User className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Tipo de Conta</h2>
+              <h2 className="text-xl font-bold mb-1">{t('kyc_account_type')}</h2>
               <p className="text-sm text-muted-foreground">
-                Selecione se você é pessoa física ou jurídica
+                {t('kyc_account_type_desc')}
               </p>
             </div>
 
-            <RadioGroup value={entityType} onValueChange={(v: any) => setEntityType(v)}>
-              <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:border-primary transition-all cursor-pointer ${entityType === 'individual' ? 'border-primary bg-primary/5' : ''}`}>
+            <RadioGroup value={effectiveEntityType} onValueChange={(v: any) => isBrazilian && setEntityType(v)}>
+              <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:border-primary transition-all cursor-pointer ${effectiveEntityType === 'individual' ? 'border-primary bg-primary/5' : ''}`}>
                 <RadioGroupItem value="individual" id="individual" />
                 <Label htmlFor="individual" className="cursor-pointer flex-1">
                   <div className="flex items-center gap-3">
                     <User className="w-5 h-5" />
                     <div>
-                      <div className="font-semibold">Pessoa Física</div>
-                      <div className="text-sm text-muted-foreground">CPF individual</div>
+                      <div className="font-semibold">{t('kyc_individual')}</div>
+                      <div className="text-sm text-muted-foreground">{t('kyc_individual_desc')}</div>
                     </div>
                   </div>
                 </Label>
               </div>
-              <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:border-primary transition-all cursor-pointer ${entityType === 'business' ? 'border-primary bg-primary/5' : ''}`}>
-                <RadioGroupItem value="business" id="business" />
-                <Label htmlFor="business" className="cursor-pointer flex-1">
-                  <div className="flex items-center gap-3">
-                    <Building2 className="w-5 h-5" />
-                    <div>
-                      <div className="font-semibold">Pessoa Jurídica</div>
-                      <div className="text-sm text-muted-foreground">CNPJ empresarial</div>
+              {/* Only show business option for Brazilian users */}
+              {isBrazilian && (
+                <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:border-primary transition-all cursor-pointer ${effectiveEntityType === 'business' ? 'border-primary bg-primary/5' : ''}`}>
+                  <RadioGroupItem value="business" id="business" />
+                  <Label htmlFor="business" className="cursor-pointer flex-1">
+                    <div className="flex items-center gap-3">
+                      <Building2 className="w-5 h-5" />
+                      <div>
+                        <div className="font-semibold">{t('kyc_business')}</div>
+                        <div className="text-sm text-muted-foreground">{t('kyc_business_desc')}</div>
+                      </div>
                     </div>
-                  </div>
-                </Label>
-              </div>
+                  </Label>
+                </div>
+              )}
             </RadioGroup>
           </div>
         );
@@ -200,9 +220,9 @@ export default function VerifyIdentity() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                 <FileText className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Tipo de Documento</h2>
+              <h2 className="text-xl font-bold mb-1">{t('kyc_document_type')}</h2>
               <p className="text-sm text-muted-foreground">
-                Escolha qual documento você vai enviar
+                {t('kyc_document_type_desc')}
               </p>
             </div>
 
@@ -210,15 +230,15 @@ export default function VerifyIdentity() {
               <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:border-primary transition-all cursor-pointer ${documentType === 'rg' ? 'border-primary bg-primary/5' : ''}`}>
                 <RadioGroupItem value="rg" id="rg" />
                 <Label htmlFor="rg" className="cursor-pointer flex-1">
-                  <div className="font-semibold">RG - Registro Geral</div>
-                  <div className="text-sm text-muted-foreground">Documento de identidade</div>
+                  <div className="font-semibold">{isBrazilian ? t('kyc_rg') : t('kyc_id_card')}</div>
+                  <div className="text-sm text-muted-foreground">{isBrazilian ? t('kyc_rg_desc') : t('kyc_id_card_desc')}</div>
                 </Label>
               </div>
               <div className={`flex items-center space-x-4 p-4 border-2 rounded-xl hover:border-primary transition-all cursor-pointer ${documentType === 'cnh' ? 'border-primary bg-primary/5' : ''}`}>
                 <RadioGroupItem value="cnh" id="cnh" />
                 <Label htmlFor="cnh" className="cursor-pointer flex-1">
-                  <div className="font-semibold">CNH - Carteira de Motorista</div>
-                  <div className="text-sm text-muted-foreground">Habilitação para dirigir</div>
+                  <div className="font-semibold">{isBrazilian ? t('kyc_cnh') : t('kyc_drivers_license')}</div>
+                  <div className="text-sm text-muted-foreground">{isBrazilian ? t('kyc_cnh_desc') : t('kyc_drivers_license_desc')}</div>
                 </Label>
               </div>
             </RadioGroup>
@@ -232,9 +252,9 @@ export default function VerifyIdentity() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                 <ImageIcon className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Frente do Documento</h2>
+              <h2 className="text-xl font-bold mb-1">{t('kyc_document_front')}</h2>
               <p className="text-sm text-muted-foreground">
-                Envie uma foto clara da frente do seu {documentType === 'rg' ? 'RG' : 'CNH'}
+                {t('kyc_document_front_desc')} {getDocumentTypeName()}
               </p>
             </div>
 
@@ -243,11 +263,11 @@ export default function VerifyIdentity() {
                 <div className="flex flex-col items-center gap-3">
                   <CheckCircle className="h-12 w-12 text-success animate-scale-in" />
                   <div>
-                    <p className="font-semibold">Documento enviado!</p>
+                    <p className="font-semibold">{t('kyc_document_uploaded')}</p>
                     <p className="text-sm text-muted-foreground">{documentFront.name}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setDocumentFront(null)}>
-                    Trocar foto
+                    {t('kyc_change_photo')}
                   </Button>
                 </div>
               </div>
@@ -263,8 +283,8 @@ export default function VerifyIdentity() {
                   />
                   <label htmlFor="doc-front" className="cursor-pointer">
                     <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                    <p className="font-semibold text-sm mb-1">Enviar arquivo</p>
-                    <p className="text-xs text-muted-foreground">Do seu dispositivo</p>
+                    <p className="font-semibold text-sm mb-1">{t('kyc_upload_file')}</p>
+                    <p className="text-xs text-muted-foreground">{t('kyc_from_device')}</p>
                   </label>
                 </div>
 
@@ -276,18 +296,18 @@ export default function VerifyIdentity() {
                   className="border-2 border-dashed rounded-xl p-6 text-center hover:border-primary transition-all bg-muted/20"
                 >
                   <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                  <p className="font-semibold text-sm mb-1">Abrir câmera</p>
-                  <p className="text-xs text-muted-foreground">Tirar foto agora</p>
+                  <p className="font-semibold text-sm mb-1">{t('kyc_open_camera')}</p>
+                  <p className="text-xs text-muted-foreground">{t('kyc_take_photo')}</p>
                 </button>
               </div>
             )}
 
             <div className="bg-muted/50 rounded-lg p-4 text-sm">
-              <p className="font-semibold mb-2">💡 Dicas para uma boa foto:</p>
+              <p className="font-semibold mb-2">💡 {t('kyc_tips_title')}</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Tire a foto em um local bem iluminado</li>
-                <li>• Certifique-se de que todos os dados estão legíveis</li>
-                <li>• Evite reflexos e sombras</li>
+                <li>• {t('kyc_tip_lighting')}</li>
+                <li>• {t('kyc_tip_readable')}</li>
+                <li>• {t('kyc_tip_no_glare')}</li>
               </ul>
             </div>
           </div>
@@ -300,9 +320,9 @@ export default function VerifyIdentity() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                 <ImageIcon className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Verso do Documento</h2>
+              <h2 className="text-xl font-bold mb-1">{t('kyc_document_back')}</h2>
               <p className="text-sm text-muted-foreground">
-                Agora envie uma foto clara do verso do seu {documentType === 'rg' ? 'RG' : 'CNH'}
+                {t('kyc_document_back_desc')} {getDocumentTypeName()}
               </p>
             </div>
 
@@ -311,11 +331,11 @@ export default function VerifyIdentity() {
                 <div className="flex flex-col items-center gap-3">
                   <CheckCircle className="h-12 w-12 text-success animate-scale-in" />
                   <div>
-                    <p className="font-semibold">Documento enviado!</p>
+                    <p className="font-semibold">{t('kyc_document_uploaded')}</p>
                     <p className="text-sm text-muted-foreground">{documentBack.name}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setDocumentBack(null)}>
-                    Trocar foto
+                    {t('kyc_change_photo')}
                   </Button>
                 </div>
               </div>
@@ -331,8 +351,8 @@ export default function VerifyIdentity() {
                   />
                   <label htmlFor="doc-back" className="cursor-pointer">
                     <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                    <p className="font-semibold text-sm mb-1">Enviar arquivo</p>
-                    <p className="text-xs text-muted-foreground">Do seu dispositivo</p>
+                    <p className="font-semibold text-sm mb-1">{t('kyc_upload_file')}</p>
+                    <p className="text-xs text-muted-foreground">{t('kyc_from_device')}</p>
                   </label>
                 </div>
 
@@ -344,8 +364,8 @@ export default function VerifyIdentity() {
                   className="border-2 border-dashed rounded-xl p-6 text-center hover:border-primary transition-all bg-muted/20"
                 >
                   <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                  <p className="font-semibold text-sm mb-1">Abrir câmera</p>
-                  <p className="text-xs text-muted-foreground">Tirar foto agora</p>
+                  <p className="font-semibold text-sm mb-1">{t('kyc_open_camera')}</p>
+                  <p className="text-xs text-muted-foreground">{t('kyc_take_photo')}</p>
                 </button>
               </div>
             )}
@@ -359,9 +379,9 @@ export default function VerifyIdentity() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                 <Camera className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Selfie com Documento</h2>
+              <h2 className="text-xl font-bold mb-1">{t('kyc_selfie')}</h2>
               <p className="text-sm text-muted-foreground">
-                Tire uma selfie segurando o documento ao lado do seu rosto
+                {t('kyc_selfie_desc')}
               </p>
             </div>
 
@@ -370,11 +390,11 @@ export default function VerifyIdentity() {
                 <div className="flex flex-col items-center gap-3">
                   <CheckCircle className="h-12 w-12 text-success animate-scale-in" />
                   <div>
-                    <p className="font-semibold">Selfie enviada!</p>
+                    <p className="font-semibold">{t('kyc_document_uploaded')}</p>
                     <p className="text-sm text-muted-foreground">{selfie.name}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={() => setSelfie(null)}>
-                    Trocar foto
+                    {t('kyc_change_photo')}
                   </Button>
                 </div>
               </div>
@@ -390,8 +410,8 @@ export default function VerifyIdentity() {
                   />
                   <label htmlFor="selfie" className="cursor-pointer">
                     <Upload className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                    <p className="font-semibold text-sm mb-1">Enviar arquivo</p>
-                    <p className="text-xs text-muted-foreground">Do seu dispositivo</p>
+                    <p className="font-semibold text-sm mb-1">{t('kyc_upload_file')}</p>
+                    <p className="text-xs text-muted-foreground">{t('kyc_from_device')}</p>
                   </label>
                 </div>
 
@@ -403,19 +423,19 @@ export default function VerifyIdentity() {
                   className="border-2 border-dashed rounded-xl p-6 text-center hover:border-primary transition-all bg-muted/20"
                 >
                   <Camera className="h-10 w-10 mx-auto mb-2 text-muted-foreground" />
-                  <p className="font-semibold text-sm mb-1">Abrir câmera</p>
-                  <p className="text-xs text-muted-foreground">Tirar selfie agora</p>
+                  <p className="font-semibold text-sm mb-1">{t('kyc_open_camera')}</p>
+                  <p className="text-xs text-muted-foreground">{t('kyc_take_selfie')}</p>
                 </button>
               </div>
             )}
 
             <div className="bg-muted/50 rounded-lg p-4 text-sm">
-              <p className="font-semibold mb-2">📸 Como tirar a selfie perfeita:</p>
+              <p className="font-semibold mb-2">📸 {t('kyc_selfie_tips_title')}</p>
               <ul className="space-y-1 text-muted-foreground">
-                <li>• Segure o documento ao lado do seu rosto</li>
-                <li>• Certifique-se de que seu rosto e o documento estão visíveis</li>
-                <li>• Use boa iluminação</li>
-                <li>• Evite usar óculos escuros ou boné</li>
+                <li>• {t('kyc_selfie_tip_hold')}</li>
+                <li>• {t('kyc_selfie_tip_visible')}</li>
+                <li>• {t('kyc_selfie_tip_lighting')}</li>
+                <li>• {t('kyc_selfie_tip_no_accessories')}</li>
               </ul>
             </div>
           </div>
@@ -428,9 +448,9 @@ export default function VerifyIdentity() {
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 mb-3">
                 <Building2 className="w-6 h-6 text-primary" />
               </div>
-              <h2 className="text-xl font-bold mb-1">Comprovante CNPJ</h2>
+              <h2 className="text-xl font-bold mb-1">{t('kyc_business_doc')}</h2>
               <p className="text-sm text-muted-foreground">
-                Envie o Comprovante de Inscrição ou Cartão CNPJ
+                {t('kyc_business_doc_desc')}
               </p>
             </div>
 
@@ -447,21 +467,21 @@ export default function VerifyIdentity() {
                   <div className="flex flex-col items-center gap-3">
                     <CheckCircle className="h-12 w-12 text-success animate-scale-in" />
                     <div>
-                      <p className="font-semibold">Documento enviado!</p>
+                      <p className="font-semibold">{t('kyc_document_uploaded')}</p>
                       <p className="text-sm text-muted-foreground">{businessDoc.name}</p>
                     </div>
                     <Button variant="outline" size="sm" onClick={(e) => {
                       e.preventDefault();
                       setBusinessDoc(null);
                     }}>
-                      Trocar arquivo
+                      {t('kyc_change_file')}
                     </Button>
                   </div>
                 ) : (
                   <>
                     <Upload className="h-12 w-12 mx-auto mb-3 text-muted-foreground" />
-                    <p className="font-semibold mb-1">Clique para enviar</p>
-                    <p className="text-sm text-muted-foreground">PNG, JPG, JPEG ou PDF (máx. 10MB)</p>
+                    <p className="font-semibold mb-1">{t('kyc_click_to_upload')}</p>
+                    <p className="text-sm text-muted-foreground">{t('kyc_file_formats')}</p>
                   </>
                 )}
               </label>
@@ -500,15 +520,15 @@ export default function VerifyIdentity() {
           }}
           title={
             cameraMode === "front"
-              ? "Frente do Documento"
+              ? t('kyc_camera_front_title')
               : cameraMode === "back"
-              ? "Verso do Documento"
-              : "Selfie com Documento"
+              ? t('kyc_camera_back_title')
+              : t('kyc_camera_selfie_title')
           }
           subtitle={
             cameraMode === "selfie"
-              ? "Segure o documento ao lado do rosto"
-              : "Posicione o documento dentro da área"
+              ? t('kyc_camera_selfie_subtitle')
+              : t('kyc_camera_doc_subtitle')
           }
         />
       )}
@@ -549,7 +569,7 @@ export default function VerifyIdentity() {
         {/* Progress Bar */}
         <div className="mb-4">
           <div className="flex justify-between mb-2">
-            <span className="text-xs font-medium">Progresso</span>
+            <span className="text-xs font-medium">{t('kyc_progress')}</span>
             <span className="text-xs font-medium text-primary">{Math.round(progress)}%</span>
           </div>
           <Progress value={progress} className="h-2" />
@@ -557,7 +577,7 @@ export default function VerifyIdentity() {
 
         {/* Stepper */}
         <div className="flex justify-between mb-6 relative">
-          {STEPS.slice(0, entityType === "business" ? 6 : 5).map((step, index) => {
+          {STEPS.slice(0, (isBrazilian && effectiveEntityType === "business") ? 6 : 5).map((step, index) => {
             const StepIcon = step.icon;
             const isCompleted = currentStep > step.id;
             const isCurrent = currentStep === step.id;
@@ -600,7 +620,7 @@ export default function VerifyIdentity() {
             size="lg"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Voltar
+            {t('back')}
           </Button>
           
           {isLastStep ? (
@@ -611,7 +631,7 @@ export default function VerifyIdentity() {
               size="lg"
             >
               {loading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              {loading ? "Enviando..." : "Finalizar"}
+              {loading ? t('kyc_sending') : t('kyc_finalize')}
             </Button>
           ) : (
             <Button
@@ -619,7 +639,7 @@ export default function VerifyIdentity() {
               className="flex-1"
               size="lg"
             >
-              Próximo
+              {t('next')}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           )}
@@ -632,7 +652,7 @@ export default function VerifyIdentity() {
             onClick={() => navigate('/')}
             className="text-muted-foreground hover:text-foreground"
           >
-            Voltar a Negociar
+            {t('kyc_back_to_trading')}
           </Button>
         </div>
 
