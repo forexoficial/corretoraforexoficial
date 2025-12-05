@@ -1,14 +1,19 @@
-import { TrendingUp, SlidersHorizontal, Compass, Radio, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search } from "lucide-react";
+import { TrendingUp, SlidersHorizontal, Pencil, Activity, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search, MousePointer, Minus, Ruler, Square, Percent, Trash2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { TradingViewChart } from "@/components/TradingViewChart";
 import { useClickSound } from "@/hooks/useClickSound";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useTradeContext } from "@/features/trading/context/TradeContext";
 import { useChartAppearance } from "@/hooks/useChartAppearance";
+import { DrawingTool } from "@/components/ChartDrawingTools";
+import { IndicatorSettings } from "@/components/IndicatorsPanel";
 
 interface Asset {
   id: string;
@@ -177,6 +182,16 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const [isTimeframeModalOpen, setIsTimeframeModalOpen] = useState(false);
   const [isChartTypeModalOpen, setIsChartTypeModalOpen] = useState(false);
   const [isAssetModalOpen, setIsAssetModalOpen] = useState(false);
+  const [isDrawingToolsOpen, setIsDrawingToolsOpen] = useState(false);
+  const [isIndicatorsOpen, setIsIndicatorsOpen] = useState(false);
+  const [selectedDrawingTool, setSelectedDrawingTool] = useState<DrawingTool>('select');
+  const [indicatorSettings, setIndicatorSettings] = useState<IndicatorSettings>({
+    sma: { enabled: false, period: 20, color: '#3b82f6' },
+    ema: { enabled: false, period: 20, color: '#f59e0b' },
+    rsi: { enabled: false, period: 14 },
+    bollingerBands: { enabled: false, period: 20, stdDev: 2 },
+    macd: { enabled: false, fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 },
+  });
   const [assets, setAssets] = useState<Asset[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [tradeProgress, setTradeProgress] = useState(0);
@@ -184,6 +199,15 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const { t } = useTranslation();
   const { activeTrade } = useTradeContext();
   const { settings: appearanceSettings } = useChartAppearance();
+
+  const drawingTools = [
+    { id: "select" as DrawingTool, icon: MousePointer, label: t("select_tool", "Seleção") },
+    { id: "trendline" as DrawingTool, icon: TrendingUp, label: t("trendline", "Linha de tendência") },
+    { id: "horizontal" as DrawingTool, icon: Minus, label: t("horizontal_line", "Linha horizontal") },
+    { id: "vertical" as DrawingTool, icon: Ruler, label: t("vertical_line", "Linha vertical") },
+    { id: "rectangle" as DrawingTool, icon: Square, label: t("rectangle", "Retângulo") },
+    { id: "fibonacci" as DrawingTool, icon: Percent, label: t("fibonacci", "Fibonacci") },
+  ];
   
   // Get dynamic chart height from settings
   const mobileChartHeight = appearanceSettings?.chart_height_mobile || 350;
@@ -331,11 +355,25 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
           >
             <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
           </button>
-          <button className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors active:scale-95">
-            <Compass className="h-5 w-5 text-muted-foreground" />
+          <button 
+            onClick={withClickSound(() => setIsDrawingToolsOpen(true))}
+            className={`h-11 w-11 flex items-center justify-center rounded-lg transition-colors active:scale-95 ${
+              selectedDrawingTool !== 'select' 
+                ? 'bg-primary/20 border border-primary/50 text-primary' 
+                : 'bg-muted/60 hover:bg-muted'
+            }`}
+          >
+            <Pencil className="h-5 w-5" />
           </button>
-          <button className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors active:scale-95">
-            <Radio className="h-5 w-5 text-muted-foreground" />
+          <button 
+            onClick={withClickSound(() => setIsIndicatorsOpen(true))}
+            className={`h-11 w-11 flex items-center justify-center rounded-lg transition-colors active:scale-95 ${
+              Object.values(indicatorSettings).some(i => i.enabled)
+                ? 'bg-primary/20 border border-primary/50 text-primary' 
+                : 'bg-muted/60 hover:bg-muted'
+            }`}
+          >
+            <Activity className="h-5 w-5" />
           </button>
         </div>
       </div>
@@ -496,6 +534,150 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
                   {t("no_assets_found", "Nenhum ativo encontrado")}
                 </div>
               )}
+            </div>
+          </ScrollArea>
+        </SheetContent>
+      </Sheet>
+
+      {/* Drawing Tools Modal */}
+      <Sheet open={isDrawingToolsOpen} onOpenChange={setIsDrawingToolsOpen}>
+        <SheetContent side="bottom" hideCloseButton className="h-auto max-h-[70vh] rounded-t-2xl bg-background border-border">
+          <SheetHeader className="flex flex-row items-center justify-between pb-4">
+            <SheetTitle className="text-left text-foreground">{t("drawing_tools", "Ferramentas de Desenho")}</SheetTitle>
+            <button 
+              onClick={withClickSound(() => setIsDrawingToolsOpen(false))}
+              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </SheetHeader>
+          
+          <div className="flex flex-col gap-2 pb-6">
+            {drawingTools.map((tool) => {
+              const Icon = tool.icon;
+              return (
+                <button
+                  key={tool.id}
+                  onClick={withClickSound(() => {
+                    setSelectedDrawingTool(tool.id);
+                    setIsDrawingToolsOpen(false);
+                  })}
+                  className={`
+                    flex items-center gap-3 p-4 rounded-xl transition-all
+                    ${selectedDrawingTool === tool.id 
+                      ? 'bg-primary/10 border-2 border-primary text-primary' 
+                      : 'bg-muted/50 border-2 border-transparent text-foreground hover:bg-muted'
+                    }
+                  `}
+                >
+                  <div className="p-2 rounded-lg bg-muted/60">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <span className="font-medium">{tool.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Indicators Modal */}
+      <Sheet open={isIndicatorsOpen} onOpenChange={setIsIndicatorsOpen}>
+        <SheetContent side="bottom" hideCloseButton className="h-auto max-h-[80vh] rounded-t-2xl bg-background border-border">
+          <SheetHeader className="flex flex-row items-center justify-between pb-4">
+            <SheetTitle className="text-left text-foreground">{t("technical_indicators", "Indicadores Técnicos")}</SheetTitle>
+            <button 
+              onClick={withClickSound(() => setIsIndicatorsOpen(false))}
+              className="h-8 w-8 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
+            >
+              <X className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </SheetHeader>
+          
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-4 pb-6">
+              {/* SMA */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                <div>
+                  <Label className="text-sm font-medium">{t("sma_simple", "SMA (Média Simples)")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("period", "Período")}: {indicatorSettings.sma.period}</p>
+                </div>
+                <Switch
+                  checked={indicatorSettings.sma.enabled}
+                  onCheckedChange={(enabled) => setIndicatorSettings(prev => ({
+                    ...prev,
+                    sma: { ...prev.sma, enabled }
+                  }))}
+                />
+              </div>
+
+              {/* EMA */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                <div>
+                  <Label className="text-sm font-medium">{t("ema_exponential", "EMA (Média Exponencial)")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("period", "Período")}: {indicatorSettings.ema.period}</p>
+                </div>
+                <Switch
+                  checked={indicatorSettings.ema.enabled}
+                  onCheckedChange={(enabled) => setIndicatorSettings(prev => ({
+                    ...prev,
+                    ema: { ...prev.ema, enabled }
+                  }))}
+                />
+              </div>
+
+              <Separator />
+
+              {/* RSI */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                <div>
+                  <Label className="text-sm font-medium">RSI</Label>
+                  <p className="text-xs text-muted-foreground">{t("period", "Período")}: {indicatorSettings.rsi.period}</p>
+                </div>
+                <Switch
+                  checked={indicatorSettings.rsi.enabled}
+                  onCheckedChange={(enabled) => setIndicatorSettings(prev => ({
+                    ...prev,
+                    rsi: { ...prev.rsi, enabled }
+                  }))}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Bollinger Bands */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                <div>
+                  <Label className="text-sm font-medium">{t("bollinger_bands", "Bandas de Bollinger")}</Label>
+                  <p className="text-xs text-muted-foreground">{t("period", "Período")}: {indicatorSettings.bollingerBands.period}</p>
+                </div>
+                <Switch
+                  checked={indicatorSettings.bollingerBands.enabled}
+                  onCheckedChange={(enabled) => setIndicatorSettings(prev => ({
+                    ...prev,
+                    bollingerBands: { ...prev.bollingerBands, enabled }
+                  }))}
+                />
+              </div>
+
+              <Separator />
+
+              {/* MACD */}
+              <div className="flex items-center justify-between p-3 bg-muted/30 rounded-xl">
+                <div>
+                  <Label className="text-sm font-medium">MACD</Label>
+                  <p className="text-xs text-muted-foreground">
+                    {indicatorSettings.macd.fastPeriod}/{indicatorSettings.macd.slowPeriod}/{indicatorSettings.macd.signalPeriod}
+                  </p>
+                </div>
+                <Switch
+                  checked={indicatorSettings.macd.enabled}
+                  onCheckedChange={(enabled) => setIndicatorSettings(prev => ({
+                    ...prev,
+                    macd: { ...prev.macd, enabled }
+                  }))}
+                />
+              </div>
             </div>
           </ScrollArea>
         </SheetContent>
