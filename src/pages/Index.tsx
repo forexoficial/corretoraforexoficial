@@ -343,8 +343,11 @@ const Index = () => {
         />
         
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <div className={`flex-1 p-4 overflow-hidden relative ${isFullscreen ? 'pb-4' : 'pb-[160px]'}`}>
-            <div className="relative w-full" style={{ height: isFullscreen ? 'calc(100vh - 96px)' : '600px' }}>
+          <div className={`flex-1 p-4 overflow-hidden relative flex flex-col ${isFullscreen ? 'pb-4' : 'pb-[100px]'}`}>
+            <div className="relative w-full flex-1 flex flex-col" style={{ 
+              minHeight: isFullscreen ? 'calc(100vh - 96px)' : '400px',
+              maxHeight: isFullscreen ? 'calc(100vh - 96px)' : undefined 
+            }}>
               {/* Chart Controls - Top Left (sempre visível) */}
               <div className="absolute top-4 left-4 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-50 shadow-lg">
                 <button 
