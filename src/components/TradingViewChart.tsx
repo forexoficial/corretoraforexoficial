@@ -1441,7 +1441,7 @@ export function TradingViewChart({
     if (useResponsive) {
       style.flex = '1 1 0';
       style.minHeight = isMobile ? '200px' : '400px';
-      style.maxHeight = isMobile ? 'calc(100vh - 280px)' : isFullscreen ? 'calc(100vh - 160px)' : 'calc(100vh - 380px)';
+      style.maxHeight = isMobile ? 'calc(100vh - 280px)' : isFullscreen ? 'calc(100vh - 160px)' : 'calc(100vh - 280px)';
       style.overflow = 'hidden';
     } else if (aspectRatio) {
       style.aspectRatio = `${aspectRatio}`;
