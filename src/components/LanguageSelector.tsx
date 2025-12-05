@@ -7,12 +7,12 @@ import {
 } from "@/components/ui/select";
 import { useLanguageContext } from "@/contexts/LanguageContext";
 import flagEN from "@/assets/flag-en.webp";
-import flagPT from "@/assets/flag-pt.webp";
+import flagBR from "@/assets/flag-br.webp";
 import flagES from "@/assets/flag-es.webp";
 
 const languages = [
   { code: "en", name: "EN", flag: flagEN },
-  { code: "pt", name: "PT", flag: flagPT },
+  { code: "pt", name: "PT", flag: flagBR },
   { code: "es", name: "ES", flag: flagES },
 ];
 
