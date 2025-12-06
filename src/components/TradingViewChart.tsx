@@ -425,6 +425,13 @@ export function TradingViewChart({
       if (!point) return;
       
       console.log('[Mouse Down] Starting drag drawing:', currentDrawingTool, point);
+      
+      // Disable chart scrolling/panning while drawing
+      chart.applyOptions({
+        handleScroll: false,
+        handleScale: false,
+      });
+      
       drawing.startDragDrawing(currentDrawingTool, point);
       
       // Prevent chart from panning while drawing
@@ -445,12 +452,21 @@ export function TradingViewChart({
       if (point) {
         drawing.updateDragPoint(point);
       }
+      
+      e.preventDefault();
+      e.stopPropagation();
     };
 
     const handleMouseUp = () => {
       if (drawing.isDraggingRef.current) {
         console.log('[Mouse Up] Ending drag drawing');
         drawing.endDragDrawing();
+        
+        // Re-enable chart scrolling/panning after drawing
+        chart.applyOptions({
+          handleScroll: true,
+          handleScale: true,
+        });
       }
     };
 
@@ -473,6 +489,13 @@ export function TradingViewChart({
       if (!point) return;
       
       console.log('[Touch Start] Starting drag drawing:', currentDrawingTool, point);
+      
+      // Disable chart scrolling/panning while drawing
+      chart.applyOptions({
+        handleScroll: false,
+        handleScale: false,
+      });
+      
       drawing.startDragDrawing(currentDrawingTool, point);
       
       e.preventDefault();
@@ -500,6 +523,12 @@ export function TradingViewChart({
       if (drawing.isDraggingRef.current) {
         console.log('[Touch End] Ending drag drawing');
         drawing.endDragDrawing();
+        
+        // Re-enable chart scrolling/panning after drawing
+        chart.applyOptions({
+          handleScroll: true,
+          handleScale: true,
+        });
       }
     };
 
