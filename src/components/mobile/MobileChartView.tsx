@@ -338,6 +338,9 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
             timeframe={selectedTimeframe}
             height={mobileChartHeight}
             onCurrentPriceUpdate={onCurrentPriceUpdate}
+            indicatorSettings={indicatorSettings}
+            drawingTool={selectedDrawingTool}
+            onDrawingToolChange={setSelectedDrawingTool}
           />
         </div>
 
