@@ -45,6 +45,10 @@ export function useChartDrawing(
   const svgOverlayRef = useRef<SVGSVGElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
+  
+  // For drag-based drawing (trendline, rectangle, fibonacci)
+  const isDraggingRef = useRef(false);
+  const currentDrawingTypeRef = useRef<DrawingObject["type"] | null>(null);
 
   // Sync state with refs
   useEffect(() => {
@@ -180,18 +184,88 @@ export function useChartDrawing(
     }
   }, [chartRef]);
 
-  // Start drawing
+  // Start drawing (for click-based: horizontal, vertical)
   const startDrawing = useCallback((type: DrawingObject["type"], point: { price: number; time: number }) => {
     console.log('[Drawing] Starting drawing:', { type, point });
     // Update refs immediately for synchronous access
     isDrawingRef.current = true;
     currentPointsRef.current = [point];
+    currentDrawingTypeRef.current = type;
     // Also update state for React reactivity
     setIsDrawing(true);
     setCurrentPoints([point]);
   }, []);
 
-  // Add point to current drawing
+  // Start drag drawing (for trendline, rectangle, fibonacci)
+  const startDragDrawing = useCallback((type: DrawingObject["type"], point: { price: number; time: number }) => {
+    console.log('[Drawing] Starting drag drawing:', { type, point });
+    isDraggingRef.current = true;
+    isDrawingRef.current = true;
+    currentDrawingTypeRef.current = type;
+    currentPointsRef.current = [point, point]; // Start with same point for both
+    setIsDrawing(true);
+    setCurrentPoints([point, point]);
+  }, []);
+
+  // Update drag point (while mouse is moving)
+  const updateDragPoint = useCallback((point: { price: number; time: number }) => {
+    if (!isDraggingRef.current || currentPointsRef.current.length < 2) return;
+    
+    // Update only the second point
+    const newPoints = [currentPointsRef.current[0], point];
+    currentPointsRef.current = newPoints;
+    setCurrentPoints(newPoints);
+  }, []);
+
+  // End drag drawing (on mouse up)
+  const endDragDrawing = useCallback(() => {
+    if (!isDraggingRef.current) return;
+    
+    const type = currentDrawingTypeRef.current;
+    const points = currentPointsRef.current;
+    
+    console.log('[Drawing] End drag drawing:', { type, points });
+    
+    isDraggingRef.current = false;
+    
+    // Check if the drag was significant (not just a click)
+    if (points.length >= 2 && type) {
+      const dx = Math.abs(points[1].time - points[0].time);
+      const dy = Math.abs(points[1].price - points[0].price);
+      
+      // If movement was too small, cancel the drawing
+      if (dx < 1 && dy < 0.0001) {
+        console.log('[Drawing] Drag too small, canceling');
+        setIsDrawing(false);
+        setCurrentPoints([]);
+        isDrawingRef.current = false;
+        currentDrawingTypeRef.current = null;
+        return;
+      }
+      
+      // Complete the drawing
+      const newDrawing: DrawingObject = {
+        id: `drawing-${Date.now()}`,
+        type,
+        points: [...points],
+        color: currentStyle.color,
+        lineWidth: currentStyle.lineWidth,
+        style: currentStyle.lineStyle
+      };
+
+      console.log('[Drawing] Creating drawing from drag:', newDrawing);
+      setDrawings(prev => [...prev, newDrawing]);
+      saveDrawing(newDrawing);
+      toast.success('Desenho adicionado');
+    }
+    
+    setIsDrawing(false);
+    setCurrentPoints([]);
+    isDrawingRef.current = false;
+    currentDrawingTypeRef.current = null;
+  }, [currentStyle]);
+
+  // Add point to current drawing (legacy for click-based)
   const addPoint = useCallback((point: { price: number; time: number }) => {
     console.log('[Drawing] Adding point:', point);
     // Update ref immediately for synchronous access
@@ -240,6 +314,8 @@ export function useChartDrawing(
   const cancelDrawing = useCallback(() => {
     setIsDrawing(false);
     setCurrentPoints([]);
+    isDraggingRef.current = false;
+    currentDrawingTypeRef.current = null;
   }, []);
 
   // Remove drawing
@@ -281,16 +357,19 @@ export function useChartDrawing(
       svgOverlayRef.current.removeChild(svgOverlayRef.current.firstChild);
     }
 
-    const allDrawings = isDrawing && currentPoints.length > 0
-      ? [...drawings, { 
+    // Include temp drawing while dragging/drawing
+    const tempDrawing = (isDrawing && currentPoints.length >= 2) 
+      ? { 
           id: 'temp', 
-          type: 'trendline' as const, 
+          type: (currentDrawingTypeRef.current || 'trendline') as DrawingObject["type"], 
           points: currentPoints, 
-          color: '#ffffff', 
-          lineWidth: 2, 
+          color: currentStyle.color, 
+          lineWidth: currentStyle.lineWidth, 
           style: 'dashed' as const 
-        }]
-      : drawings;
+        }
+      : null;
+    
+    const allDrawings = tempDrawing ? [...drawings, tempDrawing] : drawings;
 
     allDrawings.forEach(drawing => {
       const svg = svgOverlayRef.current;
@@ -435,12 +514,16 @@ export function useChartDrawing(
     drawings,
     isDrawing,
     isDrawingRef, // Export ref for checking without closure issues
+    isDraggingRef, // Export for drag detection
     currentPoints,
     currentPointsRef, // Export ref for checking without closure issues
     currentStyle,
     setCurrentStyle,
     initializeOverlay,
     startDrawing,
+    startDragDrawing,
+    updateDragPoint,
+    endDragDrawing,
     addPoint,
     completeDrawing,
     cancelDrawing,
