@@ -555,50 +555,52 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
             </button>
           </SheetHeader>
           
-          <div className="flex flex-col gap-2 pb-6">
-            {drawingTools.map((tool) => {
-              const Icon = tool.icon;
-              return (
-                <button
-                  key={tool.id}
-                  onClick={withClickSound(() => {
-                    setSelectedDrawingTool(tool.id);
-                    setIsDrawingToolsOpen(false);
-                  })}
-                  className={`
-                    flex items-center gap-3 p-4 rounded-xl transition-all
-                    ${selectedDrawingTool === tool.id 
-                      ? 'bg-primary/10 border-2 border-primary text-primary' 
-                      : 'bg-muted/50 border-2 border-transparent text-foreground hover:bg-muted'
-                    }
-                  `}
-                >
-                  <div className="p-2 rounded-lg bg-muted/60">
-                    <Icon className="h-5 w-5" />
-                  </div>
-                  <span className="font-medium">{tool.label}</span>
-                </button>
-              );
-            })}
-            
-            <Separator className="my-2" />
-            
-            {/* Clear All Drawings Button */}
-            <button
-              onClick={withClickSound(() => {
-                if ((window as any).__clearChartDrawings) {
-                  (window as any).__clearChartDrawings();
-                }
-                setIsDrawingToolsOpen(false);
+          <ScrollArea className="max-h-[50vh]">
+            <div className="flex flex-col gap-2 pb-6">
+              {drawingTools.map((tool) => {
+                const Icon = tool.icon;
+                return (
+                  <button
+                    key={tool.id}
+                    onClick={withClickSound(() => {
+                      setSelectedDrawingTool(tool.id);
+                      setIsDrawingToolsOpen(false);
+                    })}
+                    className={`
+                      flex items-center gap-3 p-4 rounded-xl transition-all
+                      ${selectedDrawingTool === tool.id 
+                        ? 'bg-primary/10 border-2 border-primary text-primary' 
+                        : 'bg-muted/50 border-2 border-transparent text-foreground hover:bg-muted'
+                      }
+                    `}
+                  >
+                    <div className="p-2 rounded-lg bg-muted/60">
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <span className="font-medium">{tool.label}</span>
+                  </button>
+                );
               })}
-              className="flex items-center gap-3 p-4 rounded-xl transition-all bg-destructive/10 border-2 border-transparent text-destructive hover:bg-destructive/20"
-            >
-              <div className="p-2 rounded-lg bg-destructive/20">
-                <Trash2 className="h-5 w-5" />
-              </div>
-              <span className="font-medium">{t("clear_all_drawings", "Limpar todos os desenhos")}</span>
-            </button>
-          </div>
+              
+              <Separator className="my-2" />
+              
+              {/* Clear All Drawings Button */}
+              <button
+                onClick={withClickSound(() => {
+                  if ((window as any).__clearChartDrawings) {
+                    (window as any).__clearChartDrawings();
+                  }
+                  setIsDrawingToolsOpen(false);
+                })}
+                className="flex items-center gap-3 p-4 rounded-xl transition-all bg-destructive/10 border-2 border-transparent text-destructive hover:bg-destructive/20"
+              >
+                <div className="p-2 rounded-lg bg-destructive/20">
+                  <Trash2 className="h-5 w-5" />
+                </div>
+                <span className="font-medium">{t("clear_all_drawings", "Limpar todos os desenhos")}</span>
+              </button>
+            </div>
+          </ScrollArea>
         </SheetContent>
       </Sheet>
 
