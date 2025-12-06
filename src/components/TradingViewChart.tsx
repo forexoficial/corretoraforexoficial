@@ -235,8 +235,14 @@ export function TradingViewChart({
 
   // Sync drawing tool to window ref without recreating chart
   useEffect(() => {
+    console.log('[TradingViewChart] Setting drawingTool to window:', drawingTool);
     (window as any).__currentDrawingTool = drawingTool;
   }, [drawingTool]);
+
+  // Debug: Log indicatorSettings changes
+  useEffect(() => {
+    console.log('[TradingViewChart] indicatorSettings changed:', indicatorSettings);
+  }, [indicatorSettings]);
 
   // Load active trades whenever userId, assetId, or timeframe changes
   useEffect(() => {
