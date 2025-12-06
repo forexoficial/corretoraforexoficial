@@ -4,13 +4,14 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useTranslation } from "@/hooks/useTranslation";
-import { ArrowLeft, Shield, Wallet, Zap, Info, BadgeCheck, Loader2, CreditCard, Globe } from "lucide-react";
+import { ArrowLeft, Shield, Wallet, Zap, Info, BadgeCheck, Loader2, CreditCard, Globe, Bitcoin } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { TradingHeader } from "@/components/TradingHeader";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { usePayment } from "@/hooks/usePayment";
 import PaymentQRCode from "@/components/payment/PaymentQRCode";
 import { StripeCheckout } from "@/components/payment/StripeCheckout";
+import { CoinbaseCheckout } from "@/components/payment/CoinbaseCheckout";
 import pixIcon from "@/assets/pix.webp";
 import secureIcon1 from "@/assets/secure-verified-1.webp";
 import secureIcon2 from "@/assets/secure-verified-2.webp";
@@ -23,7 +24,7 @@ import { toast } from "sonner";
 import { formatDocument, validateDocument, DocumentType } from "@/lib/validators";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
 
-type PaymentMethodType = "pix" | "stripe";
+type PaymentMethodType = "pix" | "stripe" | "crypto";
 
 export default function Deposit() {
   const { t, language } = useTranslation();
@@ -42,8 +43,11 @@ export default function Deposit() {
   const [completedAmount, setCompletedAmount] = useState(0);
   const [newBalance, setNewBalance] = useState(0);
   const [showStripeCheckout, setShowStripeCheckout] = useState(false);
+  const [showCoinbaseCheckout, setShowCoinbaseCheckout] = useState(false);
   const [stripeAmount, setStripeAmount] = useState(0);
+  const [cryptoAmount, setCryptoAmount] = useState(0);
   const [hasStripeGateway, setHasStripeGateway] = useState(false);
+  const [hasCoinbaseGateway, setHasCoinbaseGateway] = useState(false);
 
   const quickAmounts = [50, 100, 500, 1000];
   const stripeQuickAmounts = [10, 50, 100, 500];
@@ -57,19 +61,33 @@ export default function Deposit() {
     }
   }, [searchParams]);
 
-  // Check if Stripe gateway is configured
+  // Check if payment gateways are configured
   useEffect(() => {
-    const checkStripeGateway = async () => {
-      const { data } = await supabase
+    const checkGateways = async () => {
+      // Check Stripe gateway
+      const { data: stripeData } = await supabase
         .from("payment_gateways")
         .select("*")
         .eq("type", "worldwide")
         .eq("is_active", true)
         .single();
       
-      setHasStripeGateway(!!data);
+      setHasStripeGateway(!!stripeData);
+
+      // Check Coinbase gateway
+      const { data: cryptoGateways } = await supabase
+        .from("payment_gateways")
+        .select("*")
+        .eq("type", "crypto")
+        .eq("is_active", true);
+      
+      const coinbaseGateway = cryptoGateways?.find(g => {
+        const config = g.config as Record<string, any> | null;
+        return config?.provider === 'coinbase';
+      });
+      setHasCoinbaseGateway(!!coinbaseGateway);
     };
-    checkStripeGateway();
+    checkGateways();
   }, []);
 
   // Load user profile data
@@ -201,6 +219,20 @@ export default function Deposit() {
     setShowStripeCheckout(true);
   };
 
+  const handleCryptoSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const numAmount = parseFloat(amount);
+    
+    if (!numAmount || numAmount < 5) {
+      toast.error("Minimum crypto deposit is $5.00");
+      return;
+    }
+
+    setCryptoAmount(numAmount);
+    setShowCoinbaseCheckout(true);
+  };
+
   const handleDocumentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatDocument(e.target.value, documentType);
     setDocument(formatted);
@@ -209,6 +241,7 @@ export default function Deposit() {
   const handleBackToDeposit = () => {
     setPaymentCompleted(false);
     setShowStripeCheckout(false);
+    setShowCoinbaseCheckout(false);
     resetPayment();
   };
 
@@ -231,10 +264,10 @@ export default function Deposit() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {!paymentData && !showStripeCheckout && <TradingHeader />}
+      {!paymentData && !showStripeCheckout && !showCoinbaseCheckout && <TradingHeader />}
       
       {/* Header Navigation */}
-      {!paymentData && !showStripeCheckout && (
+      {!paymentData && !showStripeCheckout && !showCoinbaseCheckout && (
         <div className="border-b border-border bg-card flex-shrink-0">
           <div className="container mx-auto px-3 sm:px-4">
             <Tabs defaultValue="deposit" className="w-full">
@@ -301,6 +334,27 @@ export default function Deposit() {
               </h2>
               <StripeCheckout
                 amount={stripeAmount}
+                onSuccess={handleStripeSuccess}
+                onCancel={handleBackToDeposit}
+              />
+            </Card>
+          </div>
+        ) : showCoinbaseCheckout ? (
+          <div className="container mx-auto py-6 lg:py-10 max-w-lg">
+            <div className="mb-6">
+              <Button
+                variant="ghost"
+                onClick={handleBackToDeposit}
+                className="gap-2"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                {t("back") || "Back"}
+              </Button>
+            </div>
+            <Card className="p-6">
+              <CoinbaseCheckout
+                amount={cryptoAmount}
+                currency="USD"
                 onSuccess={handleStripeSuccess}
                 onCancel={handleBackToDeposit}
               />
@@ -380,6 +434,32 @@ export default function Deposit() {
                       </div>
                     </button>
                   )}
+
+                  {hasCoinbaseGateway && (
+                    <button
+                      onClick={() => setPaymentMethod("crypto")}
+                      className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
+                        paymentMethod === "crypto"
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-muted-foreground/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-card rounded-lg border border-border">
+                          <Bitcoin className="w-6 h-6 text-amber-500" />
+                        </div>
+                        <div className="text-left flex-1">
+                          <div className="font-semibold text-sm flex items-center gap-2">
+                            <Wallet className="w-4 h-4" />
+                            Cryptocurrency
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            BTC, ETH, USDC, LTC
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -451,6 +531,65 @@ export default function Deposit() {
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t("minimum") || "Minimum"}:</span>
                         <span className="font-medium text-primary">$1.00</span>
+                      </div>
+                    </div>
+
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      size="lg"
+                    >
+                      {t("continue_to_payment") || "Continue to Payment"}
+                    </Button>
+                  </form>
+                </Card>
+              ) : paymentMethod === "crypto" ? (
+                <Card className="p-6">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Bitcoin className="w-5 h-5 text-amber-500" />
+                    {t("crypto_deposit") || "Crypto Deposit"}
+                  </h3>
+                  <form onSubmit={handleCryptoSubmit} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="crypto-amount">{t("value", "Valor")} (USD)</Label>
+                      <Input
+                        id="crypto-amount"
+                        type="number"
+                        step="0.01"
+                        min={5}
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        placeholder="0.00"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-4 gap-2">
+                      {stripeQuickAmounts.map((quickAmount) => (
+                        <Button
+                          key={quickAmount}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setAmount(quickAmount.toString())}
+                        >
+                          ${quickAmount}
+                        </Button>
+                      ))}
+                    </div>
+
+                    <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{t("supported_crypto") || "Supported"}:</span>
+                        <span>BTC, ETH, USDC, LTC, DAI</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{t("currency") || "Currency"}:</span>
+                        <span className="font-medium">USD (US Dollar)</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">{t("minimum") || "Minimum"}:</span>
+                        <span className="font-medium text-primary">$5.00</span>
                       </div>
                     </div>
 
