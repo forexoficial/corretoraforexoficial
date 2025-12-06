@@ -563,8 +563,8 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
             </button>
           </SheetHeader>
           
-          <ScrollArea className="max-h-[50vh]">
-            <div className="flex flex-col gap-2 pb-6">
+          <ScrollArea className="max-h-[60vh]">
+            <div className="flex flex-col gap-2 pb-8">
               {drawingTools.map((tool) => {
                 const Icon = tool.icon;
                 return (
