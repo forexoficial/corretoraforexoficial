@@ -552,8 +552,8 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
 
       {/* Drawing Tools Modal */}
       <Sheet open={isDrawingToolsOpen} onOpenChange={setIsDrawingToolsOpen}>
-        <SheetContent side="bottom" hideCloseButton className="h-auto max-h-[70vh] rounded-t-2xl bg-background border-border">
-          <SheetHeader className="flex flex-row items-center justify-between pb-4">
+        <SheetContent side="bottom" hideCloseButton className="h-[85vh] rounded-t-2xl bg-background border-border flex flex-col">
+          <SheetHeader className="flex flex-row items-center justify-between pb-4 flex-shrink-0">
             <SheetTitle className="text-left text-foreground">{t("drawing_tools", "Ferramentas de Desenho")}</SheetTitle>
             <button 
               onClick={withClickSound(() => setIsDrawingToolsOpen(false))}
@@ -563,7 +563,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
             </button>
           </SheetHeader>
           
-          <ScrollArea className="max-h-[60vh]">
+          <ScrollArea className="flex-1 overflow-y-auto">
             <div className="flex flex-col gap-2 pb-8">
               {drawingTools.map((tool) => {
                 const Icon = tool.icon;
