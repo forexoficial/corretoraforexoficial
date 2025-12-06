@@ -375,53 +375,148 @@ export function TradingViewChart({
       drawing.initializeOverlay(chartContainerRef.current);
     }
 
-    // Handle drawing tool clicks
+    // Helper function to get point from coordinates
+    const getPointFromCoordinates = (x: number, y: number) => {
+      const price = candleSeries.coordinateToPrice(y);
+      const time = chart.timeScale().coordinateToTime(x);
+      if (!price || !time) return null;
+      return { price, time: time as number };
+    };
+
+    // Handle drawing tool clicks (for horizontal/vertical lines only)
     const handleChartClick = (param: any) => {
-      // Get current drawing tool from ref to avoid recreating chart on tool change
       const currentDrawingTool = (window as any).__currentDrawingTool || 'select';
-      // Use ref to get current drawing state without closure issues
-      const currentlyDrawing = drawing.isDrawingRef.current;
+      const isDragging = drawing.isDraggingRef.current;
       
-      console.log('[Chart Click] Tool:', currentDrawingTool, 'isDrawing:', currentlyDrawing, 'Param:', param);
-      
-      if (currentDrawingTool === 'select' || !param || !param.point) {
-        console.log('[Chart Click] Skipped - tool is select or no point');
+      // Skip click handling for drag-based tools or if dragging
+      if (currentDrawingTool === 'select' || !param || !param.point || isDragging) {
         return;
       }
       
-      // Get price and time from click coordinates
-      const price = candleSeries.coordinateToPrice(param.point.y);
-      const time = chart.timeScale().coordinateToTime(param.point.x);
-      
-      console.log('[Chart Click] Price:', price, 'Time:', time);
-      
-      if (!price || !time) {
-        console.log('[Chart Click] Invalid price or time');
+      // Only handle click for horizontal and vertical lines
+      if (currentDrawingTool !== 'horizontal' && currentDrawingTool !== 'vertical') {
         return;
       }
       
-      const point = { price, time: time as number };
+      const point = getPointFromCoordinates(param.point.x, param.point.y);
+      if (!point) return;
       
-      // If not currently drawing, start a new drawing
-      if (!currentlyDrawing) {
-        console.log('[Chart Click] Starting new drawing');
-        drawing.startDrawing(currentDrawingTool, point);
-        
-        // For horizontal and vertical lines, complete immediately after first point
-        if (currentDrawingTool === 'horizontal' || currentDrawingTool === 'vertical') {
-          console.log('[Chart Click] Auto-completing horizontal/vertical line');
-          setTimeout(() => drawing.completeDrawing(currentDrawingTool), 50);
-        }
-      } else {
-        // Add second point and complete the drawing
-        console.log('[Chart Click] Adding second point and completing');
-        drawing.addPoint(point);
-        setTimeout(() => drawing.completeDrawing(currentDrawingTool), 50);
+      console.log('[Chart Click] Creating line:', currentDrawingTool, point);
+      drawing.startDrawing(currentDrawingTool, point);
+      setTimeout(() => drawing.completeDrawing(currentDrawingTool), 50);
+    };
+
+    // Handle mouse/touch events for drag-based drawing (trendline, rectangle, fibonacci)
+    const handleMouseDown = (e: MouseEvent) => {
+      const currentDrawingTool = (window as any).__currentDrawingTool || 'select';
+      
+      // Only handle drag for trendline, rectangle, fibonacci
+      if (!['trendline', 'rectangle', 'fibonacci'].includes(currentDrawingTool)) {
+        return;
+      }
+      
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const point = getPointFromCoordinates(x, y);
+      
+      if (!point) return;
+      
+      console.log('[Mouse Down] Starting drag drawing:', currentDrawingTool, point);
+      drawing.startDragDrawing(currentDrawingTool, point);
+      
+      // Prevent chart from panning while drawing
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!drawing.isDraggingRef.current) return;
+      
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      const point = getPointFromCoordinates(x, y);
+      
+      if (point) {
+        drawing.updateDragPoint(point);
       }
     };
 
-    // Subscribe to click events
+    const handleMouseUp = () => {
+      if (drawing.isDraggingRef.current) {
+        console.log('[Mouse Up] Ending drag drawing');
+        drawing.endDragDrawing();
+      }
+    };
+
+    // Touch event handlers for mobile
+    const handleTouchStart = (e: TouchEvent) => {
+      const currentDrawingTool = (window as any).__currentDrawingTool || 'select';
+      
+      if (!['trendline', 'rectangle', 'fibonacci'].includes(currentDrawingTool)) {
+        return;
+      }
+      
+      const touch = e.touches[0];
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect || !touch) return;
+      
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      const point = getPointFromCoordinates(x, y);
+      
+      if (!point) return;
+      
+      console.log('[Touch Start] Starting drag drawing:', currentDrawingTool, point);
+      drawing.startDragDrawing(currentDrawingTool, point);
+      
+      e.preventDefault();
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!drawing.isDraggingRef.current) return;
+      
+      const touch = e.touches[0];
+      const rect = chartContainerRef.current?.getBoundingClientRect();
+      if (!rect || !touch) return;
+      
+      const x = touch.clientX - rect.left;
+      const y = touch.clientY - rect.top;
+      const point = getPointFromCoordinates(x, y);
+      
+      if (point) {
+        drawing.updateDragPoint(point);
+      }
+      
+      e.preventDefault();
+    };
+
+    const handleTouchEnd = () => {
+      if (drawing.isDraggingRef.current) {
+        console.log('[Touch End] Ending drag drawing');
+        drawing.endDragDrawing();
+      }
+    };
+
+    // Subscribe to click events (for horizontal/vertical lines)
     chart.subscribeClick(handleChartClick);
+
+    // Add mouse/touch event listeners for drag-based drawing
+    const container = chartContainerRef.current;
+    if (container) {
+      container.addEventListener('mousedown', handleMouseDown);
+      container.addEventListener('mousemove', handleMouseMove);
+      container.addEventListener('mouseup', handleMouseUp);
+      container.addEventListener('mouseleave', handleMouseUp);
+      container.addEventListener('touchstart', handleTouchStart, { passive: false });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false });
+      container.addEventListener('touchend', handleTouchEnd);
+    }
 
     // Handle ESC key to cancel drawing
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -493,6 +588,18 @@ export function TradingViewChart({
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
+      
+      // Remove mouse/touch event listeners
+      if (container) {
+        container.removeEventListener('mousedown', handleMouseDown);
+        container.removeEventListener('mousemove', handleMouseMove);
+        container.removeEventListener('mouseup', handleMouseUp);
+        container.removeEventListener('mouseleave', handleMouseUp);
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+      }
+      
       if (resizeObserver) {
         resizeObserver.disconnect();
       }
