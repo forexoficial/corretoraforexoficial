@@ -1,4 +1,4 @@
-import { TrendingUp, SlidersHorizontal, Pencil, Activity, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search, MousePointer, Minus, Ruler, Square, Percent, Trash2 } from "lucide-react";
+import { TrendingUp, SlidersHorizontal, Pencil, Activity, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search, MousePointer, Minus, Ruler, Square, Percent, Trash2, Palette } from "lucide-react";
 import { useState, useEffect } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,9 @@ import { useTradeContext } from "@/features/trading/context/TradeContext";
 import { useChartAppearance } from "@/hooks/useChartAppearance";
 import { DrawingTool } from "@/components/ChartDrawingTools";
 import { IndicatorSettings } from "@/components/IndicatorsPanel";
+import { DrawingStyle } from "@/components/DrawingCustomizer";
+import { Slider } from "@/components/ui/slider";
+import { cn } from "@/lib/utils";
 
 interface Asset {
   id: string;
@@ -185,6 +188,11 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   const [isDrawingToolsOpen, setIsDrawingToolsOpen] = useState(false);
   const [isIndicatorsOpen, setIsIndicatorsOpen] = useState(false);
   const [selectedDrawingTool, setSelectedDrawingTool] = useState<DrawingTool>('select');
+  const [drawingStyle, setDrawingStyle] = useState<DrawingStyle>({
+    color: '#3b82f6',
+    lineWidth: 2,
+    lineStyle: 'solid',
+  });
   const [indicatorSettings, setIndicatorSettings] = useState<IndicatorSettings>({
     sma: { enabled: false, period: 20, color: '#3b82f6' },
     ema: { enabled: false, period: 20, color: '#f59e0b' },
@@ -582,7 +590,111 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
                 );
               })}
               
-              <Separator className="my-2" />
+              <Separator className="my-3" />
+              
+              {/* Customize Drawing Section */}
+              <div className="p-4 rounded-xl bg-muted/30 border border-border space-y-4">
+                <div className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-primary" />
+                  <span className="font-medium text-foreground">{t("customize_drawing", "Personalizar Desenho")}</span>
+                </div>
+                
+                {/* Color Selection */}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">{t("color", "Cor")}</label>
+                  <div className="grid grid-cols-8 gap-2">
+                    {[
+                      { name: "Verde", value: "#22c55e" },
+                      { name: "Vermelho", value: "#ef4444" },
+                      { name: "Azul", value: "#3b82f6" },
+                      { name: "Amarelo", value: "#fbbf24" },
+                      { name: "Roxo", value: "#8b5cf6" },
+                      { name: "Branco", value: "#ffffff" },
+                      { name: "Cinza", value: "#6b7280" },
+                      { name: "Laranja", value: "#f97316" },
+                    ].map((color) => (
+                      <button
+                        key={color.value}
+                        onClick={withClickSound(() => setDrawingStyle({ ...drawingStyle, color: color.value }))}
+                        className={cn(
+                          "h-8 rounded-lg border-2 transition-all",
+                          drawingStyle.color === color.value
+                            ? "border-primary ring-2 ring-primary/20 scale-110"
+                            : "border-border"
+                        )}
+                        style={{ backgroundColor: color.value }}
+                        title={color.name}
+                      />
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Line Width */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-sm text-muted-foreground">{t("line_width", "Espessura")}</label>
+                    <span className="text-sm text-foreground">{drawingStyle.lineWidth}px</span>
+                  </div>
+                  <Slider
+                    value={[drawingStyle.lineWidth]}
+                    onValueChange={([value]) => setDrawingStyle({ ...drawingStyle, lineWidth: value })}
+                    min={1}
+                    max={10}
+                    step={1}
+                    className="w-full"
+                  />
+                  <div className="h-4 flex items-center">
+                    <div
+                      style={{
+                        height: `${drawingStyle.lineWidth}px`,
+                        backgroundColor: drawingStyle.color,
+                      }}
+                      className="w-full rounded-full"
+                    />
+                  </div>
+                </div>
+                
+                {/* Line Style */}
+                <div className="space-y-2">
+                  <label className="text-sm text-muted-foreground">{t("line_style", "Estilo da Linha")}</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { name: t("solid", "Sólido"), value: "solid" as const },
+                      { name: t("dashed", "Tracejado"), value: "dashed" as const },
+                      { name: t("dotted", "Pontilhado"), value: "dotted" as const },
+                    ].map((style) => (
+                      <button
+                        key={style.value}
+                        onClick={withClickSound(() => setDrawingStyle({ ...drawingStyle, lineStyle: style.value }))}
+                        className={cn(
+                          "px-3 py-2 rounded-lg border-2 text-xs font-medium transition-all",
+                          drawingStyle.lineStyle === style.value
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-muted/50 hover:bg-muted text-foreground"
+                        )}
+                      >
+                        <div className="space-y-1">
+                          <div className="text-center">{style.name}</div>
+                          <div
+                            className="h-0.5 mx-auto"
+                            style={{
+                              width: "100%",
+                              borderTop:
+                                style.value === "solid"
+                                  ? `2px solid ${drawingStyle.color}`
+                                  : style.value === "dashed"
+                                  ? `2px dashed ${drawingStyle.color}`
+                                  : `2px dotted ${drawingStyle.color}`,
+                            }}
+                          />
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              
+              <Separator className="my-3" />
               
               {/* Clear All Drawings Button */}
               <button
