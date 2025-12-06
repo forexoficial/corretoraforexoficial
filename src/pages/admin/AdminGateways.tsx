@@ -259,6 +259,8 @@ export default function AdminGateways() {
         return <Wallet className="h-4 w-4 text-green-500" />;
       case CryptoProvider.CUSTOM_CRYPTO:
         return <Key className="h-4 w-4 text-amber-500" />;
+      case CryptoProvider.COINBASE:
+        return <Wallet className="h-4 w-4 text-blue-500" />;
       case WorldwideProvider.STRIPE:
         return <Wallet className="h-4 w-4 text-indigo-500" />;
       case WorldwideProvider.PAYPAL:
@@ -519,14 +521,42 @@ export default function AdminGateways() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label>Provedor Cripto</Label>
+              <Select
+                value={formData.provider}
+                onValueChange={(value) => {
+                  const secretMap: Record<string, string> = {
+                    [CryptoProvider.CUSTOM_CRYPTO]: "CUSTOM_CRYPTO_WALLET",
+                    [CryptoProvider.COINBASE]: "COINBASE_API_KEY",
+                  };
+                  setFormData({ 
+                    ...formData, 
+                    provider: value,
+                    secretName: secretMap[value] || "CUSTOM_API_KEY",
+                    config: JSON.stringify({ provider: value }, null, 2),
+                    credentials: {}
+                  });
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={CryptoProvider.CUSTOM_CRYPTO}>USDT (Carteira Manual)</SelectItem>
+                  <SelectItem value={CryptoProvider.COINBASE}>Coinbase Commerce</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-4 border rounded-lg p-4 bg-muted/30">
               <div className="flex items-center gap-2 mb-2">
                 <Key className="h-4 w-4" />
                 <Label className="text-base font-semibold">
-                  {editingGateway ? "Atualizar Credenciais USDT" : "Credenciais USDT"}
+                  {editingGateway ? "Atualizar Credenciais Cripto" : "Credenciais Cripto"}
                 </Label>
               </div>
-              {CRYPTO_PROVIDER_CREDENTIALS[CryptoProvider.CUSTOM_CRYPTO]?.map((field) => (
+              {CRYPTO_PROVIDER_CREDENTIALS[formData.provider as CryptoProvider]?.map((field) => (
                 <div key={field.name} className="space-y-2">
                   <Label>
                     {field.label} {field.required && <span className="text-destructive">*</span>}
