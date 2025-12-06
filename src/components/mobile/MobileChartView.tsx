@@ -580,6 +580,24 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
                 </button>
               );
             })}
+            
+            <Separator className="my-2" />
+            
+            {/* Clear All Drawings Button */}
+            <button
+              onClick={withClickSound(() => {
+                if ((window as any).__clearChartDrawings) {
+                  (window as any).__clearChartDrawings();
+                }
+                setIsDrawingToolsOpen(false);
+              })}
+              className="flex items-center gap-3 p-4 rounded-xl transition-all bg-destructive/10 border-2 border-transparent text-destructive hover:bg-destructive/20"
+            >
+              <div className="p-2 rounded-lg bg-destructive/20">
+                <Trash2 className="h-5 w-5" />
+              </div>
+              <span className="font-medium">{t("clear_all_drawings", "Limpar todos os desenhos")}</span>
+            </button>
           </div>
         </SheetContent>
       </Sheet>
