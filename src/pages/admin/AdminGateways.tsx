@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Plus, Pencil, Trash2, Key, Wallet, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Key, Wallet, CheckCircle, XCircle, AlertCircle, Settings } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -48,6 +48,13 @@ export default function AdminGateways() {
   const [pixDialogOpen, setPixDialogOpen] = useState(false);
   const [cryptoDialogOpen, setCryptoDialogOpen] = useState(false);
   const [worldwideDialogOpen, setWorldwideDialogOpen] = useState(false);
+  const [stripeCredentialsDialogOpen, setStripeCredentialsDialogOpen] = useState(false);
+  const [stripeCredentials, setStripeCredentials] = useState({
+    secretKey: "",
+    publishableKey: "",
+    webhookSecret: "",
+  });
+  const [savingStripeCredentials, setSavingStripeCredentials] = useState(false);
   const [editingGateway, setEditingGateway] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -337,6 +344,53 @@ export default function AdminGateways() {
       isActive: true,
     });
     setWorldwideDialogOpen(true);
+  };
+
+  const handleSaveStripeCredentials = async () => {
+    // Validate that at least one field is filled
+    if (!stripeCredentials.secretKey && !stripeCredentials.publishableKey && !stripeCredentials.webhookSecret) {
+      toast.error("Preencha pelo menos uma credencial para atualizar");
+      return;
+    }
+
+    setSavingStripeCredentials(true);
+    try {
+      // Update the gateway record with indication that credentials were updated
+      const stripeGateway = gateways.find(g => g.config?.provider === 'stripe');
+      if (stripeGateway) {
+        await supabase
+          .from("payment_gateways")
+          .update({
+            updated_at: new Date().toISOString(),
+            api_key: stripeCredentials.publishableKey || stripeGateway.api_key,
+            api_secret: stripeCredentials.secretKey ? 'configured' : stripeGateway.api_secret,
+          })
+          .eq("id", stripeGateway.id);
+      }
+
+      toast.success(
+        "Para aplicar as novas credenciais, acesse o Supabase Dashboard > Settings > Edge Functions > Secrets e atualize manualmente: STRIPE_SECRET_KEY, STRIPE_PUBLISHABLE_KEY, STRIPE_WEBHOOK_SECRET",
+        { duration: 10000 }
+      );
+      
+      // Copy credentials to clipboard for easy pasting
+      const credentialsText = `STRIPE_SECRET_KEY=${stripeCredentials.secretKey}\nSTRIPE_PUBLISHABLE_KEY=${stripeCredentials.publishableKey}\nSTRIPE_WEBHOOK_SECRET=${stripeCredentials.webhookSecret}`;
+      await navigator.clipboard.writeText(credentialsText);
+      toast.info("Credenciais copiadas para a área de transferência!", { duration: 3000 });
+
+      setStripeCredentialsDialogOpen(false);
+      setStripeCredentials({ secretKey: "", publishableKey: "", webhookSecret: "" });
+    } catch (error) {
+      console.error("Erro ao salvar credenciais:", error);
+      toast.error("Erro ao salvar credenciais");
+    } finally {
+      setSavingStripeCredentials(false);
+    }
+  };
+
+  const openStripeCredentialsDialog = () => {
+    setStripeCredentials({ secretKey: "", publishableKey: "", webhookSecret: "" });
+    setStripeCredentialsDialogOpen(true);
   };
 
   if (loading) {
@@ -971,6 +1025,16 @@ export default function AdminGateways() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          {gateway.config?.provider === 'stripe' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={openStripeCredentialsDialog}
+                              title="Atualizar credenciais Stripe"
+                            >
+                              <Settings className="h-4 w-4 text-primary" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1008,6 +1072,98 @@ export default function AdminGateways() {
           </ol>
         </Card>
       )}
+
+      {/* Stripe Credentials Dialog */}
+      <Dialog open={stripeCredentialsDialogOpen} onOpenChange={setStripeCredentialsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-primary" />
+              Atualizar Credenciais Stripe
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium text-amber-200">Atenção</p>
+                  <p className="text-muted-foreground">
+                    Após preencher, as credenciais serão copiadas para a área de transferência. 
+                    Você precisará colá-las manualmente no Supabase Dashboard.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="stripe-secret-key">Secret Key (sk_live_...)</Label>
+                <Input
+                  id="stripe-secret-key"
+                  type="password"
+                  placeholder="sk_live_..."
+                  value={stripeCredentials.secretKey}
+                  onChange={(e) => setStripeCredentials(prev => ({ ...prev, secretKey: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="stripe-publishable-key">Publishable Key (pk_live_...)</Label>
+                <Input
+                  id="stripe-publishable-key"
+                  type="text"
+                  placeholder="pk_live_..."
+                  value={stripeCredentials.publishableKey}
+                  onChange={(e) => setStripeCredentials(prev => ({ ...prev, publishableKey: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="stripe-webhook-secret">Webhook Secret (whsec_...)</Label>
+                <Input
+                  id="stripe-webhook-secret"
+                  type="password"
+                  placeholder="whsec_..."
+                  value={stripeCredentials.webhookSecret}
+                  onChange={(e) => setStripeCredentials(prev => ({ ...prev, webhookSecret: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setStripeCredentialsDialogOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSaveStripeCredentials}
+                disabled={savingStripeCredentials}
+              >
+                {savingStripeCredentials ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Copiar e Salvar
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground text-center">
+              <a 
+                href="https://supabase.com/dashboard/project/xhmisqcngalyjapkdwvh/settings/functions" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-primary hover:underline"
+              >
+                Abrir Supabase Secrets →
+              </a>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
