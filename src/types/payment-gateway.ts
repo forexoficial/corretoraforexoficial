@@ -25,7 +25,8 @@ export enum PixProvider {
 
 // Provedores Cripto
 export enum CryptoProvider {
-  CUSTOM_CRYPTO = "custom_crypto"
+  CUSTOM_CRYPTO = "custom_crypto",
+  COINBASE = "coinbase"
 }
 
 // Provedores Worldwide (Internacionais)
@@ -131,6 +132,24 @@ export const CRYPTO_PROVIDER_CREDENTIALS: Record<CryptoProvider, CredentialField
       placeholder: "Secret da API",
       description: "Secret do provedor (se necessário)",
       required: false,
+      type: "password"
+    }
+  ],
+  [CryptoProvider.COINBASE]: [
+    {
+      name: "API_KEY",
+      label: "API Key",
+      placeholder: "Sua API Key da Coinbase Commerce",
+      description: "Obtenha em: Coinbase Commerce → Settings → API Keys",
+      required: true,
+      type: "password"
+    },
+    {
+      name: "WEBHOOK_SECRET",
+      label: "Webhook Shared Secret",
+      placeholder: "Seu Webhook Shared Secret",
+      description: "Obtenha em: Coinbase Commerce → Settings → Webhook subscriptions",
+      required: true,
       type: "password"
     }
   ]
