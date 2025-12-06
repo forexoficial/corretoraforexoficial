@@ -461,13 +461,13 @@ export function TradingViewChart({
       if (drawing.isDraggingRef.current) {
         console.log('[Mouse Up] Ending drag drawing');
         drawing.endDragDrawing();
-        
-        // Re-enable chart scrolling/panning after drawing
-        chart.applyOptions({
-          handleScroll: true,
-          handleScale: true,
-        });
       }
+      
+      // Always re-enable chart scrolling/panning on mouse up
+      chart.applyOptions({
+        handleScroll: true,
+        handleScale: true,
+      });
     };
 
     // Touch event handlers for mobile
@@ -523,13 +523,13 @@ export function TradingViewChart({
       if (drawing.isDraggingRef.current) {
         console.log('[Touch End] Ending drag drawing');
         drawing.endDragDrawing();
-        
-        // Re-enable chart scrolling/panning after drawing
-        chart.applyOptions({
-          handleScroll: true,
-          handleScale: true,
-        });
       }
+      
+      // Always re-enable chart scrolling/panning on touch end
+      chart.applyOptions({
+        handleScroll: true,
+        handleScale: true,
+      });
     };
 
     // Subscribe to click events (for horizontal/vertical lines)
@@ -546,6 +546,10 @@ export function TradingViewChart({
       container.addEventListener('touchmove', handleTouchMove, { passive: false });
       container.addEventListener('touchend', handleTouchEnd);
     }
+    
+    // Global listeners to catch mouse/touch release outside chart
+    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('touchend', handleTouchEnd);
 
     // Handle ESC key to cancel drawing
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -628,6 +632,10 @@ export function TradingViewChart({
         container.removeEventListener('touchmove', handleTouchMove);
         container.removeEventListener('touchend', handleTouchEnd);
       }
+      
+      // Remove global listeners
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('touchend', handleTouchEnd);
       
       if (resizeObserver) {
         resizeObserver.disconnect();
