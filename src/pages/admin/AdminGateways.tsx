@@ -55,6 +55,12 @@ export default function AdminGateways() {
     webhookSecret: "",
   });
   const [savingStripeCredentials, setSavingStripeCredentials] = useState(false);
+  
+  // Generic credentials dialog for PIX and Crypto
+  const [credentialsDialogOpen, setCredentialsDialogOpen] = useState(false);
+  const [selectedGatewayForCredentials, setSelectedGatewayForCredentials] = useState<any | null>(null);
+  const [genericCredentials, setGenericCredentials] = useState<Record<string, string>>({});
+  const [savingGenericCredentials, setSavingGenericCredentials] = useState(false);
   const [editingGateway, setEditingGateway] = useState<any | null>(null);
   const [formData, setFormData] = useState({
     name: "",
@@ -391,6 +397,74 @@ export default function AdminGateways() {
   const openStripeCredentialsDialog = () => {
     setStripeCredentials({ secretKey: "", publishableKey: "", webhookSecret: "" });
     setStripeCredentialsDialogOpen(true);
+  };
+
+  // Open generic credentials dialog for PIX/Crypto
+  const openCredentialsDialog = (gateway: any) => {
+    setSelectedGatewayForCredentials(gateway);
+    setGenericCredentials({});
+    setCredentialsDialogOpen(true);
+  };
+
+  // Get credential fields based on gateway type and provider
+  const getCredentialFieldsForGateway = (gateway: any): CredentialField[] => {
+    if (!gateway) return [];
+    const provider = gateway.config?.provider;
+    
+    if (gateway.type === GatewayType.PIX || gateway.type === "pix") {
+      return PIX_PROVIDER_CREDENTIALS[provider as PixProvider] || [];
+    } else if (gateway.type === GatewayType.CRYPTO || gateway.type === "crypto" || gateway.type === "usdt") {
+      return CRYPTO_PROVIDER_CREDENTIALS[provider as CryptoProvider] || [];
+    } else if (gateway.type === GatewayType.WORLDWIDE || gateway.type === "worldwide") {
+      return WORLDWIDE_PROVIDER_CREDENTIALS[provider as WorldwideProvider] || [];
+    }
+    return [];
+  };
+
+  // Save generic credentials
+  const handleSaveGenericCredentials = async () => {
+    if (!selectedGatewayForCredentials) return;
+    
+    const hasCredentials = Object.values(genericCredentials).some(v => v?.trim());
+    if (!hasCredentials) {
+      toast.error("Preencha pelo menos uma credencial para atualizar");
+      return;
+    }
+
+    setSavingGenericCredentials(true);
+    try {
+      // Update the gateway config with new credentials
+      const updatedConfig = {
+        ...selectedGatewayForCredentials.config,
+        credentials: {
+          ...(selectedGatewayForCredentials.config?.credentials || {}),
+          ...Object.fromEntries(
+            Object.entries(genericCredentials).filter(([_, v]) => v?.trim())
+          )
+        }
+      };
+
+      const { error } = await supabase
+        .from("payment_gateways")
+        .update({
+          config: updatedConfig,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedGatewayForCredentials.id);
+
+      if (error) throw error;
+
+      toast.success("Credenciais atualizadas com sucesso!");
+      setCredentialsDialogOpen(false);
+      setSelectedGatewayForCredentials(null);
+      setGenericCredentials({});
+      fetchGateways();
+    } catch (error) {
+      console.error("Erro ao salvar credenciais:", error);
+      toast.error("Erro ao salvar credenciais");
+    } finally {
+      setSavingGenericCredentials(false);
+    }
   };
 
   if (loading) {
@@ -848,6 +922,14 @@ export default function AdminGateways() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            onClick={() => openCredentialsDialog(gateway)}
+                            title="Atualizar credenciais"
+                          >
+                            <Settings className="h-4 w-4 text-primary" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={() => handleEdit(gateway)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -935,6 +1017,14 @@ export default function AdminGateways() {
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openCredentialsDialog(gateway)}
+                            title="Atualizar credenciais"
+                          >
+                            <Settings className="h-4 w-4 text-primary" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1160,6 +1250,79 @@ export default function AdminGateways() {
               >
                 Abrir Supabase Secrets →
               </a>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Generic Credentials Dialog for PIX/Crypto */}
+      <Dialog open={credentialsDialogOpen} onOpenChange={setCredentialsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Key className="h-5 w-5 text-primary" />
+              Atualizar Credenciais - {selectedGatewayForCredentials?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-sm">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <div>
+                  <p className="font-medium">Armazenamento Seguro</p>
+                  <p className="text-muted-foreground">
+                    As credenciais serão atualizadas e armazenadas de forma segura no banco de dados.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              {getCredentialFieldsForGateway(selectedGatewayForCredentials).map((field) => (
+                <div key={field.name} className="space-y-2">
+                  <Label htmlFor={`cred-${field.name}`}>
+                    {field.label}
+                    {field.required && <span className="text-destructive ml-1">*</span>}
+                  </Label>
+                  <Input
+                    id={`cred-${field.name}`}
+                    type={field.type === "password" ? "password" : "text"}
+                    placeholder={field.placeholder}
+                    value={genericCredentials[field.name] || ""}
+                    onChange={(e) => setGenericCredentials(prev => ({ 
+                      ...prev, 
+                      [field.name]: e.target.value 
+                    }))}
+                  />
+                  {field.description && (
+                    <p className="text-xs text-muted-foreground">{field.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setCredentialsDialogOpen(false);
+                  setSelectedGatewayForCredentials(null);
+                  setGenericCredentials({});
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                className="flex-1"
+                onClick={handleSaveGenericCredentials}
+                disabled={savingGenericCredentials}
+              >
+                {savingGenericCredentials ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : null}
+                Salvar Credenciais
+              </Button>
             </div>
           </div>
         </DialogContent>
