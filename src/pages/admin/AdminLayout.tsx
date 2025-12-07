@@ -57,6 +57,7 @@ const menuItems = [
   { icon: Bell, label: "Pop-ups", path: "/admin/popups" },
   { icon: Zap, label: "Boosters", path: "/admin/boosters" },
   { icon: UserCheck, label: "Afiliados", path: "/admin/affiliates" },
+  { icon: Users, label: "Copy Trade", path: "/admin/copy-trade" },
   { icon: DollarSign, label: "Saques", path: "/admin/withdrawals" },
   { icon: FileText, label: "Documentos Legais", path: "/admin/legal" },
   { icon: KeyRound, label: "Login Social", path: "/admin/social-auth" },
