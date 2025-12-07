@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { History, Trophy, HelpCircle, User, MoreHorizontal, Gift, Settings, Zap, BarChart3 } from "lucide-react";
+import { History, Trophy, HelpCircle, User, MoreHorizontal, Gift, Settings, Zap, BarChart3, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
 import { SupportDialog } from "@/components/SupportDialog";
@@ -9,6 +9,7 @@ import { PromotionsMenu } from "@/components/PromotionsMenu";
 import { SettingsMenu } from "@/components/SettingsMenu";
 import { LegalMenu } from "@/components/LegalMenu";
 import { BoosterMenu } from "@/components/BoosterMenu";
+import { CopyTradeSubscribe } from "@/components/CopyTradeSubscribe";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TradeAnalyticsDashboard } from "@/components/TradeAnalyticsDashboard";
@@ -34,6 +35,7 @@ export const TradingSidebar = ({
   const [showSettings, setShowSettings] = useState(false);
   const [showLegal, setShowLegal] = useState(false);
   const [showAnalytics, setShowAnalytics] = useState(false);
+  const [showCopyTrade, setShowCopyTrade] = useState(false);
   
   return (
     <>
@@ -93,6 +95,14 @@ export const TradingSidebar = ({
       
       <button 
         className={`flex ${isMobileSheet ? 'flex-row justify-start px-6 py-4 border-b border-border/50' : 'flex-col'} items-center gap-${isMobileSheet ? '4' : '1'} p-2 hover:bg-sidebar-accent transition-colors w-full`}
+        onClick={() => setShowCopyTrade(true)}
+      >
+        <Users className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-blue-500`} />
+        <span className={`${isMobileSheet ? 'text-sm' : 'text-[10px]'} text-sidebar-foreground font-medium`}>{t("copy", "Copy")}</span>
+      </button>
+      
+      <button 
+        className={`flex ${isMobileSheet ? 'flex-row justify-start px-6 py-4 border-b border-border/50' : 'flex-col'} items-center gap-${isMobileSheet ? '4' : '1'} p-2 hover:bg-sidebar-accent transition-colors w-full`}
         onClick={() => setShowPromotions(true)}
       >
         <Gift className={`${isMobileSheet ? 'w-5 h-5' : 'w-6 h-6'} text-sidebar-foreground`} />
@@ -133,6 +143,7 @@ export const TradingSidebar = ({
     <PromotionsMenu open={showPromotions} onOpenChange={setShowPromotions} />
     <SettingsMenu open={showSettings} onOpenChange={setShowSettings} />
     <LegalMenu open={showLegal} onOpenChange={setShowLegal} />
+    <CopyTradeSubscribe open={showCopyTrade} onOpenChange={setShowCopyTrade} />
     
     {/* Analytics Sheet */}
     <Sheet open={showAnalytics} onOpenChange={setShowAnalytics}>
