@@ -41,6 +41,8 @@ import AdminTradeManagement from "./pages/admin/AdminTradeManagement";
 import AdminChartAppearance from "./pages/admin/AdminChartAppearance";
 import AdminSocialAuth from "./pages/admin/AdminSocialAuth";
 import AdminTransactionRecovery from "./pages/admin/AdminTransactionRecovery";
+import AdminCopyTrade from "./pages/admin/AdminCopyTrade";
+import CopyTrade from "./pages/CopyTrade";
 import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateReferrals from "./pages/affiliate/AffiliateReferrals";
@@ -127,6 +129,14 @@ const App = () => (
                 }
               />
               <Route
+                path="/copy-trade"
+                element={
+                  <ProtectedRoute>
+                    <CopyTrade />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/admin"
                 element={
                   <ProtectedRoute>
@@ -149,6 +159,7 @@ const App = () => (
               <Route path="popups" element={<AdminPopups />} />
               <Route path="boosters" element={<AdminBoosters />} />
                 <Route path="affiliates" element={<AdminAffiliates />} />
+                <Route path="copy-trade" element={<AdminCopyTrade />} />
                 <Route path="withdrawals" element={<AdminWithdrawals />} />
                 <Route path="legal" element={<AdminLegal />} />
                 <Route path="social-auth" element={<AdminSocialAuth />} />

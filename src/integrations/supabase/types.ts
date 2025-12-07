@@ -710,6 +710,183 @@ export type Database = {
         }
         Relationships: []
       }
+      copied_trades: {
+        Row: {
+          copied_trade_id: string | null
+          copy_trader_id: string
+          created_at: string
+          failure_reason: string | null
+          follower_user_id: string
+          id: string
+          original_trade_id: string
+          status: string
+        }
+        Insert: {
+          copied_trade_id?: string | null
+          copy_trader_id: string
+          created_at?: string
+          failure_reason?: string | null
+          follower_user_id: string
+          id?: string
+          original_trade_id: string
+          status?: string
+        }
+        Update: {
+          copied_trade_id?: string | null
+          copy_trader_id?: string
+          created_at?: string
+          failure_reason?: string | null
+          follower_user_id?: string
+          id?: string
+          original_trade_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copied_trades_copied_trade_id_fkey"
+            columns: ["copied_trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copied_trades_copy_trader_id_fkey"
+            columns: ["copy_trader_id"]
+            isOneToOne: false
+            referencedRelation: "copy_traders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "copied_trades_original_trade_id_fkey"
+            columns: ["original_trade_id"]
+            isOneToOne: false
+            referencedRelation: "trades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copy_trade_followers: {
+        Row: {
+          allocation_percentage: number
+          copy_trader_id: string
+          created_at: string
+          follower_user_id: string
+          id: string
+          is_active: boolean | null
+          max_trade_amount: number | null
+          total_copied_trades: number | null
+          total_profit: number | null
+          updated_at: string
+        }
+        Insert: {
+          allocation_percentage?: number
+          copy_trader_id: string
+          created_at?: string
+          follower_user_id: string
+          id?: string
+          is_active?: boolean | null
+          max_trade_amount?: number | null
+          total_copied_trades?: number | null
+          total_profit?: number | null
+          updated_at?: string
+        }
+        Update: {
+          allocation_percentage?: number
+          copy_trader_id?: string
+          created_at?: string
+          follower_user_id?: string
+          id?: string
+          is_active?: boolean | null
+          max_trade_amount?: number | null
+          total_copied_trades?: number | null
+          total_profit?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "copy_trade_followers_copy_trader_id_fkey"
+            columns: ["copy_trader_id"]
+            isOneToOne: false
+            referencedRelation: "copy_traders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      copy_trade_requests: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      copy_traders: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          total_followers: number | null
+          total_trades: number | null
+          updated_at: string
+          user_id: string
+          win_rate: number | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          total_followers?: number | null
+          total_trades?: number | null
+          updated_at?: string
+          user_id: string
+          win_rate?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          total_followers?: number | null
+          total_trades?: number | null
+          updated_at?: string
+          user_id?: string
+          win_rate?: number | null
+        }
+        Relationships: []
+      }
       legal_documents: {
         Row: {
           content: string | null
