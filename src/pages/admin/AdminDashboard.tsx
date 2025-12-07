@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { 
   Users, 
   Shield, 
@@ -21,7 +28,10 @@ import {
   Coins,
   BadgeDollarSign,
   Trophy,
-  Flame
+  Flame,
+  CalendarIcon,
+  Filter,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -41,7 +51,7 @@ import {
   Cell,
   Legend
 } from "recharts";
-import { format, subDays, startOfDay, endOfDay } from "date-fns";
+import { format, subDays, startOfDay, endOfDay, differenceInDays, eachDayOfInterval } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 interface DashboardStats {
@@ -109,133 +119,207 @@ export default function AdminDashboard() {
   const [depositChartData, setDepositChartData] = useState<DepositData[]>([]);
   const [tradeDistribution, setTradeDistribution] = useState<TradeData[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Date filter states
+  const [startDate, setStartDate] = useState<Date | undefined>(subDays(new Date(), 30));
+  const [endDate, setEndDate] = useState<Date | undefined>(new Date());
+  const [isFiltering, setIsFiltering] = useState(false);
 
-  useEffect(() => {
-    const fetchAllStats = async () => {
-      try {
-        const today = startOfDay(new Date());
-        const weekAgo = subDays(today, 7);
+  const fetchAllStats = async (filterStart?: Date, filterEnd?: Date) => {
+    try {
+      setLoading(true);
+      const start = filterStart ? startOfDay(filterStart) : undefined;
+      const end = filterEnd ? endOfDay(filterEnd) : undefined;
+      
+      const today = startOfDay(new Date());
+      const weekAgo = subDays(today, 7);
 
-        // Fetch all stats in parallel
-        const [
-          usersRes,
-          newUsersTodayRes,
-          newUsersWeekRes,
-          pendingVerRes,
-          approvedVerRes,
-          rejectedVerRes,
-          activeTradesRes,
-          totalTradesRes,
-          wonTradesRes,
-          lostTradesRes,
-          totalTransRes,
-          pendingTransRes,
-          depositsRes,
-          withdrawalsRes,
-          profilesRes,
-          affiliatesRes,
-          commissionsRes,
-          boostersRes,
-          depositsChartRes,
-        ] = await Promise.all([
-          supabase.from("profiles").select("*", { count: "exact", head: true }),
-          supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", today.toISOString()),
-          supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", weekAgo.toISOString()),
-          supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "under_review"),
-          supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "approved"),
-          supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "rejected"),
-          supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "open"),
-          supabase.from("trades").select("*", { count: "exact", head: true }).eq("is_demo", false),
-          supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "won").eq("is_demo", false),
-          supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "lost").eq("is_demo", false),
-          supabase.from("transactions").select("*", { count: "exact", head: true }),
-          supabase.from("transactions").select("*", { count: "exact", head: true }).eq("status", "pending"),
-          supabase.from("transactions").select("amount").eq("type", "deposit").eq("status", "completed"),
-          supabase.from("transactions").select("amount").eq("type", "withdrawal").eq("status", "completed"),
-          supabase.from("profiles").select("balance, demo_balance, total_deposited"),
-          supabase.from("affiliates").select("*", { count: "exact", head: true }).eq("is_active", true),
-          supabase.from("commissions").select("amount"),
-          supabase.from("user_boosters").select("*", { count: "exact", head: true }).eq("is_active", true),
-          supabase.from("transactions").select("amount, created_at").eq("type", "deposit").eq("status", "completed").gte("created_at", subDays(new Date(), 30).toISOString()).order("created_at", { ascending: true }),
-        ]);
+      // Fetch all stats in parallel
+      const [
+        usersRes,
+        newUsersTodayRes,
+        newUsersWeekRes,
+        pendingVerRes,
+        approvedVerRes,
+        rejectedVerRes,
+        activeTradesRes,
+        totalTradesRes,
+        wonTradesRes,
+        lostTradesRes,
+        totalTransRes,
+        pendingTransRes,
+        depositsRes,
+        withdrawalsRes,
+        profilesRes,
+        affiliatesRes,
+        commissionsRes,
+        boostersRes,
+        depositsChartRes,
+      ] = await Promise.all([
+        // Users - filtered by date
+        start && end 
+          ? supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("profiles").select("*", { count: "exact", head: true }),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", today.toISOString()),
+        supabase.from("profiles").select("*", { count: "exact", head: true }).gte("created_at", weekAgo.toISOString()),
+        // Verifications - filtered by date
+        start && end 
+          ? supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "under_review").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "under_review"),
+        start && end 
+          ? supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "approved").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "approved"),
+        start && end 
+          ? supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "rejected").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("verification_requests").select("*", { count: "exact", head: true }).eq("status", "rejected"),
+        // Trades - filtered by date
+        supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "open"),
+        start && end 
+          ? supabase.from("trades").select("*", { count: "exact", head: true }).eq("is_demo", false).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("trades").select("*", { count: "exact", head: true }).eq("is_demo", false),
+        start && end 
+          ? supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "won").eq("is_demo", false).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "won").eq("is_demo", false),
+        start && end 
+          ? supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "lost").eq("is_demo", false).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("trades").select("*", { count: "exact", head: true }).eq("status", "lost").eq("is_demo", false),
+        // Transactions - filtered by date
+        start && end 
+          ? supabase.from("transactions").select("*", { count: "exact", head: true }).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("transactions").select("*", { count: "exact", head: true }),
+        start && end 
+          ? supabase.from("transactions").select("*", { count: "exact", head: true }).eq("status", "pending").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("transactions").select("*", { count: "exact", head: true }).eq("status", "pending"),
+        start && end 
+          ? supabase.from("transactions").select("amount, created_at").eq("type", "deposit").eq("status", "completed").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("transactions").select("amount, created_at").eq("type", "deposit").eq("status", "completed"),
+        start && end 
+          ? supabase.from("transactions").select("amount, created_at").eq("type", "withdrawal").eq("status", "completed").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("transactions").select("amount, created_at").eq("type", "withdrawal").eq("status", "completed"),
+        supabase.from("profiles").select("balance, demo_balance, total_deposited"),
+        start && end 
+          ? supabase.from("affiliates").select("*", { count: "exact", head: true }).eq("is_active", true).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("affiliates").select("*", { count: "exact", head: true }).eq("is_active", true),
+        start && end 
+          ? supabase.from("commissions").select("amount, created_at").gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("commissions").select("amount, created_at"),
+        start && end 
+          ? supabase.from("user_boosters").select("*", { count: "exact", head: true }).eq("is_active", true).gte("created_at", start.toISOString()).lte("created_at", end.toISOString())
+          : supabase.from("user_boosters").select("*", { count: "exact", head: true }).eq("is_active", true),
+        // Chart data - use filter dates or last 30 days
+        start && end 
+          ? supabase.from("transactions").select("amount, created_at").eq("type", "deposit").eq("status", "completed").gte("created_at", start.toISOString()).lte("created_at", end.toISOString()).order("created_at", { ascending: true })
+          : supabase.from("transactions").select("amount, created_at").eq("type", "deposit").eq("status", "completed").gte("created_at", subDays(new Date(), 30).toISOString()).order("created_at", { ascending: true }),
+      ]);
 
-        // Calculate totals
-        const totalDeposits = depositsRes.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-        const totalWithdrawals = withdrawalsRes.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
-        const totalBalance = profilesRes.data?.reduce((sum, p) => sum + Number(p.balance || 0), 0) || 0;
-        const totalDemo = profilesRes.data?.reduce((sum, p) => sum + Number(p.demo_balance || 0), 0) || 0;
-        const totalDeposited = profilesRes.data?.reduce((sum, p) => sum + Number(p.total_deposited || 0), 0) || 0;
-        const totalCommissions = commissionsRes.data?.reduce((sum, c) => sum + Number(c.amount), 0) || 0;
-        
-        // Platform profit = total deposited - total current balance - total withdrawals
-        const platformProfit = totalDeposited - totalBalance - totalWithdrawals;
+      // Calculate totals
+      const totalDeposits = depositsRes.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      const totalWithdrawals = withdrawalsRes.data?.reduce((sum, t) => sum + Number(t.amount), 0) || 0;
+      const totalBalance = profilesRes.data?.reduce((sum, p) => sum + Number(p.balance || 0), 0) || 0;
+      const totalDemo = profilesRes.data?.reduce((sum, p) => sum + Number(p.demo_balance || 0), 0) || 0;
+      const totalDeposited = profilesRes.data?.reduce((sum, p) => sum + Number(p.total_deposited || 0), 0) || 0;
+      const totalCommissionsAmount = commissionsRes.data?.reduce((sum, c) => sum + Number(c.amount), 0) || 0;
+      
+      // Platform profit calculation - for filtered dates, use deposit/withdrawal from that period
+      let platformProfit = 0;
+      if (start && end) {
+        // For date range: profit = deposits - withdrawals in that period
+        platformProfit = totalDeposits - totalWithdrawals;
+      } else {
+        // All time: profit = total deposited - current balance - total withdrawals
+        platformProfit = totalDeposited - totalBalance - totalWithdrawals;
+      }
 
-        setStats({
-          totalUsers: usersRes.count || 0,
-          newUsersToday: newUsersTodayRes.count || 0,
-          newUsersWeek: newUsersWeekRes.count || 0,
-          pendingVerifications: pendingVerRes.count || 0,
-          approvedVerifications: approvedVerRes.count || 0,
-          rejectedVerifications: rejectedVerRes.count || 0,
-          activeTrades: activeTradesRes.count || 0,
-          totalTrades: totalTradesRes.count || 0,
-          wonTrades: wonTradesRes.count || 0,
-          lostTrades: lostTradesRes.count || 0,
-          totalTransactions: totalTransRes.count || 0,
-          pendingTransactions: pendingTransRes.count || 0,
-          completedDeposits: depositsRes.data?.length || 0,
-          totalDepositsAmount: totalDeposits,
-          totalWithdrawalsAmount: totalWithdrawals,
-          platformProfit: platformProfit > 0 ? platformProfit : 0,
-          totalUserBalance: totalBalance,
-          totalDemoBalance: totalDemo,
-          activeAffiliates: affiliatesRes.count || 0,
-          totalCommissions,
-          activeBoosters: boostersRes.count || 0,
+      setStats({
+        totalUsers: usersRes.count || 0,
+        newUsersToday: newUsersTodayRes.count || 0,
+        newUsersWeek: newUsersWeekRes.count || 0,
+        pendingVerifications: pendingVerRes.count || 0,
+        approvedVerifications: approvedVerRes.count || 0,
+        rejectedVerifications: rejectedVerRes.count || 0,
+        activeTrades: activeTradesRes.count || 0,
+        totalTrades: totalTradesRes.count || 0,
+        wonTrades: wonTradesRes.count || 0,
+        lostTrades: lostTradesRes.count || 0,
+        totalTransactions: totalTransRes.count || 0,
+        pendingTransactions: pendingTransRes.count || 0,
+        completedDeposits: depositsRes.data?.length || 0,
+        totalDepositsAmount: totalDeposits,
+        totalWithdrawalsAmount: totalWithdrawals,
+        platformProfit: platformProfit > 0 ? platformProfit : 0,
+        totalUserBalance: totalBalance,
+        totalDemoBalance: totalDemo,
+        activeAffiliates: affiliatesRes.count || 0,
+        totalCommissions: totalCommissionsAmount,
+        activeBoosters: boostersRes.count || 0,
+      });
+
+      // Process deposit chart data
+      const depositsByDay: Record<string, { amount: number; count: number }> = {};
+      
+      if (start && end) {
+        // Use the filtered date range
+        const days = eachDayOfInterval({ start, end });
+        days.forEach(day => {
+          const dateKey = format(day, "dd/MM");
+          depositsByDay[dateKey] = { amount: 0, count: 0 };
         });
-
-        // Process deposit chart data (last 30 days)
-        const depositsByDay: Record<string, { amount: number; count: number }> = {};
+      } else {
+        // Default: last 30 days
         for (let i = 29; i >= 0; i--) {
           const date = format(subDays(new Date(), i), "dd/MM");
           depositsByDay[date] = { amount: 0, count: 0 };
         }
-        
-        depositsChartRes.data?.forEach((deposit) => {
-          const date = format(new Date(deposit.created_at), "dd/MM");
-          if (depositsByDay[date]) {
-            depositsByDay[date].amount += Number(deposit.amount);
-            depositsByDay[date].count += 1;
-          }
-        });
-
-        setDepositChartData(
-          Object.entries(depositsByDay).map(([date, data]) => ({
-            date,
-            amount: data.amount,
-            count: data.count,
-          }))
-        );
-
-        // Trade distribution
-        const won = wonTradesRes.count || 0;
-        const lost = lostTradesRes.count || 0;
-        const active = activeTradesRes.count || 0;
-        setTradeDistribution([
-          { name: "Ganhas", value: won, color: "#22c55e" },
-          { name: "Perdidas", value: lost, color: "#ef4444" },
-          { name: "Ativas", value: active, color: "#eab308" },
-        ]);
-
-      } catch (error) {
-        console.error("Error fetching dashboard stats:", error);
-      } finally {
-        setLoading(false);
       }
-    };
+      
+      depositsChartRes.data?.forEach((deposit) => {
+        const date = format(new Date(deposit.created_at), "dd/MM");
+        if (depositsByDay[date]) {
+          depositsByDay[date].amount += Number(deposit.amount);
+          depositsByDay[date].count += 1;
+        }
+      });
 
+      setDepositChartData(
+        Object.entries(depositsByDay).map(([date, data]) => ({
+          date,
+          amount: data.amount,
+          count: data.count,
+        }))
+      );
+
+      // Trade distribution
+      const won = wonTradesRes.count || 0;
+      const lost = lostTradesRes.count || 0;
+      const active = activeTradesRes.count || 0;
+      setTradeDistribution([
+        { name: "Ganhas", value: won, color: "#22c55e" },
+        { name: "Perdidas", value: lost, color: "#ef4444" },
+        { name: "Ativas", value: active, color: "#eab308" },
+      ]);
+
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchAllStats();
   }, []);
+
+  const handleApplyFilter = () => {
+    setIsFiltering(true);
+    fetchAllStats(startDate, endDate).finally(() => setIsFiltering(false));
+  };
+
+  const handleClearFilter = () => {
+    setStartDate(subDays(new Date(), 30));
+    setEndDate(new Date());
+    setIsFiltering(true);
+    fetchAllStats().finally(() => setIsFiltering(false));
+  };
 
   const winRate = stats.totalTrades > 0 
     ? ((stats.wonTrades / (stats.wonTrades + stats.lostTrades)) * 100).toFixed(1)
@@ -255,19 +339,153 @@ export default function AdminDashboard() {
   return (
     <div className="space-y-8 pb-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent">
-            Dashboard Executivo
-          </h1>
-          <p className="text-muted-foreground">
-            Visão completa da plataforma em tempo real
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent">
+              Dashboard Executivo
+            </h1>
+            <p className="text-muted-foreground">
+              Visão completa da plataforma em tempo real
+            </p>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Clock className="h-4 w-4" />
+            <span>Última atualização: {format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+          </div>
         </div>
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Clock className="h-4 w-4" />
-          <span>Última atualização: {format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
-        </div>
+
+        {/* Date Filter */}
+        <Card className="p-4 bg-gradient-to-r from-card to-card/80 border-border/50">
+          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <Filter className="h-4 w-4 text-primary" />
+              <span>Filtrar por período:</span>
+            </div>
+            
+            <div className="flex flex-wrap items-center gap-3">
+              {/* Start Date */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              <span className="text-muted-foreground">até</span>
+
+              {/* End Date */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-[160px] justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    initialFocus
+                    className="p-3 pointer-events-auto"
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {/* Quick Filters */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate(subDays(new Date(), 7));
+                    setEndDate(new Date());
+                  }}
+                >
+                  7 dias
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate(subDays(new Date(), 30));
+                    setEndDate(new Date());
+                  }}
+                >
+                  30 dias
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    setStartDate(subDays(new Date(), 90));
+                    setEndDate(new Date());
+                  }}
+                >
+                  90 dias
+                </Button>
+              </div>
+
+              {/* Apply and Clear Buttons */}
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleApplyFilter}
+                  disabled={isFiltering || !startDate || !endDate}
+                  className="gap-2"
+                >
+                  {isFiltering ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Filter className="h-4 w-4" />
+                  )}
+                  Aplicar
+                </Button>
+                <Button
+                  variant="ghost"
+                  onClick={handleClearFilter}
+                  disabled={isFiltering}
+                >
+                  Limpar
+                </Button>
+              </div>
+            </div>
+          </div>
+          
+          {startDate && endDate && (
+            <div className="mt-3 pt-3 border-t border-border/50">
+              <p className="text-xs text-muted-foreground">
+                Exibindo dados de <span className="font-medium text-foreground">{format(startDate, "dd/MM/yyyy")}</span> até <span className="font-medium text-foreground">{format(endDate, "dd/MM/yyyy")}</span>
+                {" "}({differenceInDays(endDate, startDate) + 1} dias)
+              </p>
+            </div>
+          )}
+        </Card>
       </div>
 
       {/* Hero Profit Card - 3D Metallic Green */}
