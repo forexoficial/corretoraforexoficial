@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, Copy, Check, AlertCircle, Loader2 } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useAuth } from "@/contexts/AuthContext";
@@ -222,11 +222,11 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
   };
 
   // Load subscriptions when sheet opens
-  useState(() => {
+  useEffect(() => {
     if (open) {
       loadMySubscriptions();
     }
-  });
+  }, [open, user?.id]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
