@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Mail, Phone, MapPin, Calendar, TrendingUp, DollarSign, Award, Settings, LogOut, Edit2, Save, X, Copy, Check, Shield, Crown, Zap } from "lucide-react";
+import { Camera, Mail, Phone, MapPin, Calendar, TrendingUp, DollarSign, Award, Settings, LogOut, Edit2, Save, X, Copy, Check, Shield, Crown, Zap, Users } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useCurrency } from "@/hooks/useCurrency";
 import { Button } from "@/components/ui/button";
@@ -685,9 +685,31 @@ export default function Profile() {
         </Tabs>
       </div>
 
-      {/* Affiliate Panel Button */}
-      {isAffiliate && (
-        <div className="container mx-auto px-4 pb-8">
+      {/* Copy Trade & Affiliate Panel Buttons */}
+      <div className="container mx-auto px-4 pb-8 space-y-4">
+        {/* Copy Trade Button */}
+        <Card className="bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-background border-blue-500/20">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-bold mb-1">{t('copy_trade_title', 'Copy Trade')}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {t('copy_trade_desc', 'Copie operações de traders experientes automaticamente')}
+                </p>
+              </div>
+              <Button 
+                onClick={() => navigate('/copy-trade')}
+                className="gap-2 bg-blue-600 hover:bg-blue-700"
+              >
+                <Users className="h-4 w-4" />
+                {t('access_copy_trade', 'Acessar')}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Affiliate Panel Button */}
+        {isAffiliate && (
           <Card className="bg-gradient-to-br from-primary/10 via-accent/5 to-background border-primary/20">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -707,8 +729,8 @@ export default function Profile() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Avatar Upload Dialog */}
       <AvatarUploadDialog
