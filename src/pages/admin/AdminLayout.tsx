@@ -244,14 +244,14 @@ export default function AdminLayout() {
         <div className="p-4 border-b border-border flex items-center justify-between">
           {sidebarOpen ? (
             customization.currentLogo && (
-              <div className="flex flex-col gap-2">
+              <div className="flex flex-col gap-1">
                 <img 
                   src={customization.currentLogo}
                   alt="Logo" 
-                  className="h-8 cursor-pointer transition-opacity hover:opacity-80"
+                  className="h-5 cursor-pointer transition-opacity hover:opacity-80"
                   onClick={() => navigate('/')}
                 />
-                <span className="text-xs text-muted-foreground font-medium">Admin Panel</span>
+                <span className="text-[10px] text-muted-foreground font-medium">Admin Panel</span>
               </div>
             )
           ) : (
@@ -259,7 +259,7 @@ export default function AdminLayout() {
               <img 
                 src={customization.currentLogo}
                 alt="Logo" 
-                className="h-6 cursor-pointer transition-opacity hover:opacity-80"
+                className="h-4 cursor-pointer transition-opacity hover:opacity-80"
                 onClick={() => navigate('/')}
               />
             )
