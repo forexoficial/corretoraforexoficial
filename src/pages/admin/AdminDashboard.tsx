@@ -292,13 +292,24 @@ export default function AdminDashboard() {
               </div>
               
               <div className="relative">
-                <h2 className="text-5xl md:text-7xl font-black tracking-tight"
+                <h2 className="text-5xl md:text-7xl font-black tracking-tight text-white"
                     style={{
-                      background: "linear-gradient(180deg, #86efac 0%, #22c55e 40%, #15803d 80%, #166534 100%)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      textShadow: "0 0 80px rgba(34, 197, 94, 0.5)",
-                      filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.3))"
+                      textShadow: `
+                        0 1px 0 #ccc,
+                        0 2px 0 #c9c9c9,
+                        0 3px 0 #bbb,
+                        0 4px 0 #b9b9b9,
+                        0 5px 0 #aaa,
+                        0 6px 1px rgba(0,0,0,.1),
+                        0 0 5px rgba(0,0,0,.1),
+                        0 1px 3px rgba(0,0,0,.3),
+                        0 3px 5px rgba(0,0,0,.2),
+                        0 5px 10px rgba(0,0,0,.25),
+                        0 10px 10px rgba(0,0,0,.2),
+                        0 20px 20px rgba(0,0,0,.15),
+                        0 0 60px rgba(34, 197, 94, 0.4)
+                      `,
+                      filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.4))"
                     }}>
                   {formatCurrency(stats.platformProfit)}
                 </h2>
