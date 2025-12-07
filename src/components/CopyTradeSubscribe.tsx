@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface CopyTradeSubscribeProps {
@@ -31,6 +32,7 @@ interface CopyTrader {
   win_rate: number | null;
   total_trades: number | null;
   total_followers: number | null;
+  avatar_url?: string | null;
 }
 
 export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribeProps) {
@@ -53,6 +55,7 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
     
     setLoadingSubscriptions(true);
     try {
+      // Fetch subscriptions with copy trader info
       const { data, error } = await supabase
         .from("copy_trade_followers")
         .select(`
@@ -60,14 +63,35 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
           copy_traders (
             display_name,
             win_rate,
-            total_trades
+            total_trades,
+            user_id
           )
         `)
         .eq("follower_user_id", user.id)
         .eq("is_active", true);
 
       if (error) throw error;
-      setMySubscriptions(data || []);
+      
+      // Fetch avatars for each copy trader
+      if (data && data.length > 0) {
+        const userIds = data.map(sub => sub.copy_traders?.user_id).filter(Boolean);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("user_id, avatar_url")
+          .in("user_id", userIds);
+        
+        const avatarMap = new Map(profiles?.map(p => [p.user_id, p.avatar_url]) || []);
+        const enrichedData = data.map(sub => ({
+          ...sub,
+          copy_traders: {
+            ...sub.copy_traders,
+            avatar_url: avatarMap.get(sub.copy_traders?.user_id) || null
+          }
+        }));
+        setMySubscriptions(enrichedData);
+      } else {
+        setMySubscriptions([]);
+      }
     } catch (error: any) {
       console.error("Error loading subscriptions:", error);
     } finally {
@@ -106,7 +130,17 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
         return;
       }
 
-      setFoundTrader(data);
+      // Fetch avatar from profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("user_id", data.user_id)
+        .maybeSingle();
+
+      setFoundTrader({
+        ...data,
+        avatar_url: profile?.avatar_url || null
+      });
     } catch (error: any) {
       console.error("Error searching trader:", error);
       setSearchError(t("search_error", "Erro ao buscar trader"));
@@ -288,8 +322,14 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
               {foundTrader && (
                 <Card className="border-blue-500/30 bg-blue-500/5">
                   <CardContent className="p-4 space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12 border-2 border-blue-500/30">
+                        <AvatarImage src={foundTrader.avatar_url || undefined} />
+                        <AvatarFallback className="bg-blue-500/20 text-blue-500 font-semibold">
+                          {foundTrader.display_name.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
                         <h4 className="font-semibold">{foundTrader.display_name}</h4>
                         <p className="text-xs text-muted-foreground">{foundTrader.description}</p>
                       </div>
@@ -380,8 +420,14 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
                   {mySubscriptions.map((sub) => (
                     <Card key={sub.id}>
                       <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border border-border">
+                            <AvatarImage src={sub.copy_traders?.avatar_url || undefined} />
+                            <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                              {sub.copy_traders?.display_name?.slice(0, 2).toUpperCase() || "CT"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex-1">
                             <h4 className="font-semibold">{sub.copy_traders?.display_name}</h4>
                             <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
                               <span>{sub.allocation_percentage}% {t("allocation", "alocação")}</span>
