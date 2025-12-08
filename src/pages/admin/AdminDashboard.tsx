@@ -355,145 +355,96 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Date Filter */}
-        <Card className="p-3 md:p-4 bg-gradient-to-r from-card to-card/80 border-border/50">
-          <div className="flex flex-col gap-3 md:gap-4">
-            <div className="flex items-center gap-2 text-xs md:text-sm font-medium">
-              <Filter className="h-3 w-3 md:h-4 md:w-4 text-primary" />
-              <span>Filtrar por período:</span>
-            </div>
-            
-            <div className="flex flex-wrap items-center gap-2 md:gap-3">
-              {/* Start Date */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "w-[120px] md:w-[160px] justify-start text-left font-normal text-xs md:text-sm h-8 md:h-10",
-                      !startDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-                    {startDate ? format(startDate, "dd/MM/yy") : "Início"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={startDate}
-                    onSelect={setStartDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
+        {/* Minimalist Date Filter */}
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+          {/* Date Range */}
+          <div className="flex items-center gap-1.5 bg-card/50 border border-border/40 rounded-lg px-2 py-1">
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <CalendarIcon className="h-3 w-3" />
+                  <span className="font-medium text-foreground">{startDate ? format(startDate, "dd/MM/yy") : "Início"}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={startDate}
+                  onSelect={setStartDate}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
 
-              <span className="text-xs md:text-sm text-muted-foreground">até</span>
+            <span className="text-[10px] text-muted-foreground/60">—</span>
 
-              {/* End Date */}
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className={cn(
-                      "w-[120px] md:w-[160px] justify-start text-left font-normal text-xs md:text-sm h-8 md:h-10",
-                      !endDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
-                    {endDate ? format(endDate, "dd/MM/yy") : "Fim"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={endDate}
-                    onSelect={setEndDate}
-                    initialFocus
-                    className="p-3 pointer-events-auto"
-                    locale={ptBR}
-                  />
-                </PopoverContent>
-              </Popover>
-
-              {/* Quick Filters */}
-              <div className="flex items-center gap-1 md:gap-2">
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs h-7 md:h-9 px-2 md:px-3"
-                  onClick={() => {
-                    setStartDate(subDays(new Date(), 7));
-                    setEndDate(new Date());
-                  }}
-                >
-                  7d
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs h-7 md:h-9 px-2 md:px-3"
-                  onClick={() => {
-                    setStartDate(subDays(new Date(), 30));
-                    setEndDate(new Date());
-                  }}
-                >
-                  30d
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="text-xs h-7 md:h-9 px-2 md:px-3"
-                  onClick={() => {
-                    setStartDate(subDays(new Date(), 90));
-                    setEndDate(new Date());
-                  }}
-                >
-                  90d
-                </Button>
-              </div>
-
-              {/* Apply and Clear Buttons */}
-              <div className="flex items-center gap-1 md:gap-2">
-                <Button
-                  onClick={handleApplyFilter}
-                  disabled={isFiltering || !startDate || !endDate}
-                  size="sm"
-                  className="gap-1 md:gap-2 text-xs h-7 md:h-9"
-                >
-                  {isFiltering ? (
-                    <RefreshCw className="h-3 w-3 md:h-4 md:w-4 animate-spin" />
-                  ) : (
-                    <Filter className="h-3 w-3 md:h-4 md:w-4" />
-                  )}
-                  <span className="hidden sm:inline">Aplicar</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs h-7 md:h-9"
-                  onClick={handleClearFilter}
-                  disabled={isFiltering}
-                >
-                  Limpar
-                </Button>
-              </div>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <span className="font-medium text-foreground">{endDate ? format(endDate, "dd/MM/yy") : "Fim"}</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={endDate}
+                  onSelect={setEndDate}
+                  initialFocus
+                  className="p-3 pointer-events-auto"
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
-          
+
+          {/* Quick Filters - Pill Style */}
+          <div className="flex items-center gap-1">
+            {[
+              { label: "7d", days: 7 },
+              { label: "30d", days: 30 },
+              { label: "90d", days: 90 },
+            ].map((filter) => (
+              <button
+                key={filter.days}
+                onClick={() => {
+                  setStartDate(subDays(new Date(), filter.days));
+                  setEndDate(new Date());
+                }}
+                className={cn(
+                  "px-2 py-0.5 text-[10px] font-medium rounded-full transition-all",
+                  startDate && differenceInDays(new Date(), startDate) === filter.days
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Apply Button */}
+          <button
+            onClick={handleApplyFilter}
+            disabled={isFiltering || !startDate || !endDate}
+            className="flex items-center gap-1 px-2 py-1 text-[10px] font-medium bg-primary/10 text-primary hover:bg-primary/20 rounded-md transition-colors disabled:opacity-50"
+          >
+            {isFiltering ? (
+              <RefreshCw className="h-2.5 w-2.5 animate-spin" />
+            ) : (
+              <Filter className="h-2.5 w-2.5" />
+            )}
+            Aplicar
+          </button>
+
+          {/* Days info */}
           {startDate && endDate && (
-            <div className="mt-3 pt-3 border-t border-border/50">
-              <p className="text-xs text-muted-foreground">
-                Exibindo dados de <span className="font-medium text-foreground">{format(startDate, "dd/MM/yyyy")}</span> até <span className="font-medium text-foreground">{format(endDate, "dd/MM/yyyy")}</span>
-                {" "}({differenceInDays(endDate, startDate) + 1} dias)
-              </p>
-            </div>
+            <span className="text-[10px] text-muted-foreground/70">
+              {differenceInDays(endDate, startDate) + 1}d
+            </span>
           )}
-        </Card>
+        </div>
       </div>
 
       {/* Hero Profit Card - 3D Metallic Green */}
