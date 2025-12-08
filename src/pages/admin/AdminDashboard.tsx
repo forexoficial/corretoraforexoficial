@@ -337,45 +337,46 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-8 pb-8">
+    <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col gap-3 md:gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4">
           <div>
-            <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent">
+            <h1 className="text-xl md:text-4xl font-bold mb-1 md:mb-2 bg-gradient-to-r from-white via-primary to-white bg-clip-text text-transparent">
               Dashboard Executivo
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-xs md:text-base text-muted-foreground">
               Visão completa da plataforma em tempo real
             </p>
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="h-4 w-4" />
-            <span>Última atualização: {format(new Date(), "dd/MM/yyyy HH:mm", { locale: ptBR })}</span>
+          <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground">
+            <Clock className="h-3 w-3 md:h-4 md:w-4" />
+            <span>Atualizado: {format(new Date(), "dd/MM HH:mm", { locale: ptBR })}</span>
           </div>
         </div>
 
         {/* Date Filter */}
-        <Card className="p-4 bg-gradient-to-r from-card to-card/80 border-border/50">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Filter className="h-4 w-4 text-primary" />
+        <Card className="p-3 md:p-4 bg-gradient-to-r from-card to-card/80 border-border/50">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex items-center gap-2 text-xs md:text-sm font-medium">
+              <Filter className="h-3 w-3 md:h-4 md:w-4 text-primary" />
               <span>Filtrar por período:</span>
             </div>
             
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
               {/* Start Date */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    size="sm"
                     className={cn(
-                      "w-[160px] justify-start text-left font-normal",
+                      "w-[120px] md:w-[160px] justify-start text-left font-normal text-xs md:text-sm h-8 md:h-10",
                       !startDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "dd/MM/yyyy") : "Data inicial"}
+                    <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                    {startDate ? format(startDate, "dd/MM/yy") : "Início"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -390,20 +391,21 @@ export default function AdminDashboard() {
                 </PopoverContent>
               </Popover>
 
-              <span className="text-muted-foreground">até</span>
+              <span className="text-xs md:text-sm text-muted-foreground">até</span>
 
               {/* End Date */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
+                    size="sm"
                     className={cn(
-                      "w-[160px] justify-start text-left font-normal",
+                      "w-[120px] md:w-[160px] justify-start text-left font-normal text-xs md:text-sm h-8 md:h-10",
                       !endDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "dd/MM/yyyy") : "Data final"}
+                    <CalendarIcon className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
+                    {endDate ? format(endDate, "dd/MM/yy") : "Fim"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -419,55 +421,61 @@ export default function AdminDashboard() {
               </Popover>
 
               {/* Quick Filters */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   variant="secondary"
                   size="sm"
+                  className="text-xs h-7 md:h-9 px-2 md:px-3"
                   onClick={() => {
                     setStartDate(subDays(new Date(), 7));
                     setEndDate(new Date());
                   }}
                 >
-                  7 dias
+                  7d
                 </Button>
                 <Button
                   variant="secondary"
                   size="sm"
+                  className="text-xs h-7 md:h-9 px-2 md:px-3"
                   onClick={() => {
                     setStartDate(subDays(new Date(), 30));
                     setEndDate(new Date());
                   }}
                 >
-                  30 dias
+                  30d
                 </Button>
                 <Button
                   variant="secondary"
                   size="sm"
+                  className="text-xs h-7 md:h-9 px-2 md:px-3"
                   onClick={() => {
                     setStartDate(subDays(new Date(), 90));
                     setEndDate(new Date());
                   }}
                 >
-                  90 dias
+                  90d
                 </Button>
               </div>
 
               {/* Apply and Clear Buttons */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 md:gap-2">
                 <Button
                   onClick={handleApplyFilter}
                   disabled={isFiltering || !startDate || !endDate}
-                  className="gap-2"
+                  size="sm"
+                  className="gap-1 md:gap-2 text-xs h-7 md:h-9"
                 >
                   {isFiltering ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-3 w-3 md:h-4 md:w-4 animate-spin" />
                   ) : (
-                    <Filter className="h-4 w-4" />
+                    <Filter className="h-3 w-3 md:h-4 md:w-4" />
                   )}
-                  Aplicar
+                  <span className="hidden sm:inline">Aplicar</span>
                 </Button>
                 <Button
                   variant="ghost"
+                  size="sm"
+                  className="text-xs h-7 md:h-9"
                   onClick={handleClearFilter}
                   disabled={isFiltering}
                 >
@@ -493,71 +501,61 @@ export default function AdminDashboard() {
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.15)_0%,transparent_50%,rgba(0,0,0,0.3)_100%)]" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-400/50 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-emerald-600/30 to-transparent" />
-        <div className="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-24 -left-24 w-48 h-48 bg-emerald-400/10 rounded-full blur-3xl" />
+        <div className="absolute -top-24 -right-24 w-24 md:w-48 h-24 md:h-48 bg-emerald-500/20 rounded-full blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-24 md:w-48 h-24 md:h-48 bg-emerald-400/10 rounded-full blur-3xl" />
         
-        <div className="relative p-8 md:p-12">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+        <div className="relative p-4 md:p-12">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 md:gap-8">
             <div className="flex-1">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/30 border border-emerald-500/40 backdrop-blur-sm shadow-lg shadow-emerald-500/20">
-                  <Flame className="h-6 w-6 text-emerald-400" />
+              <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+                <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-gradient-to-br from-emerald-500/30 to-emerald-600/30 border border-emerald-500/40 backdrop-blur-sm shadow-lg shadow-emerald-500/20">
+                  <Flame className="h-4 w-4 md:h-6 md:w-6 text-emerald-400" />
                 </div>
                 <div>
-                  <p className="text-emerald-300/80 text-sm font-medium uppercase tracking-wider">Lucro da Plataforma</p>
-                  <p className="text-emerald-400/60 text-xs">Ganhos acumulados das operações</p>
+                  <p className="text-emerald-300/80 text-xs md:text-sm font-medium uppercase tracking-wider">Lucro da Plataforma</p>
+                  <p className="text-emerald-400/60 text-[10px] md:text-xs hidden sm:block">Ganhos acumulados</p>
                 </div>
               </div>
               
               <div className="relative">
-                <h2 className="text-5xl md:text-7xl font-black tracking-tight text-white"
+                <h2 className="text-2xl sm:text-4xl md:text-7xl font-black tracking-tight text-white"
                     style={{
                       textShadow: `
                         0 1px 0 #ccc,
                         0 2px 0 #c9c9c9,
-                        0 3px 0 #bbb,
-                        0 4px 0 #b9b9b9,
-                        0 5px 0 #aaa,
-                        0 6px 1px rgba(0,0,0,.1),
-                        0 0 5px rgba(0,0,0,.1),
-                        0 1px 3px rgba(0,0,0,.3),
-                        0 3px 5px rgba(0,0,0,.2),
-                        0 5px 10px rgba(0,0,0,.25),
-                        0 10px 10px rgba(0,0,0,.2),
-                        0 20px 20px rgba(0,0,0,.15),
                         0 0 60px rgba(34, 197, 94, 0.4)
                       `,
-                      filter: "drop-shadow(0 8px 16px rgba(0,0,0,0.4))"
+                      filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.4))"
                     }}>
                   {formatCurrency(stats.platformProfit)}
                 </h2>
                 <div className="absolute -inset-4 bg-emerald-500/5 blur-2xl -z-10" />
               </div>
               
-              <div className="flex items-center gap-2 mt-4 text-emerald-400/80">
-                <ArrowUpRight className="h-5 w-5" />
-                <span className="text-sm font-medium">
-                  Margem de {((stats.platformProfit / (stats.totalDepositsAmount || 1)) * 100).toFixed(1)}% sobre depósitos
+              <div className="flex items-center gap-1 md:gap-2 mt-2 md:mt-4 text-emerald-400/80">
+                <ArrowUpRight className="h-3 w-3 md:h-5 md:w-5" />
+                <span className="text-xs md:text-sm font-medium">
+                  Margem: {((stats.platformProfit / (stats.totalDepositsAmount || 1)) * 100).toFixed(1)}%
                 </span>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 md:gap-6">
-              <div className="p-4 rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
-                <p className="text-emerald-400/70 text-xs mb-1">Total Depositado</p>
-                <p className="text-xl font-bold text-emerald-300">{formatCurrency(stats.totalDepositsAmount)}</p>
+            <div className="grid grid-cols-2 gap-2 md:gap-6">
+              <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
+                <p className="text-emerald-400/70 text-[10px] md:text-xs mb-0.5 md:mb-1">Depositado</p>
+                <p className="text-sm md:text-xl font-bold text-emerald-300">{formatCurrency(stats.totalDepositsAmount)}</p>
               </div>
-              <div className="p-4 rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
-                <p className="text-emerald-400/70 text-xs mb-1">Saldo Usuários</p>
-                <p className="text-xl font-bold text-emerald-300">{formatCurrency(stats.totalUserBalance)}</p>
+              <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
+                <p className="text-emerald-400/70 text-[10px] md:text-xs mb-0.5 md:mb-1">Saldo</p>
+                <p className="text-sm md:text-xl font-bold text-emerald-300">{formatCurrency(stats.totalUserBalance)}</p>
               </div>
-              <div className="p-4 rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
-                <p className="text-emerald-400/70 text-xs mb-1">Total Saques</p>
-                <p className="text-xl font-bold text-emerald-300">{formatCurrency(stats.totalWithdrawalsAmount)}</p>
+              <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
+                <p className="text-emerald-400/70 text-[10px] md:text-xs mb-0.5 md:mb-1">Saques</p>
+                <p className="text-sm md:text-xl font-bold text-emerald-300">{formatCurrency(stats.totalWithdrawalsAmount)}</p>
               </div>
-              <div className="p-4 rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
-                <p className="text-emerald-400/70 text-xs mb-1">Taxa de Perda</p>
-                <p className="text-xl font-bold text-emerald-300">{100 - Number(winRate)}%</p>
+              <div className="p-2 md:p-4 rounded-lg md:rounded-xl bg-emerald-900/40 border border-emerald-700/30 backdrop-blur-sm">
+                <p className="text-emerald-400/70 text-[10px] md:text-xs mb-0.5 md:mb-1">Perda</p>
+                <p className="text-sm md:text-xl font-bold text-emerald-300">{100 - Number(winRate)}%</p>
               </div>
             </div>
           </div>
@@ -565,7 +563,7 @@ export default function AdminDashboard() {
       </Card>
 
       {/* Quick Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-4">
         <QuickStatCard
           icon={Users}
           label="Usuários"
@@ -576,7 +574,7 @@ export default function AdminDashboard() {
         />
         <QuickStatCard
           icon={TrendingUp}
-          label="Trades Ativos"
+          label="Ativos"
           value={stats.activeTrades}
           subValue={`${stats.totalTrades} total`}
           trend="neutral"
@@ -584,7 +582,7 @@ export default function AdminDashboard() {
         />
         <QuickStatCard
           icon={CheckCircle2}
-          label="Taxa de Vitória"
+          label="Vitória"
           value={`${winRate}%`}
           subValue={`${stats.wonTrades} ganhas`}
           trend="up"
@@ -594,13 +592,13 @@ export default function AdminDashboard() {
           icon={DollarSign}
           label="Transações"
           value={stats.totalTransactions}
-          subValue={`${stats.pendingTransactions} pendentes`}
+          subValue={`${stats.pendingTransactions} pend.`}
           trend="neutral"
           color="purple"
         />
         <QuickStatCard
           icon={Shield}
-          label="Verificações"
+          label="Verif."
           value={stats.pendingVerifications}
           subValue="pendentes"
           trend={stats.pendingVerifications > 0 ? "warning" : "neutral"}
@@ -608,37 +606,37 @@ export default function AdminDashboard() {
         />
         <QuickStatCard
           icon={Zap}
-          label="Boosters Ativos"
+          label="Boosters"
           value={stats.activeBoosters}
-          subValue="em uso"
+          subValue="ativos"
           trend="up"
           color="cyan"
         />
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Deposit Growth Chart */}
-        <Card className="lg:col-span-2 p-6 bg-gradient-to-br from-card to-card/50 border-border/50">
-          <div className="flex items-center justify-between mb-6">
+        <Card className="lg:col-span-2 p-3 md:p-6 bg-gradient-to-br from-card to-card/50 border-border/50">
+          <div className="flex items-center justify-between mb-3 md:mb-6">
             <div>
-              <h3 className="text-xl font-bold flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                Crescimento de Depósitos
+              <h3 className="text-sm md:text-xl font-bold flex items-center gap-1.5 md:gap-2">
+                <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+                Depósitos
               </h3>
-              <p className="text-sm text-muted-foreground">Últimos 30 dias</p>
+              <p className="text-[10px] md:text-sm text-muted-foreground">Últimos 30 dias</p>
             </div>
-            <div className="flex items-center gap-4 text-sm">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full bg-gradient-to-r from-primary to-primary/50" />
-                <span className="text-muted-foreground">Volume</span>
+            <div className="flex items-center gap-2 md:gap-4 text-xs md:text-sm">
+              <div className="flex items-center gap-1 md:gap-2">
+                <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-gradient-to-r from-primary to-primary/50" />
+                <span className="text-muted-foreground hidden sm:inline">Volume</span>
               </div>
             </div>
           </div>
           
-          <div className="h-[300px]">
+          <div className="h-[180px] md:h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={depositChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+              <AreaChart data={depositChartData} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
                 <defs>
                   <linearGradient id="depositGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
@@ -650,23 +648,26 @@ export default function AdminDashboard() {
                 <XAxis 
                   dataKey="date" 
                   stroke="hsl(var(--muted-foreground))" 
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
+                  interval="preserveStartEnd"
                 />
                 <YAxis 
                   stroke="hsl(var(--muted-foreground))" 
-                  fontSize={12}
+                  fontSize={10}
                   tickLine={false}
                   axisLine={false}
                   tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                  width={35}
                 />
                 <Tooltip 
                   contentStyle={{ 
                     backgroundColor: "hsl(var(--card))", 
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
-                    boxShadow: "0 10px 40px -10px rgba(0,0,0,0.5)"
+                    boxShadow: "0 10px 40px -10px rgba(0,0,0,0.5)",
+                    fontSize: "12px"
                   }}
                   formatter={(value: number) => [formatCurrency(value), "Depósitos"]}
                   labelStyle={{ color: "hsl(var(--foreground))" }}
@@ -675,7 +676,7 @@ export default function AdminDashboard() {
                   type="monotone" 
                   dataKey="amount" 
                   stroke="hsl(var(--primary))" 
-                  strokeWidth={3}
+                  strokeWidth={2}
                   fill="url(#depositGradient)" 
                 />
               </AreaChart>
@@ -684,24 +685,24 @@ export default function AdminDashboard() {
         </Card>
 
         {/* Trade Distribution Pie */}
-        <Card className="p-6 bg-gradient-to-br from-card to-card/50 border-border/50">
-          <div className="mb-6">
-            <h3 className="text-xl font-bold flex items-center gap-2">
-              <PieChart className="h-5 w-5 text-primary" />
-              Distribuição de Trades
+        <Card className="p-3 md:p-6 bg-gradient-to-br from-card to-card/50 border-border/50">
+          <div className="mb-3 md:mb-6">
+            <h3 className="text-sm md:text-xl font-bold flex items-center gap-1.5 md:gap-2">
+              <PieChart className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+              Trades
             </h3>
-            <p className="text-sm text-muted-foreground">Por resultado</p>
+            <p className="text-[10px] md:text-sm text-muted-foreground">Distribuição</p>
           </div>
           
-          <div className="h-[250px]">
+          <div className="h-[150px] md:h-[250px]">
             <ResponsiveContainer width="100%" height="100%">
               <RechartsPieChart>
                 <Pie
                   data={tradeDistribution}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
+                  innerRadius={35}
+                  outerRadius={55}
                   paddingAngle={4}
                   dataKey="value"
                   strokeWidth={0}
@@ -714,37 +715,38 @@ export default function AdminDashboard() {
                   contentStyle={{ 
                     backgroundColor: "hsl(var(--card))", 
                     border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px"
+                    borderRadius: "8px",
+                    fontSize: "12px"
                   }}
                 />
                 <Legend 
                   verticalAlign="bottom" 
-                  height={36}
-                  formatter={(value) => <span className="text-sm text-muted-foreground">{value}</span>}
+                  height={24}
+                  formatter={(value) => <span className="text-xs text-muted-foreground">{value}</span>}
                 />
               </RechartsPieChart>
             </ResponsiveContainer>
           </div>
           
-          <div className="grid grid-cols-3 gap-2 mt-4">
-            <div className="text-center p-2 rounded-lg bg-green-500/10">
-              <p className="text-xl font-bold text-green-500">{stats.wonTrades}</p>
-              <p className="text-xs text-muted-foreground">Ganhas</p>
+          <div className="grid grid-cols-3 gap-1 md:gap-2 mt-2 md:mt-4">
+            <div className="text-center p-1.5 md:p-2 rounded-lg bg-green-500/10">
+              <p className="text-sm md:text-xl font-bold text-green-500">{stats.wonTrades}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Ganhas</p>
             </div>
-            <div className="text-center p-2 rounded-lg bg-red-500/10">
-              <p className="text-xl font-bold text-red-500">{stats.lostTrades}</p>
-              <p className="text-xs text-muted-foreground">Perdidas</p>
+            <div className="text-center p-1.5 md:p-2 rounded-lg bg-red-500/10">
+              <p className="text-sm md:text-xl font-bold text-red-500">{stats.lostTrades}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Perdidas</p>
             </div>
-            <div className="text-center p-2 rounded-lg bg-yellow-500/10">
-              <p className="text-xl font-bold text-yellow-500">{stats.activeTrades}</p>
-              <p className="text-xs text-muted-foreground">Ativas</p>
+            <div className="text-center p-1.5 md:p-2 rounded-lg bg-yellow-500/10">
+              <p className="text-sm md:text-xl font-bold text-yellow-500">{stats.activeTrades}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Ativas</p>
             </div>
           </div>
         </Card>
       </div>
 
       {/* Detailed Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
         {/* Users Card */}
         <DetailCard
           title="Usuários"
@@ -754,7 +756,7 @@ export default function AdminDashboard() {
           stats={[
             { label: "Total", value: stats.totalUsers },
             { label: "Hoje", value: stats.newUsersToday, highlight: true },
-            { label: "Esta semana", value: stats.newUsersWeek },
+            { label: "Semana", value: stats.newUsersWeek },
           ]}
         />
 
@@ -765,9 +767,9 @@ export default function AdminDashboard() {
           iconColor="text-amber-500"
           bgColor="from-amber-500/10 to-amber-600/5"
           stats={[
-            { label: "Pendentes", value: stats.pendingVerifications, highlight: stats.pendingVerifications > 0 },
-            { label: "Aprovadas", value: stats.approvedVerifications },
-            { label: "Rejeitadas", value: stats.rejectedVerifications },
+            { label: "Pend.", value: stats.pendingVerifications, highlight: stats.pendingVerifications > 0 },
+            { label: "Aprov.", value: stats.approvedVerifications },
+            { label: "Rejeit.", value: stats.rejectedVerifications },
           ]}
         />
 
@@ -785,54 +787,54 @@ export default function AdminDashboard() {
 
         {/* Demo Mode Card */}
         <DetailCard
-          title="Modo Demo"
+          title="Demo"
           icon={Target}
           iconColor="text-cyan-500"
           bgColor="from-cyan-500/10 to-cyan-600/5"
           stats={[
-            { label: "Saldo Total Demo", value: formatCurrency(stats.totalDemoBalance) },
-            { label: "Boosters Ativos", value: stats.activeBoosters },
+            { label: "Saldo Demo", value: formatCurrency(stats.totalDemoBalance) },
+            { label: "Boosters", value: stats.activeBoosters },
           ]}
         />
       </div>
 
       {/* Bottom Row - Financial Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="p-6 bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-green-500/20">
-              <ArrowUpRight className="h-6 w-6 text-green-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-6">
+        <Card className="p-3 md:p-6 bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-green-500/20">
+              <ArrowUpRight className="h-4 w-4 md:h-6 md:w-6 text-green-500" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Entradas</p>
-              <p className="text-2xl font-bold text-green-500">{formatCurrency(stats.totalDepositsAmount)}</p>
-              <p className="text-xs text-muted-foreground">{stats.completedDeposits} depósitos</p>
-            </div>
-          </div>
-        </Card>
-
-        <Card className="p-6 bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-red-500/20">
-              <ArrowDownRight className="h-6 w-6 text-red-500" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Saídas</p>
-              <p className="text-2xl font-bold text-red-500">{formatCurrency(stats.totalWithdrawalsAmount)}</p>
-              <p className="text-xs text-muted-foreground">saques aprovados</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-muted-foreground">Entradas</p>
+              <p className="text-base md:text-2xl font-bold text-green-500 truncate">{formatCurrency(stats.totalDepositsAmount)}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">{stats.completedDeposits} dep.</p>
             </div>
           </div>
         </Card>
 
-        <Card className="p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-xl bg-primary/20">
-              <Wallet className="h-6 w-6 text-primary" />
+        <Card className="p-3 md:p-6 bg-gradient-to-br from-red-500/10 to-red-600/5 border-red-500/20">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-red-500/20">
+              <ArrowDownRight className="h-4 w-4 md:h-6 md:w-6 text-red-500" />
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Saldo em Contas</p>
-              <p className="text-2xl font-bold text-primary">{formatCurrency(stats.totalUserBalance)}</p>
-              <p className="text-xs text-muted-foreground">disponível para operações</p>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-muted-foreground">Saídas</p>
+              <p className="text-base md:text-2xl font-bold text-red-500 truncate">{formatCurrency(stats.totalWithdrawalsAmount)}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">saques</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-3 md:p-6 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          <div className="flex items-center gap-2 md:gap-4">
+            <div className="p-2 md:p-3 rounded-lg md:rounded-xl bg-primary/20">
+              <Wallet className="h-4 w-4 md:h-6 md:w-6 text-primary" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs md:text-sm text-muted-foreground">Saldo</p>
+              <p className="text-base md:text-2xl font-bold text-primary truncate">{formatCurrency(stats.totalUserBalance)}</p>
+              <p className="text-[10px] md:text-xs text-muted-foreground">disponível</p>
             </div>
           </div>
         </Card>
@@ -868,16 +870,16 @@ function QuickStatCard({
 
   return (
     <Card className={cn(
-      "p-4 bg-gradient-to-br border transition-all duration-300 hover:scale-105 hover:shadow-lg",
+      "p-2 md:p-4 bg-gradient-to-br border transition-all duration-300 hover:scale-105 hover:shadow-lg",
       colorClasses[color]
     )}>
-      <div className="flex items-center gap-3 mb-2">
-        <Icon className="h-5 w-5" />
-        <span className="text-xs font-medium text-muted-foreground">{label}</span>
+      <div className="flex items-center gap-1.5 md:gap-3 mb-1 md:mb-2">
+        <Icon className="h-3 w-3 md:h-5 md:w-5" />
+        <span className="text-[10px] md:text-xs font-medium text-muted-foreground truncate">{label}</span>
       </div>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-base md:text-2xl font-bold">{value}</p>
       <p className={cn(
-        "text-xs",
+        "text-[10px] md:text-xs truncate",
         trend === "up" && "text-green-500",
         trend === "down" && "text-red-500",
         trend === "warning" && "text-amber-500",
@@ -904,19 +906,19 @@ function DetailCard({
   stats: Array<{ label: string; value: string | number; highlight?: boolean }>;
 }) {
   return (
-    <Card className={cn("p-5 bg-gradient-to-br border-border/50", bgColor)}>
-      <div className="flex items-center gap-3 mb-4">
-        <div className={cn("p-2 rounded-lg bg-background/50")}>
-          <Icon className={cn("h-5 w-5", iconColor)} />
+    <Card className={cn("p-3 md:p-5 bg-gradient-to-br border-border/50", bgColor)}>
+      <div className="flex items-center gap-2 md:gap-3 mb-2 md:mb-4">
+        <div className={cn("p-1.5 md:p-2 rounded-md md:rounded-lg bg-background/50")}>
+          <Icon className={cn("h-3 w-3 md:h-5 md:w-5", iconColor)} />
         </div>
-        <h4 className="font-semibold">{title}</h4>
+        <h4 className="font-semibold text-xs md:text-base">{title}</h4>
       </div>
-      <div className="space-y-3">
+      <div className="space-y-1.5 md:space-y-3">
         {stats.map((stat, idx) => (
           <div key={idx} className="flex items-center justify-between">
-            <span className="text-sm text-muted-foreground">{stat.label}</span>
+            <span className="text-[10px] md:text-sm text-muted-foreground">{stat.label}</span>
             <span className={cn(
-              "font-semibold",
+              "font-semibold text-xs md:text-base",
               stat.highlight && "text-primary"
             )}>
               {stat.value}
