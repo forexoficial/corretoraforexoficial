@@ -11,6 +11,7 @@ import { CurrencyProvider } from "@/contexts/CurrencyContext";
 import { PlatformCustomizationProvider } from "@/contexts/PlatformCustomizationContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { InstallPrompt } from "@/components/InstallPrompt";
+import { PWANotificationInit } from "@/components/PWANotificationInit";
 import Index from "./pages/Index";
 import Deposit from "./pages/Deposit";
 import Withdrawal from "./pages/Withdrawal";
@@ -66,6 +67,7 @@ const App = () => (
               <CurrencyProvider>
                 <PlatformCustomizationProvider>
                 <InstallPrompt />
+                <PWANotificationInit />
               <Routes>
                 <Route path="/auth" element={<Auth />} />
                 <Route path="/signup" element={<Signup />} />
