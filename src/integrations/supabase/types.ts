@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notification_queue: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          id: string
+          notification_type: string
+          processed: boolean | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          notification_type: string
+          processed?: boolean | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          id?: string
+          notification_type?: string
+          processed?: boolean | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       affiliate_custom_links: {
         Row: {
           affiliate_id: string
