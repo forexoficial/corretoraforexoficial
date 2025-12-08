@@ -1065,6 +1065,8 @@ export type Database = {
         Row: {
           avatar_url: string | null
           balance: number | null
+          country_code: string | null
+          country_name: string | null
           created_at: string
           current_asset_id: string | null
           demo_balance: number | null
@@ -1075,6 +1077,7 @@ export type Database = {
           is_admin: boolean | null
           is_blocked: boolean | null
           is_demo_mode: boolean | null
+          preferred_currency: string | null
           selected_assets: Json | null
           total_deposited: number | null
           updated_at: string
@@ -1088,6 +1091,8 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           balance?: number | null
+          country_code?: string | null
+          country_name?: string | null
           created_at?: string
           current_asset_id?: string | null
           demo_balance?: number | null
@@ -1098,6 +1103,7 @@ export type Database = {
           is_admin?: boolean | null
           is_blocked?: boolean | null
           is_demo_mode?: boolean | null
+          preferred_currency?: string | null
           selected_assets?: Json | null
           total_deposited?: number | null
           updated_at?: string
@@ -1111,6 +1117,8 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           balance?: number | null
+          country_code?: string | null
+          country_name?: string | null
           created_at?: string
           current_asset_id?: string | null
           demo_balance?: number | null
@@ -1121,6 +1129,7 @@ export type Database = {
           is_admin?: boolean | null
           is_blocked?: boolean | null
           is_demo_mode?: boolean | null
+          preferred_currency?: string | null
           selected_assets?: Json | null
           total_deposited?: number | null
           updated_at?: string
@@ -1310,6 +1319,7 @@ export type Database = {
           created_at: string
           id: string
           notes: string | null
+          payment_currency: string | null
           payment_method: string | null
           status: string
           transaction_reference: string | null
@@ -1322,6 +1332,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_currency?: string | null
           payment_method?: string | null
           status?: string
           transaction_reference?: string | null
@@ -1334,6 +1345,7 @@ export type Database = {
           created_at?: string
           id?: string
           notes?: string | null
+          payment_currency?: string | null
           payment_method?: string | null
           status?: string
           transaction_reference?: string | null
