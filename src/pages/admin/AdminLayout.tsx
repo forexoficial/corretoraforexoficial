@@ -41,6 +41,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/admin" },
@@ -70,13 +71,20 @@ export default function AdminLayout() {
   const { customization } = usePlatformCustomization();
   const navigate = useNavigate();
   const location = useLocation();
+  const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Default to closed on mobile, open on desktop
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [password, setPassword] = useState("");
   const [verifyingPassword, setVerifyingPassword] = useState(false);
   const [passwordVerified, setPasswordVerified] = useState(false);
+
+  // Set sidebar state based on device after initial render
+  useEffect(() => {
+    setSidebarOpen(!isMobile);
+  }, [isMobile]);
 
   useEffect(() => {
     const checkAdmin = async () => {
@@ -235,11 +243,36 @@ export default function AdminLayout() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
+      {/* Mobile Overlay */}
+      {isMobile && sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Mobile Menu Toggle Button - Always visible on mobile when sidebar is closed */}
+      {isMobile && !sidebarOpen && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50 bg-card border border-border shadow-lg"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+      )}
+
       {/* Sidebar */}
       <aside
         className={cn(
           "bg-card border-r border-border flex flex-col transition-all duration-300",
-          sidebarOpen ? "w-64" : "w-20"
+          isMobile 
+            ? cn(
+                "fixed inset-y-0 left-0 z-50 w-64",
+                sidebarOpen ? "translate-x-0" : "-translate-x-full"
+              )
+            : sidebarOpen ? "w-64" : "w-20"
         )}
       >
         {/* Header */}
@@ -280,12 +313,15 @@ export default function AdminLayout() {
                   variant={isActive ? "default" : "ghost"}
                   className={cn(
                     "w-full justify-start gap-3 h-12",
-                    !sidebarOpen && "justify-center"
+                    !sidebarOpen && !isMobile && "justify-center"
                   )}
-                  onClick={() => navigate(item.path)}
+                  onClick={() => {
+                    navigate(item.path);
+                    if (isMobile) setSidebarOpen(false);
+                  }}
                 >
                   <Icon className="h-5 w-5" />
-                  {sidebarOpen && <span>{item.label}</span>}
+                  {(sidebarOpen || isMobile) && <span>{item.label}</span>}
                 </Button>
               );
             })}
@@ -298,20 +334,23 @@ export default function AdminLayout() {
             variant="ghost"
             className={cn(
               "w-full justify-start gap-3 h-12 text-destructive hover:text-destructive",
-              !sidebarOpen && "justify-center"
+              !sidebarOpen && !isMobile && "justify-center"
             )}
             onClick={handleLogout}
           >
             <LogOut className="h-5 w-5" />
-            {sidebarOpen && <span>Sair</span>}
+            {(sidebarOpen || isMobile) && <span>Sair</span>}
           </Button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden">
+      <main className={cn(
+        "flex-1 overflow-hidden",
+        isMobile && "w-full"
+      )}>
         <ScrollArea className="h-full">
-          <div className="p-8">
+          <div className={cn("p-8", isMobile && "pt-16")}>
             <Outlet />
           </div>
         </ScrollArea>
