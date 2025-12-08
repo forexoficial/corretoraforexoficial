@@ -812,5 +812,8 @@
   "payment_error": "Falha ao criar pagamento",
   "payment_completed": "Pagamento concluído!",
   "payment_failed": "Falha no pagamento",
-  "copied": "Copiado!"
+  "copied": "Copiado!",
+  "powered_by_coinbase": "Powered by Coinbase Commerce",
+  "coinbase_security_title": "Protegido pela Coinbase",
+  "coinbase_security_desc": "Sua transação é processada através da Coinbase, a corretora de criptomoedas mais confiável do mundo. Com segurança de nível institucional, conformidade regulatória e proteção de seguro, garantimos os mais altos padrões de segurança para suas transações com ativos digitais."
 }

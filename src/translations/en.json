@@ -809,5 +809,8 @@
   "payment_error": "Failed to create payment",
   "payment_completed": "Payment completed!",
   "payment_failed": "Payment failed",
-  "copied": "Copied!"
+  "copied": "Copied!",
+  "powered_by_coinbase": "Powered by Coinbase Commerce",
+  "coinbase_security_title": "Protected by Coinbase",
+  "coinbase_security_desc": "Your transaction is processed through Coinbase, the world's most trusted cryptocurrency exchange. With institutional-grade security, regulatory compliance, and insurance protection, we ensure the highest standards of safety for your digital asset transactions."
 }
