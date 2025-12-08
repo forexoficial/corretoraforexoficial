@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bell, Send, Users, Trash2, RefreshCw, Smartphone, Monitor, Globe } from "lucide-react";
+import { Bell, Send, Users, Trash2, RefreshCw, Smartphone, Monitor, Globe, ShieldCheck, DollarSign, Wallet, UserCheck, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -153,6 +153,15 @@ export default function AdminPushNotifications() {
     anonymous: subscriptions.filter(s => !s.user_id).length,
   };
 
+  // Tipos de notificações automáticas para admin
+  const autoNotificationTypes = [
+    { type: 'new_deposit', title: '💰 Novo Depósito', description: 'Quando um usuário realiza um depósito', icon: DollarSign, color: 'text-green-500' },
+    { type: 'withdrawal_request', title: '🏦 Solicitação de Saque', description: 'Quando um usuário solicita um saque', icon: Wallet, color: 'text-blue-500' },
+    { type: 'identity_verification', title: '🪪 Verificação de Identidade', description: 'Quando um usuário envia documentos', icon: UserCheck, color: 'text-amber-500' },
+    { type: 'affiliate_withdrawal', title: '👥 Saque de Afiliado', description: 'Quando afiliado solicita saque', icon: Users, color: 'text-purple-500' },
+    { type: 'new_user', title: '🎉 Novo Usuário', description: 'Quando um novo usuário se cadastra', icon: UserPlus, color: 'text-cyan-500' },
+  ];
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center gap-2 md:gap-3">
@@ -164,6 +173,35 @@ export default function AdminPushNotifications() {
           </p>
         </div>
       </div>
+
+      {/* Admin Auto-Notifications Info */}
+      <Card className="border-amber-500/30 bg-amber-500/5">
+        <CardHeader className="p-3 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg text-amber-600">
+            <ShieldCheck className="h-4 w-4 md:h-5 md:w-5" />
+            Notificações Automáticas para Admins
+          </CardTitle>
+          <CardDescription className="text-xs md:text-sm">
+            Administradores recebem notificações automáticas para os seguintes eventos
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 md:gap-3">
+            {autoNotificationTypes.map((notif) => (
+              <div key={notif.type} className="flex items-start gap-2 p-2 md:p-3 rounded-lg bg-background/50 border border-border/50">
+                <notif.icon className={`h-4 w-4 md:h-5 md:w-5 mt-0.5 ${notif.color}`} />
+                <div>
+                  <p className="text-xs md:text-sm font-medium">{notif.title}</p>
+                  <p className="text-[10px] md:text-xs text-muted-foreground">{notif.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-3 p-2 rounded bg-muted/50">
+            ⚠️ Para receber notificações, admins devem ter o PWA instalado e notificações ativadas
+          </p>
+        </CardContent>
+      </Card>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-3 gap-2 md:gap-4">
