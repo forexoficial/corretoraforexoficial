@@ -350,7 +350,7 @@ export default function AdminLayout() {
         isMobile && "w-full"
       )}>
         <ScrollArea className="h-full">
-          <div className={cn("p-8", isMobile && "pt-16")}>
+          <div className={cn("p-4 md:p-8", isMobile && "pt-14")}>
             <Outlet />
           </div>
         </ScrollArea>

@@ -205,23 +205,23 @@ export default function AdminVerifications() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">Verificações de Identidade</h1>
-        <p className="text-muted-foreground">Gerencie as solicitações de verificação</p>
+        <h1 className="text-xl md:text-4xl font-bold mb-1 md:mb-2">Verificações de Identidade</h1>
+        <p className="text-xs md:text-base text-muted-foreground">Gerencie as solicitações de verificação</p>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-2 md:gap-4">
         {verifications.map((verification) => (
-          <Card key={verification.id} className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h3 className="font-semibold">{verification.profiles?.full_name || "Usuário"}</h3>
-                <p className="text-sm text-muted-foreground">
+          <Card key={verification.id} className="p-3 md:p-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
+              <div className="space-y-0.5 md:space-y-1">
+                <h3 className="font-semibold text-sm md:text-base">{verification.profiles?.full_name || "Usuário"}</h3>
+                <p className="text-[10px] md:text-sm text-muted-foreground">
                   {verification.entity_type === "individual" ? "Pessoa Física" : "Pessoa Jurídica"} • 
                   {verification.document_type.toUpperCase()}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] md:text-xs text-muted-foreground">
                   {new Date(verification.created_at).toLocaleString("pt-BR", {
                     timeZone: 'America/Sao_Paulo',
                     day: '2-digit',
@@ -232,15 +232,16 @@ export default function AdminVerifications() {
                   })}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 {getStatusBadge(verification.status)}
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setSelectedVerification(verification)}
+                  className="h-7 md:h-9 text-xs md:text-sm"
                 >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Ver Detalhes
+                  <Eye className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                  Ver
                 </Button>
               </div>
             </div>

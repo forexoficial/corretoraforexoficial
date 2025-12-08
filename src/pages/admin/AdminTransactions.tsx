@@ -119,13 +119,77 @@ export default function AdminTransactions() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">{t("admin_transactions_title")}</h1>
-        <p className="text-muted-foreground">{t("admin_transactions_desc")}</p>
+        <h1 className="text-xl md:text-4xl font-bold mb-1 md:mb-2">{t("admin_transactions_title")}</h1>
+        <p className="text-xs md:text-base text-muted-foreground">{t("admin_transactions_desc")}</p>
       </div>
 
-      <Card>
+      {/* Mobile: Card layout */}
+      <div className="space-y-2 md:hidden">
+        {transactions.map((transaction) => (
+          <Card key={transaction.id} className="p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">
+                  {transaction.profiles?.full_name || "Usuário"}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge variant={transaction.type === "deposit" ? "default" : "secondary"} className="text-[10px] h-5">
+                    {transaction.type === "deposit" ? t("admin_deposit") : t("admin_withdrawal")}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground">{transaction.payment_method || "N/A"}</span>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {new Date(transaction.created_at).toLocaleString("pt-BR", {
+                    timeZone: 'America/Sao_Paulo',
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-sm">R$ {Number(transaction.amount).toFixed(2)}</p>
+                <Badge variant={
+                  transaction.status === "completed" ? "default" :
+                  transaction.status === "pending" ? "secondary" : "destructive"
+                } className="text-[10px] h-5 mt-1">
+                  {transaction.status === "completed" && t("admin_complete")}
+                  {transaction.status === "pending" && t("pending")}
+                  {transaction.status === "failed" && t("failed")}
+                </Badge>
+              </div>
+            </div>
+            {transaction.status === "pending" && (
+              <div className="flex gap-2 mt-2 pt-2 border-t">
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => handleApprove(transaction)}
+                  className="flex-1 h-8 text-xs"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  {t("admin_approve")}
+                </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={() => handleReject(transaction.id)}
+                  className="flex-1 h-8 text-xs"
+                >
+                  <X className="h-3 w-3 mr-1" />
+                  {t("admin_reject")}
+                </Button>
+              </div>
+            )}
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop: Table layout */}
+      <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>
