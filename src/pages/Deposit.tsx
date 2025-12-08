@@ -23,6 +23,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDocument, validateDocument, DocumentType } from "@/lib/validators";
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
 
 type PaymentMethodType = "pix" | "stripe" | "crypto";
 
@@ -32,6 +34,7 @@ export default function Deposit() {
   const [searchParams] = useSearchParams();
   const { settings } = usePlatformSettings();
   const { loading, paymentData, createPayment, resetPayment } = usePayment();
+  const isMobile = useIsMobile();
   
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethodType>("stripe");
   const [amount, setAmount] = useState<string>("");
@@ -264,7 +267,20 @@ export default function Deposit() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden bg-background">
-      {!paymentData && !showStripeCheckout && !showCoinbaseCheckout && <TradingHeader />}
+      {/* Mobile Header */}
+      {isMobile && (
+        <>
+          <MobileTradingHeader 
+            selectedAsset={{
+              name: t("deposit", "Depósito"),
+              icon_url: ""
+            }}
+          />
+          <div className="h-14" /> {/* Spacer for fixed header */}
+        </>
+      )}
+      
+      {!isMobile && !paymentData && !showStripeCheckout && !showCoinbaseCheckout && <TradingHeader />}
       
       {/* Header Navigation */}
       {!paymentData && !showStripeCheckout && !showCoinbaseCheckout && (

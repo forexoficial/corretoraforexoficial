@@ -24,12 +24,15 @@ import {
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { CameraCapture } from "@/components/CameraCapture";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
 
 export default function VerifyIdentity() {
   const { user } = useAuth();
   const { customization } = usePlatformCustomization();
   const { t, language } = useTranslation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
   const [entityType, setEntityType] = useState<"individual" | "business">("individual");
@@ -531,6 +534,19 @@ export default function VerifyIdentity() {
               : t('kyc_camera_doc_subtitle')
           }
         />
+      )}
+
+      {/* Mobile Header */}
+      {isMobile && (
+        <>
+          <MobileTradingHeader 
+            selectedAsset={{
+              name: t('kyc_title', 'Verificar Identidade'),
+              icon_url: ""
+            }}
+          />
+          <div className="h-14" /> {/* Spacer for fixed header */}
+        </>
       )}
 
       <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 p-3 pb-16">

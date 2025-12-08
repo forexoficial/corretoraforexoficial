@@ -277,13 +277,16 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-background pb-16">
       {/* Mobile Header */}
-      {isMobile && profile?.current_asset_id && (
-        <MobileTradingHeader 
-          selectedAsset={{
-            name: "Profile",
-            icon_url: ""
-          }}
-        />
+      {isMobile && (
+        <>
+          <MobileTradingHeader 
+            selectedAsset={{
+              name: "Profile",
+              icon_url: ""
+            }}
+          />
+          <div className="h-14" /> {/* Spacer for fixed header */}
+        </>
       )}
 
       {/* Desktop Header Navigation */}

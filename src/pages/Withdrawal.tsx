@@ -24,11 +24,14 @@ import secureIcon2 from "@/assets/secure-verified-2.webp";
 import secureIcon3 from "@/assets/secure-verified-3.webp";
 import secureIcon4 from "@/assets/secure-verified-4.webp";
 import secureIcon5 from "@/assets/secure-verified-5.webp";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
 
 export default function Withdrawal() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const { settings } = usePlatformSettings();
   const [accountType, setAccountType] = useState<"real" | "crypto" | "bonus">("real");
   const [withdrawalType, setWithdrawalType] = useState<"BRL" | "USDT">("BRL");
@@ -187,42 +190,57 @@ export default function Withdrawal() {
 
   return (
     <div className="min-h-screen bg-background pb-16">
+      {/* Mobile Header */}
+      {isMobile && (
+        <>
+          <MobileTradingHeader 
+            selectedAsset={{
+              name: t("withdrawal", "Retirada"),
+              icon_url: ""
+            }}
+          />
+          <div className="h-14" /> {/* Spacer for fixed header */}
+        </>
+      )}
+
       {/* Header Navigation */}
-      <div className="border-b border-border bg-card">
-        <div className="container mx-auto px-4">
-          <Tabs defaultValue="withdrawal" className="w-full">
-            <TabsList className="w-full justify-start h-auto bg-transparent rounded-none border-none p-0 gap-6 overflow-x-auto">
-              <TabsTrigger 
-                value="deposit"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
-                onClick={() => navigate('/deposit')}
-              >
-                {t("deposit", "Depósito")}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="withdrawal" 
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
-              >
-                {t("withdrawal", "Retirada")}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="transactions"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
-                onClick={() => navigate('/transactions')}
-              >
-                {t("transactions", "Transações")}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="profile"
-                className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
-                onClick={() => navigate('/profile')}
-              >
-                {t("profile", "Perfil")}
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+      {!isMobile && (
+        <div className="border-b border-border bg-card">
+          <div className="container mx-auto px-4">
+            <Tabs defaultValue="withdrawal" className="w-full">
+              <TabsList className="w-full justify-start h-auto bg-transparent rounded-none border-none p-0 gap-6 overflow-x-auto">
+                <TabsTrigger 
+                  value="deposit"
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
+                  onClick={() => navigate('/deposit')}
+                >
+                  {t("deposit", "Depósito")}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="withdrawal" 
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
+                >
+                  {t("withdrawal", "Retirada")}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="transactions"
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
+                  onClick={() => navigate('/transactions')}
+                >
+                  {t("transactions", "Transações")}
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="profile"
+                  className="data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none bg-transparent px-0 pb-3"
+                  onClick={() => navigate('/profile')}
+                >
+                  {t("profile", "Perfil")}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Main Content */}
       <div className="container mx-auto px-4 py-8">

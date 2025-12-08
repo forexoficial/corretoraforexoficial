@@ -402,12 +402,15 @@ export default function CopyTrade() {
   return (
     <div className="min-h-screen bg-background pb-16">
       {isMobile && (
-        <MobileTradingHeader 
-          selectedAsset={{
-            name: "Copy Trade",
-            icon_url: ""
-          }}
-        />
+        <>
+          <MobileTradingHeader 
+            selectedAsset={{
+              name: "Copy Trade",
+              icon_url: ""
+            }}
+          />
+          <div className="h-14" /> {/* Spacer for fixed header */}
+        </>
       )}
 
       {!isMobile && (

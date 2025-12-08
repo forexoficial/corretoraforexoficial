@@ -141,7 +141,8 @@ export function MobileTradingView({
       <PlatformPopup />
       <div className="flex flex-col h-screen bg-background">
         <MobileTradingHeader selectedAsset={selectedAsset} />
-        <MobileChartView 
+        <div className="h-14" /> {/* Spacer for fixed header */}
+        <MobileChartView
           selectedAsset={selectedAsset} 
           onAssetChange={handleAssetChange}
           onCurrentPriceUpdate={handlePriceUpdate}
