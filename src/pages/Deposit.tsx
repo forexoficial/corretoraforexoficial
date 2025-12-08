@@ -429,7 +429,7 @@ export default function Deposit() {
                       <div className="text-left flex-1">
                         <div className="font-semibold text-sm flex items-center gap-2">
                           <Globe className="w-4 h-4" />
-                          {t("international_payment") || "International"}
+                          {t("global_payment")}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Card, Apple Pay, Google Pay
