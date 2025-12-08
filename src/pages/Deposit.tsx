@@ -448,7 +448,7 @@ export default function Deposit() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-card rounded-lg border border-border">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-white rounded-lg">
                           <img 
                             src={pixIcon} 
                             alt="PIX" 
