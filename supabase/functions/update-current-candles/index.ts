@@ -23,6 +23,10 @@ interface Candle {
   volume: number;
 }
 
+// Cache para armazenar o preço atual de cada asset
+// Isso garante que todos os timeframes usem o MESMO preço
+const assetCurrentPrices: Map<string, number> = new Map();
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -82,8 +86,38 @@ Deno.serve(async (req) => {
       return map[timeframe] || 60 * 1000
     }
 
-    // For each asset and timeframe, update or create new candle
+    // PASSO 1: Para cada asset, determinar o preço atual ÚNICO
+    // Usar o timeframe 1m como referência base
     for (const asset of assets) {
+      // Buscar o candle mais recente de 1m para obter o preço base
+      const { data: baseCandle } = await supabaseClient
+        .from('candles')
+        .select('close')
+        .eq('asset_id', asset.id)
+        .eq('timeframe', '1m')
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single();
+
+      if (baseCandle) {
+        const currentPrice = Number(baseCandle.close);
+        // Aplicar uma pequena variação aleatória ao preço atual
+        const volatility = 0.0015; // 0.15% volatility
+        const randomChange = (Math.random() - 0.5) * volatility;
+        const newPrice = currentPrice * (1 + randomChange);
+        assetCurrentPrices.set(asset.id, newPrice);
+        console.log(`[${asset.symbol}] Base price: ${currentPrice.toFixed(6)} -> New price: ${newPrice.toFixed(6)}`);
+      } else {
+        // Preço inicial padrão se não houver candles
+        assetCurrentPrices.set(asset.id, 100);
+        console.log(`[${asset.symbol}] No candles found, using default price: 100`);
+      }
+    }
+
+    // PASSO 2: Atualizar TODOS os timeframes com o MESMO preço
+    for (const asset of assets) {
+      const currentPrice = assetCurrentPrices.get(asset.id) || 100;
+      
       for (const timeframe of timeframes) {
         try {
           const timeframeMs = getTimeframeMs(timeframe)
@@ -104,9 +138,39 @@ Deno.serve(async (req) => {
             continue;
           }
 
-          // Se não existe candle, pular (será criado pelo generate-candles)
+          // Se não existe candle, criar um novo com o preço atual
           if (!candles || candles.length === 0) {
-            console.log(`No candles found for ${asset.symbol} ${timeframe}`);
+            console.log(`No candles found for ${asset.symbol} ${timeframe}, creating initial candle`);
+            
+            const newCandleTimestamp = alignToTimeframe(nowBrazil, timeframeMs)
+            const open = currentPrice
+            const close = currentPrice
+            const high = currentPrice * 1.001
+            const low = currentPrice * 0.999
+            const volume = Math.random() * 1000000 + 100000
+            
+            const { error: insertError } = await supabaseClient
+              .from('candles')
+              .insert({
+                asset_id: asset.id,
+                timeframe,
+                timestamp: new Date(newCandleTimestamp).toISOString(),
+                open: open.toFixed(8),
+                high: high.toFixed(8),
+                low: low.toFixed(8),
+                close: close.toFixed(8),
+                volume: volume.toFixed(2),
+                is_manipulated: false
+              })
+            
+            if (!insertError) {
+              updatedCandles.push({
+                asset: asset.symbol,
+                timeframe,
+                action: 'created_initial',
+                price: currentPrice.toFixed(6)
+              })
+            }
             continue;
           }
 
@@ -116,18 +180,17 @@ Deno.serve(async (req) => {
           
           // Verificar se o candle atual expirou
           if (nowBrazil >= candleExpiry) {
-            // Criar novo candle
+            // Criar novo candle com o preço atual
             console.log(`Creating new candle for ${asset.symbol} ${timeframe} - expired at ${new Date(candleExpiry).toISOString()}`)
             
             const newCandleTimestamp = alignToTimeframe(nowBrazil, timeframeMs)
             const lastClose = Number(currentCandle.close)
             
-            const volatility = 0.002
-            const randomChange = (Math.random() - 0.5) * volatility
+            // O open do novo candle é o close do anterior, mas o close é o preço atual
             const open = lastClose
-            const close = open * (1 + randomChange)
-            const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5)
-            const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5)
+            const close = currentPrice
+            const high = Math.max(open, close) * 1.0005
+            const low = Math.min(open, close) * 0.9995
             const volume = Math.random() * 1000000 + 100000
             
             const { error: insertError } = await supabaseClient
@@ -153,16 +216,15 @@ Deno.serve(async (req) => {
               asset: asset.symbol,
               timeframe,
               action: 'created',
+              price: close.toFixed(6),
               timestamp: new Date(newCandleTimestamp).toISOString()
             })
             
-            console.log(`Created new candle for ${asset.symbol} ${timeframe} at ${new Date(newCandleTimestamp).toISOString()}`)
+            console.log(`Created new candle for ${asset.symbol} ${timeframe} at price ${close.toFixed(6)}`)
           } else {
-            // Atualizar candle atual
-            const volatility = 0.002
-            const randomChange = (Math.random() - 0.5) * volatility
+            // Atualizar candle atual com o MESMO preço atual do asset
             const currentClose = Number(currentCandle.close)
-            const newClose = currentClose * (1 + randomChange)
+            const newClose = currentPrice // Usar o preço único do asset
 
             const currentHigh = Number(currentCandle.high)
             const currentLow = Number(currentCandle.low)
@@ -190,11 +252,11 @@ Deno.serve(async (req) => {
               asset: asset.symbol,
               timeframe,
               action: 'updated',
-              candle_id: currentCandle.id,
+              price: newClose.toFixed(6),
               expires_in_ms: candleExpiry - nowBrazil
             })
 
-            console.log(`Updated ${asset.symbol} ${timeframe}: ${currentClose} -> ${newClose} (expires in ${Math.round((candleExpiry - nowBrazil) / 1000)}s)`)
+            console.log(`Updated ${asset.symbol} ${timeframe}: ${currentClose.toFixed(6)} -> ${newClose.toFixed(6)} (expires in ${Math.round((candleExpiry - nowBrazil) / 1000)}s)`)
           }
         } catch (error) {
           console.error(`Error processing ${asset.symbol} ${timeframe}:`, error);
