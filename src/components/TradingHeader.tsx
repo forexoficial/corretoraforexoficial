@@ -19,7 +19,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import DemoModeToggle from "./DemoModeToggle";
 import { FirstDepositDialog } from "./FirstDepositDialog";
-import { formatCurrency } from "@/lib/utils";
+import { useCurrency } from "@/hooks/useCurrency";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { VerificationProgress } from "./VerificationProgress";
@@ -48,6 +48,7 @@ export const TradingHeader = ({
   onAssetRemove 
 }: TradingHeaderProps) => {
   const { t } = useTranslation();
+  const { formatCurrency } = useCurrency();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -147,7 +148,7 @@ export const TradingHeader = ({
                   {isDemoMode ? t("demo_mode", "Demo") : t("real_mode", "Real")}
                 </div>
                 <div className={`font-bold text-xl ${!isDemoMode ? "text-success" : ""} ${balanceUpdating ? "animate-pulse" : ""} transition-all duration-300`}>
-                  R$ {formatCurrency(currentBalance)}
+                  {formatCurrency(currentBalance)}
                 </div>
               </div>
               <ChevronDown className="w-4 h-4" />
@@ -157,7 +158,7 @@ export const TradingHeader = ({
                 <div className="space-y-1">
                   <div className="text-xs text-muted-foreground">{user?.email}</div>
                   <div className={`font-bold text-lg ${!isDemoMode ? "text-success" : "text-foreground"}`}>
-                    R$ {formatCurrency(currentBalance)}
+                    {formatCurrency(currentBalance)}
                   </div>
                 </div>
               </DropdownMenuLabel>
