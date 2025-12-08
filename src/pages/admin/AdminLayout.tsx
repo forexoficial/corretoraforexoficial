@@ -54,6 +54,7 @@ const menuItems = [
   { icon: TrendingUp, label: "Negociações", path: "/admin/trades" },
   { icon: Coins, label: "Ativos", path: "/admin/assets" },
   { icon: Wallet, label: "Gateways", path: "/admin/gateways" },
+  { icon: Bell, label: "Notificações Push", path: "/admin/push-notifications" },
   { icon: Bell, label: "Pop-ups", path: "/admin/popups" },
   { icon: Zap, label: "Boosters", path: "/admin/boosters" },
   { icon: UserCheck, label: "Afiliados", path: "/admin/affiliates" },
