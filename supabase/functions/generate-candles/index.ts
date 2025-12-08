@@ -46,17 +46,41 @@ serve(async (req) => {
 
     const bias = activeBiases && activeBiases.length > 0 ? activeBiases[0] : null
 
-    // Get the last candle for this asset/timeframe
-    const { data: lastCandle } = await supabase
+    // IMPORTANTE: Buscar o preço base de QUALQUER timeframe existente
+    // para manter consistência entre todos os timeframes
+    let basePrice = getInitialPrice(asset.symbol)
+    
+    // Tentar buscar preço do timeframe 1m primeiro (mais estável)
+    const { data: referenceCandle } = await supabase
       .from('candles')
-      .select('*')
+      .select('close')
       .eq('asset_id', assetId)
-      .eq('timeframe', timeframe)
+      .eq('timeframe', '1m')
       .order('timestamp', { ascending: false })
       .limit(1)
       .single()
 
-    let basePrice = lastCandle ? parseFloat(lastCandle.close) : getInitialPrice(asset.symbol)
+    if (referenceCandle) {
+      basePrice = parseFloat(referenceCandle.close)
+      console.log(`Using reference price from 1m timeframe: ${basePrice}`)
+    } else {
+      // Se não houver 1m, tentar qualquer outro timeframe
+      const { data: anyCandle } = await supabase
+        .from('candles')
+        .select('close, timeframe')
+        .eq('asset_id', assetId)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (anyCandle) {
+        basePrice = parseFloat(anyCandle.close)
+        console.log(`Using reference price from ${anyCandle.timeframe} timeframe: ${basePrice}`)
+      } else {
+        console.log(`No existing candles, using initial price: ${basePrice}`)
+      }
+    }
+
     const timeframeMs = getTimeframeMs(timeframe)
     
     // Função para obter timestamp atual em UTC-3 (Horário de Brasília)
@@ -66,13 +90,29 @@ serve(async (req) => {
     }
 
     // Função para alinhar timestamp ao início do intervalo do timeframe em UTC-3
-    const alignToTimeframe = (timestamp: number, timeframeMs: number) => {
-      return Math.floor(timestamp / timeframeMs) * timeframeMs
+    const alignToTimeframe = (timestamp: number, tfMs: number) => {
+      return Math.floor(timestamp / tfMs) * tfMs
     }
 
     const nowBrazil = getBrazilTime()
     const alignedNow = alignToTimeframe(nowBrazil, timeframeMs)
     
+    // Verificar se já existe candle para este timeframe específico
+    const { data: lastCandle } = await supabase
+      .from('candles')
+      .select('*')
+      .eq('asset_id', assetId)
+      .eq('timeframe', timeframe)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single()
+
+    // Se já existe candle para este timeframe, usar como base
+    if (lastCandle) {
+      basePrice = parseFloat(lastCandle.close)
+      console.log(`Using existing ${timeframe} candle price: ${basePrice}`)
+    }
+
     let startTimestamp = lastCandle 
       ? new Date(lastCandle.timestamp).getTime() + timeframeMs
       : alignedNow - (count * timeframeMs)
@@ -84,16 +124,16 @@ serve(async (req) => {
       const alignedTimestamp = alignToTimeframe(candleTimestamp, timeframeMs)
       const timestamp = new Date(alignedTimestamp)
       
-      // Generate realistic OHLCV data
-      const volatility = 0.002 // 0.2% volatility
+      // Generate realistic OHLCV data com volatilidade reduzida para manter consistência
+      const volatility = 0.0015 // 0.15% volatility (reduzido para maior estabilidade)
       const trend = bias ? getBiasTrend(bias) : getRandomTrend()
       
       const open = basePrice
       const priceChange = basePrice * volatility * (Math.random() * 2 - 1) + trend
       const close = Math.max(0, open + priceChange)
       
-      const high = Math.max(open, close) * (1 + Math.random() * volatility)
-      const low = Math.min(open, close) * (1 - Math.random() * volatility)
+      const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5)
+      const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5)
       
       const volume = Math.random() * 1000000 + 100000
 
@@ -122,6 +162,8 @@ serve(async (req) => {
       console.error('Error inserting candles:', insertError)
       throw insertError
     }
+
+    console.log(`Generated ${insertedCandles.length} candles for ${asset.symbol} ${timeframe}`)
 
     return new Response(
       JSON.stringify({ 
@@ -169,11 +211,11 @@ function getTimeframeMs(timeframe: string): number {
 
 function getRandomTrend(): number {
   // Random walk with slight upward bias
-  return (Math.random() - 0.48) * 0.001
+  return (Math.random() - 0.48) * 0.0005 // Reduzido para menor variação
 }
 
 function getBiasTrend(bias: any): number {
   const strength = parseFloat(bias.strength) / 100
   const direction = bias.direction === 'up' ? 1 : bias.direction === 'down' ? -1 : 0
-  return direction * strength * 0.002
+  return direction * strength * 0.001 // Reduzido para menor variação
 }
