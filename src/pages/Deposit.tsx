@@ -23,6 +23,7 @@ import tetherLogo from "@/assets/crypto/tether.svg";
 import ethereumLogo from "@/assets/crypto/ethereum.svg";
 import solanaLogo from "@/assets/crypto/solana.svg";
 import xrpLogo from "@/assets/crypto/xrp.svg";
+import coinbaseLogo from "@/assets/crypto/coinbase.svg";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -474,12 +475,15 @@ export default function Deposit() {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-card rounded-lg border border-border">
-                          <Bitcoin className="w-6 h-6 text-amber-500" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-[#0052FF] rounded-lg">
+                          <img 
+                            src={coinbaseLogo} 
+                            alt="Coinbase" 
+                            className="w-8 h-8 sm:w-10 sm:h-10 brightness-0 invert"
+                          />
                         </div>
                         <div className="text-left flex-1">
-                          <div className="font-semibold text-sm flex items-center gap-2">
-                            <Wallet className="w-4 h-4" />
+                          <div className="font-semibold text-sm">
                             Cryptocurrency
                           </div>
                           <div className="text-xs text-muted-foreground">
