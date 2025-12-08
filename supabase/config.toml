@@ -41,3 +41,9 @@ verify_jwt = false
 
 [functions.send-push-notification]
 verify_jwt = false
+
+[functions.notify-admins]
+verify_jwt = false
+
+[functions.cleanup-demo-trades]
+verify_jwt = false
