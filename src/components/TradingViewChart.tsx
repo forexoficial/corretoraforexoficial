@@ -88,6 +88,9 @@ export function TradingViewChart({
   // Determine which color set to use based on theme
   const isDarkMode = theme === 'dark' || theme === 'system';
   
+  // Track container dimensions with ResizeObserver
+  const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
+  
   // Check if responsive mode is enabled
   const isResponsiveMode = useMemo(() => {
     if (!appearanceSettings) return { desktop: false, mobile: true, fullscreen: true };
@@ -102,15 +105,18 @@ export function TradingViewChart({
   const effectiveHeight = useMemo(() => {
     if (!appearanceSettings) return height;
     
-    // If responsive mode is enabled, return null to let CSS handle it
+    // If responsive mode is enabled, calculate based on viewport
     if (isMobile && isResponsiveMode.mobile) {
-      return null; // Will use flex-grow
+      // Mobile: use viewport height minus header and controls
+      return Math.max(300, window.innerHeight - 280);
     }
     if (isFullscreen && isResponsiveMode.fullscreen) {
-      return null; // Will use flex-grow
+      // Fullscreen: use most of the viewport
+      return Math.max(400, window.innerHeight - 160);
     }
     if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
-      return null; // Will use flex-grow
+      // Desktop responsive: use available viewport height
+      return Math.max(400, window.innerHeight - 320);
     }
     
     // Fixed height mode
@@ -563,33 +569,72 @@ export function TradingViewChart({
 
     // Handle resize with ResizeObserver for responsive mode
     let resizeObserver: ResizeObserver | null = null;
+    let resizeTimeout: NodeJS.Timeout | null = null;
     
     const handleResize = () => {
-      if (chartContainerRef.current && chartRef.current) {
-        const newWidth = chartContainerRef.current.clientWidth;
-        const newHeight = useResponsive 
-          ? chartContainerRef.current.clientHeight || chartHeight
-          : chartHeight;
-        
-        chartRef.current.applyOptions({
-          width: newWidth,
-          height: newHeight,
-        });
-      }
+      // Debounce resize events
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (chartContainerRef.current && chartRef.current) {
+          // Get actual available dimensions
+          const container = chartContainerRef.current;
+          const parent = container.parentElement;
+          
+          // Calculate width from parent or container
+          const newWidth = parent?.clientWidth || container.clientWidth || window.innerWidth - 400;
+          
+          // Calculate height based on mode
+          let newHeight: number;
+          if (useResponsive) {
+            // For responsive mode, calculate based on viewport
+            if (isMobile) {
+              newHeight = Math.max(300, window.innerHeight - 280);
+            } else if (isFullscreen) {
+              newHeight = Math.max(400, window.innerHeight - 160);
+            } else {
+              // Desktop: get parent height or calculate from viewport
+              const parentHeight = parent?.clientHeight;
+              if (parentHeight && parentHeight > 100) {
+                newHeight = parentHeight;
+              } else {
+                newHeight = Math.max(400, window.innerHeight - 320);
+              }
+            }
+          } else {
+            newHeight = chartHeight;
+          }
+          
+          // Only update if dimensions actually changed
+          if (newWidth > 0 && newHeight > 0) {
+            chartRef.current.applyOptions({
+              width: Math.floor(newWidth),
+              height: Math.floor(newHeight),
+            });
+            
+            // Update container dimensions state
+            setContainerDimensions({ width: newWidth, height: newHeight });
+          }
+        }
+      }, 50); // 50ms debounce
     };
 
     // Use ResizeObserver for responsive mode
-    if (useResponsive && chartContainerRef.current) {
-      resizeObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          if (entry.target === chartContainerRef.current) {
-            handleResize();
-          }
-        }
-      });
+    resizeObserver = new ResizeObserver(() => {
+      handleResize();
+    });
+    
+    if (chartContainerRef.current) {
       resizeObserver.observe(chartContainerRef.current);
     }
+    
+    // Also observe parent for more accurate sizing
+    if (chartContainerRef.current?.parentElement) {
+      resizeObserver.observe(chartContainerRef.current.parentElement);
+    }
 
+    // Initial resize after a short delay to ensure layout is complete
+    setTimeout(handleResize, 100);
+    
     window.addEventListener('resize', handleResize);
 
     // Load initial data
@@ -621,6 +666,9 @@ export function TradingViewChart({
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('keydown', handleKeyDown);
+      
+      // Clear resize timeout
+      if (resizeTimeout) clearTimeout(resizeTimeout);
       
       // Remove mouse/touch event listeners
       if (container) {
@@ -1587,11 +1635,19 @@ export function TradingViewChart({
       margin: widthPercentage < 100 ? '0 auto' : undefined,
     };
     
-    // Responsive mode: use flex-grow to fill all available space with proper constraints
+    // Always set a concrete height to ensure proper sizing
     if (useResponsive) {
-      style.flex = '1 1 0';
-      style.minHeight = isMobile ? '200px' : '400px';
-      style.maxHeight = isMobile ? 'calc(100vh - 280px)' : isFullscreen ? 'calc(100vh - 160px)' : 'calc(100vh - 280px)';
+      // Calculate dynamic height based on viewport
+      let dynamicHeight: number;
+      if (isMobile) {
+        dynamicHeight = Math.max(300, window.innerHeight - 280);
+      } else if (isFullscreen) {
+        dynamicHeight = Math.max(400, window.innerHeight - 160);
+      } else {
+        dynamicHeight = Math.max(400, window.innerHeight - 320);
+      }
+      style.height = `${dynamicHeight}px`;
+      style.minHeight = isMobile ? '300px' : '400px';
       style.overflow = 'hidden';
     } else if (aspectRatio) {
       style.aspectRatio = `${aspectRatio}`;
@@ -1602,7 +1658,7 @@ export function TradingViewChart({
     }
     
     return style;
-  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, height]);
+  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, isFullscreen, height]);
 
   return (
     <div className="relative" style={containerStyle}>
