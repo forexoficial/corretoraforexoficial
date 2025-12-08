@@ -1,57 +1,59 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePushNotifications } from './usePushNotifications';
+import { toast } from 'sonner';
 
 /**
  * Hook that automatically requests push notification permissions
  * when the PWA is installed or when running in standalone mode
  */
 export function usePWAInstallNotification() {
-  const { isSupported, isSubscribed, subscribe, permission } = usePushNotifications();
+  const { isSupported, isSubscribed, subscribe, permission, isLoading } = usePushNotifications();
   const hasRequestedRef = useRef(false);
+  const [showPrompt, setShowPrompt] = useState(false);
 
+  // Check if this is a first-time PWA install
   useEffect(() => {
-    // Check if running as installed PWA (standalone mode)
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                          (window.navigator as any).standalone === true;
 
-    // Only proceed if:
-    // 1. Running as PWA (standalone)
-    // 2. Push notifications are supported
-    // 3. Not already subscribed
-    // 4. Haven't already requested this session
-    // 5. Permission is not denied
+    // Check if we've already prompted in this PWA install
+    const hasPrompted = localStorage.getItem('pwa_notification_prompted');
+
     if (
       isStandalone &&
       isSupported &&
       !isSubscribed &&
       !hasRequestedRef.current &&
-      permission !== 'denied'
+      !hasPrompted &&
+      permission !== 'denied' &&
+      !isLoading
     ) {
       hasRequestedRef.current = true;
       
-      // Small delay to ensure app is fully loaded
+      // Show prompt after a delay to let the app load
       const timer = setTimeout(() => {
-        console.log('[PWA] Requesting push notification permission automatically...');
-        subscribe();
-      }, 1500);
+        console.log('[PWA] Showing notification permission prompt...');
+        setShowPrompt(true);
+      }, 2000);
 
       return () => clearTimeout(timer);
     }
-  }, [isSupported, isSubscribed, subscribe, permission]);
+  }, [isSupported, isSubscribed, permission, isLoading]);
 
-  // Also listen for the appinstalled event (triggered when PWA is installed)
+  // Handle the appinstalled event
   useEffect(() => {
     const handleAppInstalled = () => {
       console.log('[PWA] App installed event detected');
       
-      if (isSupported && !isSubscribed && !hasRequestedRef.current && permission !== 'denied') {
+      const hasPrompted = localStorage.getItem('pwa_notification_prompted');
+      
+      if (isSupported && !isSubscribed && !hasRequestedRef.current && !hasPrompted && permission !== 'denied') {
         hasRequestedRef.current = true;
         
-        // Request permission after installation
         setTimeout(() => {
-          console.log('[PWA] Requesting push notification permission after install...');
-          subscribe();
-        }, 2000);
+          console.log('[PWA] Showing notification prompt after install...');
+          setShowPrompt(true);
+        }, 2500);
       }
     };
 
@@ -60,5 +62,39 @@ export function usePWAInstallNotification() {
     return () => {
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, [isSupported, isSubscribed, subscribe, permission]);
+  }, [isSupported, isSubscribed, permission]);
+
+  // Handle user response to prompt
+  const handleAcceptNotifications = async () => {
+    setShowPrompt(false);
+    localStorage.setItem('pwa_notification_prompted', 'true');
+    
+    const success = await subscribe();
+    
+    if (success) {
+      toast.success('Notificações ativadas!', {
+        description: 'Você receberá alertas importantes sobre suas operações.',
+        duration: 4000
+      });
+    } else {
+      toast.error('Não foi possível ativar notificações', {
+        description: 'Você pode ativar depois nas configurações.',
+        duration: 4000
+      });
+    }
+  };
+
+  const handleDeclineNotifications = () => {
+    setShowPrompt(false);
+    localStorage.setItem('pwa_notification_prompted', 'true');
+    toast.info('Você pode ativar notificações depois no seu perfil.', {
+      duration: 3000
+    });
+  };
+
+  return {
+    showPrompt,
+    handleAcceptNotifications,
+    handleDeclineNotifications
+  };
 }
