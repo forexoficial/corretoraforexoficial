@@ -1,6 +1,5 @@
 import { useTranslation } from "@/hooks/useTranslation";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { RotateCcw, TrendingUp, Wallet } from "lucide-react";
 import {
@@ -9,8 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { formatCurrencyCompact } from "@/lib/utils";
-import { Badge } from "@/components/ui/badge";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface DemoModeToggleProps {
   isDemoMode: boolean;
@@ -28,6 +26,17 @@ export default function DemoModeToggle({
   realBalance,
 }: DemoModeToggleProps) {
   const { t } = useTranslation();
+  const { formatCurrency, symbol, currency } = useCurrency();
+  
+  const formatCompact = (value: number): string => {
+    if (value >= 1000000) {
+      return symbol + ' ' + (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    }
+    if (value >= 100000) {
+      return symbol + ' ' + (value / 1000).toFixed(0) + 'k';
+    }
+    return formatCurrency(value);
+  };
   
   return (
     <div className="space-y-3">
@@ -52,7 +61,7 @@ export default function DemoModeToggle({
             />
           </div>
           <div className="font-bold text-base text-foreground">
-            R$ {formatCurrencyCompact(demoBalance)}
+            {formatCompact(demoBalance)}
           </div>
           {isDemoMode && (
             <TooltipProvider>
@@ -69,7 +78,7 @@ export default function DemoModeToggle({
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p>{t("reset_balance", "Resetar saldo para R$ 10.000,00")}</p>
+                  <p>{currency === 'BRL' ? t("reset_balance_brl", "Resetar saldo para R$ 10.000,00") : t("reset_balance_usd", "Reset balance to $10,000.00")}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -95,7 +104,7 @@ export default function DemoModeToggle({
             />
           </div>
           <div className={`font-bold text-base ${!isDemoMode ? 'text-success' : 'text-foreground'}`}>
-            R$ {formatCurrencyCompact(realBalance)}
+            {formatCompact(realBalance)}
           </div>
         </div>
       </div>
@@ -105,7 +114,9 @@ export default function DemoModeToggle({
         <p className="text-xs text-muted-foreground leading-relaxed">
           {isDemoMode ? (
             <>
-              💡 {t("demo_info", "Modo treino: Pratique suas estratégias com R$ 10.000 virtuais. Sem risco real.")}
+              💡 {currency === 'BRL' 
+                ? t("demo_info", "Modo treino: Pratique suas estratégias com R$ 10.000 virtuais. Sem risco real.")
+                : t("demo_info_usd", "Practice mode: Practice your strategies with $10,000 virtual. No real risk.")}
             </>
           ) : (
             <>
