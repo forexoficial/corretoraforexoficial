@@ -144,12 +144,14 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
           continue
         }
 
-        // Get closing price (candle at trade expiration time)
+        // Get closing price - use the MOST RECENT candle for the asset
+        // NOTE: Some assets have candles with future timestamps (auto-generated),
+        // so we need to get the absolute most recent candle, not filtered by expires_at
         const { data: closeCandle } = await supabase
           .from('candles')
-          .select('close')
+          .select('close, timestamp')
           .eq('asset_id', trade.asset_id)
-          .lte('timestamp', trade.expires_at)
+          .eq('timeframe', '1m') // Use 1m timeframe for consistency
           .order('timestamp', { ascending: false })
           .limit(1)
           .single()
@@ -159,6 +161,8 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
           errorCount++
           continue
         }
+        
+        console.log(`Trade ${trade.id}: Using candle from ${closeCandle.timestamp} with close ${closeCandle.close}`)
 
         const exitPrice = parseFloat(closeCandle.close)
         
