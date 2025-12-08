@@ -237,22 +237,48 @@ serve(async (req) => {
 
       const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .select('balance, user_id')
+        .select('balance, total_deposited, user_id')
         .eq('user_id', transaction.user_id)
         .single();
 
-      if (!profileError && profile) {
-        const newBalance = (profile.balance || 0) + transaction.amount;
+      if (profileError) {
+        console.error('[Coinbase Webhook] Failed to fetch profile:', profileError);
+      } else if (profile) {
+        const currentBalance = Number(profile.balance) || 0;
+        const currentTotalDeposited = Number(profile.total_deposited) || 0;
+        const depositAmount = Number(transaction.amount) || 0;
+        
+        const newBalance = currentBalance + depositAmount;
+        const newTotalDeposited = currentTotalDeposited + depositAmount;
+        
+        // Calculate user tier based on total deposited
+        let userTier = 'standard';
+        if (newTotalDeposited >= 1000000) {
+          userTier = 'vip';
+        } else if (newTotalDeposited >= 100000) {
+          userTier = 'pro';
+        }
         
         const { error: balanceError } = await supabaseAdmin
           .from('profiles')
-          .update({ balance: newBalance })
+          .update({ 
+            balance: newBalance,
+            total_deposited: newTotalDeposited,
+            user_tier: userTier,
+            updated_at: new Date().toISOString()
+          })
           .eq('user_id', transaction.user_id);
 
         if (balanceError) {
           console.error('[Coinbase Webhook] Failed to update balance:', balanceError);
         } else {
-          console.log('[Coinbase Webhook] Balance updated:', profile.balance, '->', newBalance);
+          console.log('[Coinbase Webhook] Balance updated successfully:', {
+            previousBalance: currentBalance,
+            newBalance,
+            depositAmount,
+            newTotalDeposited,
+            userTier
+          });
         }
       }
     }

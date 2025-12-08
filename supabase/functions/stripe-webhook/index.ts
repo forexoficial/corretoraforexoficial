@@ -90,32 +90,43 @@ serve(async (req) => {
           const userId = paymentIntent.metadata.supabase_user_id;
           const amount = paymentIntent.amount / 100; // Convert from cents
 
-          const { error: balanceError } = await supabase.rpc("", {}).then(() => 
-            supabase
-              .from("profiles")
-              .select("balance, total_deposited")
-              .eq("user_id", userId)
-              .single()
-          );
+          if (!userId) {
+            logStep("No user ID in metadata, skipping balance update");
+            break;
+          }
 
           // Get current profile
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from("profiles")
             .select("balance, total_deposited")
             .eq("user_id", userId)
             .single();
 
+          if (profileError) {
+            logStep("Error fetching profile", { error: profileError.message });
+            break;
+          }
+
           if (profile) {
-            const newBalance = (profile.balance || 0) + amount;
-            const newTotalDeposited = (profile.total_deposited || 0) + amount;
+            const currentBalance = Number(profile.balance) || 0;
+            const currentTotalDeposited = Number(profile.total_deposited) || 0;
+            const newBalance = currentBalance + amount;
+            const newTotalDeposited = currentTotalDeposited + amount;
+
+            // Calculate user tier based on total deposited
+            let userTier = 'standard';
+            if (newTotalDeposited >= 1000000) {
+              userTier = 'vip';
+            } else if (newTotalDeposited >= 100000) {
+              userTier = 'pro';
+            }
 
             const { error: updateBalanceError } = await supabase
               .from("profiles")
               .update({
                 balance: newBalance,
                 total_deposited: newTotalDeposited,
-                user_tier: newTotalDeposited >= 1000000 ? 'vip' : 
-                           newTotalDeposited >= 100000 ? 'pro' : 'standard',
+                user_tier: userTier,
                 updated_at: new Date().toISOString(),
               })
               .eq("user_id", userId);
@@ -123,8 +134,17 @@ serve(async (req) => {
             if (updateBalanceError) {
               logStep("Error updating balance", { error: updateBalanceError.message });
             } else {
-              logStep("Balance updated", { userId, newBalance, amount });
+              logStep("Balance updated successfully", { 
+                userId, 
+                previousBalance: currentBalance,
+                newBalance, 
+                depositAmount: amount,
+                newTotalDeposited,
+                userTier
+              });
             }
+          } else {
+            logStep("Profile not found for user", { userId });
           }
         }
         break;
