@@ -39,6 +39,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const signOut = async () => {
+    // Limpar preferência de idioma para permitir detecção automática no próximo login
+    localStorage.removeItem('app_language');
+    console.log('[Auth] Logout - idioma removido do localStorage');
     await supabase.auth.signOut();
     navigate("/auth");
   };
