@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Bell, Send, Users, Trash2, RefreshCw, Smartphone, Monitor, Globe, ShieldCheck, DollarSign, Wallet, UserCheck, UserPlus } from "lucide-react";
+import { Bell, Send, Users, Trash2, RefreshCw, Smartphone, Monitor, Globe, ShieldCheck, DollarSign, Wallet, UserCheck, UserPlus, Key, Copy, CheckCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -22,6 +22,11 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+
+interface VapidKeys {
+  publicKey: string;
+  privateKey: string;
+}
 
 interface PushSubscription {
   id: string;
@@ -44,6 +49,12 @@ export default function AdminPushNotifications() {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
   const [url, setUrl] = useState("");
+  
+  // VAPID Keys state
+  const [generatingKeys, setGeneratingKeys] = useState(false);
+  const [vapidKeys, setVapidKeys] = useState<VapidKeys | null>(null);
+  const [copiedPublic, setCopiedPublic] = useState(false);
+  const [copiedPrivate, setCopiedPrivate] = useState(false);
 
   const fetchSubscriptions = async () => {
     setLoading(true);
@@ -162,6 +173,46 @@ export default function AdminPushNotifications() {
     { type: 'new_user', title: '🎉 Novo Usuário', description: 'Quando um novo usuário se cadastra', icon: UserPlus, color: 'text-cyan-500' },
   ];
 
+  const handleGenerateVapidKeys = async () => {
+    setGeneratingKeys(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-vapid-keys");
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        setVapidKeys({
+          publicKey: data.publicKey,
+          privateKey: data.privateKey,
+        });
+        toast.success("Chaves VAPID geradas com sucesso!");
+      } else {
+        toast.error(data?.error || "Erro ao gerar chaves");
+      }
+    } catch (error) {
+      console.error("Error generating VAPID keys:", error);
+      toast.error("Erro ao gerar chaves VAPID");
+    } finally {
+      setGeneratingKeys(false);
+    }
+  };
+
+  const copyToClipboard = async (text: string, type: 'public' | 'private') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === 'public') {
+        setCopiedPublic(true);
+        setTimeout(() => setCopiedPublic(false), 2000);
+      } else {
+        setCopiedPrivate(true);
+        setTimeout(() => setCopiedPrivate(false), 2000);
+      }
+      toast.success(`Chave ${type === 'public' ? 'pública' : 'privada'} copiada!`);
+    } catch {
+      toast.error("Erro ao copiar");
+    }
+  };
+
   return (
     <div className="space-y-4 md:space-y-6">
       <div className="flex items-center gap-2 md:gap-3">
@@ -173,6 +224,122 @@ export default function AdminPushNotifications() {
           </p>
         </div>
       </div>
+
+      {/* VAPID Keys Management */}
+      <Card className="border-primary/30 bg-primary/5">
+        <CardHeader className="p-3 md:p-6">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            <Key className="h-4 w-4 md:h-5 md:w-5 text-primary" />
+            Configuração de Chaves VAPID
+          </CardTitle>
+          <CardDescription className="text-xs md:text-sm">
+            Gere novas chaves VAPID para autenticação de push notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-3 pt-0 md:p-6 md:pt-0 space-y-4">
+          {!vapidKeys ? (
+            <div className="text-center py-4">
+              <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-amber-500" />
+              <p className="text-sm text-muted-foreground mb-4">
+                Gere um novo par de chaves VAPID no formato correto para habilitar push notifications
+              </p>
+              <Button 
+                onClick={handleGenerateVapidKeys} 
+                disabled={generatingKeys}
+                className="gap-2"
+              >
+                {generatingKeys ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    Gerando...
+                  </>
+                ) : (
+                  <>
+                    <Key className="h-4 w-4" />
+                    Gerar Novas Chaves VAPID
+                  </>
+                )}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                <p className="text-sm text-green-600">
+                  Chaves geradas com sucesso! Copie e atualize no Supabase.
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">VAPID_PUBLIC_KEY</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={vapidKeys.publicKey} 
+                      readOnly 
+                      className="font-mono text-xs"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(vapidKeys.publicKey, 'public')}
+                    >
+                      {copiedPublic ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">VAPID_PRIVATE_KEY</Label>
+                  <div className="flex gap-2">
+                    <Input 
+                      value={vapidKeys.privateKey} 
+                      readOnly 
+                      className="font-mono text-xs"
+                      type="password"
+                    />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => copyToClipboard(vapidKeys.privateKey, 'private')}
+                    >
+                      {copiedPrivate ? (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-3 rounded-lg bg-muted/50 space-y-2">
+                <p className="text-xs font-medium">📋 Instruções:</p>
+                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Copie as duas chaves acima</li>
+                  <li>Acesse o <a href="https://supabase.com/dashboard/project/xhmisqcngalyjapkdwvh/settings/functions" target="_blank" rel="noopener" className="text-primary underline">Supabase Dashboard → Settings → Functions</a></li>
+                  <li>Atualize os secrets VAPID_PUBLIC_KEY e VAPID_PRIVATE_KEY</li>
+                  <li>As notificações push começarão a funcionar após a atualização</li>
+                </ol>
+              </div>
+
+              <Button 
+                variant="outline" 
+                onClick={handleGenerateVapidKeys} 
+                disabled={generatingKeys}
+                className="w-full gap-2"
+              >
+                <RefreshCw className={`h-4 w-4 ${generatingKeys ? 'animate-spin' : ''}`} />
+                Gerar Novas Chaves
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Admin Auto-Notifications Info */}
       <Card className="border-amber-500/30 bg-amber-500/5">
