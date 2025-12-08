@@ -18,6 +18,11 @@ import secureIcon2 from "@/assets/secure-verified-2.webp";
 import secureIcon3 from "@/assets/secure-verified-3.webp";
 import secureIcon4 from "@/assets/secure-verified-4.webp";
 import secureIcon5 from "@/assets/secure-verified-5.webp";
+import bitcoinLogo from "@/assets/crypto/bitcoin.svg";
+import tetherLogo from "@/assets/crypto/tether.svg";
+import ethereumLogo from "@/assets/crypto/ethereum.svg";
+import solanaLogo from "@/assets/crypto/solana.svg";
+import xrpLogo from "@/assets/crypto/xrp.svg";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -25,6 +30,14 @@ import { formatDocument, validateDocument, DocumentType } from "@/lib/validators
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
+
+const cryptoLogos = [
+  { name: "Bitcoin", symbol: "BTC", logo: bitcoinLogo },
+  { name: "Tether", symbol: "USDT", logo: tetherLogo },
+  { name: "Ethereum", symbol: "ETH", logo: ethereumLogo },
+  { name: "Solana", symbol: "SOL", logo: solanaLogo },
+  { name: "XRP", symbol: "XRP", logo: xrpLogo },
+];
 
 type PaymentMethodType = "pix" | "stripe" | "crypto";
 
@@ -561,13 +574,36 @@ export default function Deposit() {
                 </Card>
               ) : paymentMethod === "crypto" ? (
                 <Card className="p-6">
+                  {/* Decorative Crypto Banner */}
+                  <div className="mb-6 bg-gradient-to-r from-amber-500/10 via-primary/10 to-purple-500/10 rounded-xl p-4 border border-border/50">
+                    <div className="flex items-center justify-center gap-4 sm:gap-6">
+                      {cryptoLogos.map((crypto) => (
+                        <div 
+                          key={crypto.symbol} 
+                          className="flex flex-col items-center gap-1.5 group"
+                        >
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-card border border-border flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                            <img 
+                              src={crypto.logo} 
+                              alt={crypto.name} 
+                              className="w-6 h-6 sm:w-8 sm:h-8"
+                            />
+                          </div>
+                          <span className="text-[10px] sm:text-xs font-medium text-muted-foreground">
+                            {crypto.symbol}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Bitcoin className="w-5 h-5 text-amber-500" />
-                    {t("crypto_deposit") || "Crypto Deposit"}
+                    {t("crypto_deposit_title") || "Cryptocurrency Deposit"}
                   </h3>
                   <form onSubmit={handleCryptoSubmit} className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor="crypto-amount">{t("value", "Valor")} (USD)</Label>
+                      <Label htmlFor="crypto-amount">{t("deposit_amount") || "Deposit Amount"} (USD)</Label>
                       <Input
                         id="crypto-amount"
                         type="number"
@@ -596,15 +632,15 @@ export default function Deposit() {
 
                     <div className="bg-muted/30 rounded-lg p-4 space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t("supported_crypto") || "Supported"}:</span>
-                        <span>BTC, ETH, USDC, LTC, DAI</span>
+                        <span className="text-muted-foreground">{t("accepted_cryptocurrencies") || "Accepted Cryptocurrencies"}:</span>
+                        <span className="font-medium">BTC, ETH, USDC, LTC, DAI</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t("currency") || "Currency"}:</span>
+                        <span className="text-muted-foreground">{t("payment_currency") || "Payment Currency"}:</span>
                         <span className="font-medium">USD (US Dollar)</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-muted-foreground">{t("minimum") || "Minimum"}:</span>
+                        <span className="text-muted-foreground">{t("minimum_deposit") || "Minimum Deposit"}:</span>
                         <span className="font-medium text-primary">$5.00</span>
                       </div>
                     </div>
@@ -614,7 +650,7 @@ export default function Deposit() {
                       className="w-full"
                       size="lg"
                     >
-                      {t("continue_to_payment") || "Continue to Payment"}
+                      {t("continue_to_crypto_payment") || "Continue to Crypto Payment"}
                     </Button>
                   </form>
                 </Card>
