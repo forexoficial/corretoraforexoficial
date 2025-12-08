@@ -809,5 +809,8 @@
   "payment_error": "Error al crear pago",
   "payment_completed": "¡Pago completado!",
   "payment_failed": "Pago fallido",
-  "copied": "¡Copiado!"
+  "copied": "¡Copiado!",
+  "powered_by_coinbase": "Powered by Coinbase Commerce",
+  "coinbase_security_title": "Protegido por Coinbase",
+  "coinbase_security_desc": "Su transacción es procesada a través de Coinbase, la casa de cambio de criptomonedas más confiable del mundo. Con seguridad de nivel institucional, cumplimiento regulatorio y protección de seguro, garantizamos los más altos estándares de seguridad para sus transacciones con activos digitales."
 }
