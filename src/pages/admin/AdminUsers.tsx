@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Search, Shield, Ban, Pencil } from "lucide-react";
+import { Loader2, Search, Shield, Ban, Pencil, Globe, Filter, X } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
@@ -13,10 +13,15 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface User {
   id: string;
@@ -29,6 +34,9 @@ interface User {
   avatar_url: string | null;
   is_admin: boolean;
   is_blocked: boolean;
+  country_code: string | null;
+  country_name: string | null;
+  preferred_currency: string | null;
 }
 
 export default function AdminUsers() {
@@ -39,6 +47,15 @@ export default function AdminUsers() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newBalance, setNewBalance] = useState("");
+  
+  // Filters
+  const [countryFilter, setCountryFilter] = useState<string>("all");
+  const [currencyFilter, setCurrencyFilter] = useState<string>("all");
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Unique countries and currencies from users
+  const uniqueCountries = [...new Set(users.map(u => u.country_code).filter(Boolean))] as string[];
+  const uniqueCurrencies = [...new Set(users.map(u => u.preferred_currency).filter(Boolean))] as string[];
 
   useEffect(() => {
     fetchUsers();
@@ -119,11 +136,19 @@ export default function AdminUsers() {
     fetchUsers();
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.full_name.toLowerCase().includes(search.toLowerCase()) ||
-      user.document.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = user.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      user.document.toLowerCase().includes(search.toLowerCase());
+    const matchesCountry = countryFilter === "all" || user.country_code === countryFilter;
+    const matchesCurrency = currencyFilter === "all" || user.preferred_currency === currencyFilter;
+    return matchesSearch && matchesCountry && matchesCurrency;
+  });
+
+  // Stats by filter
+  const brazilianUsers = users.filter(u => u.country_code === 'BR').length;
+  const internationalUsers = users.filter(u => u.country_code && u.country_code !== 'BR').length;
+  const totalBalanceBRL = users.filter(u => u.preferred_currency === 'BRL').reduce((sum, u) => sum + Number(u.balance || 0), 0);
+  const totalBalanceUSD = users.filter(u => u.preferred_currency !== 'BRL').reduce((sum, u) => sum + Number(u.balance || 0), 0);
 
   if (loading) {
     return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
@@ -136,15 +161,104 @@ export default function AdminUsers() {
         <p className="text-xs md:text-base text-muted-foreground">{t("admin_users_desc")}</p>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder={t("admin_search_placeholder")}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-10 h-9 md:h-10 text-sm"
-        />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+        <Card className="p-3 md:p-4">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-green-500" />
+            <span className="text-xs text-muted-foreground">Brasil</span>
+          </div>
+          <p className="text-lg md:text-2xl font-bold mt-1">{brazilianUsers}</p>
+          <p className="text-[10px] text-muted-foreground">R$ {totalBalanceBRL.toFixed(2)}</p>
+        </Card>
+        <Card className="p-3 md:p-4">
+          <div className="flex items-center gap-2">
+            <Globe className="h-4 w-4 text-blue-500" />
+            <span className="text-xs text-muted-foreground">Internacional</span>
+          </div>
+          <p className="text-lg md:text-2xl font-bold mt-1">{internationalUsers}</p>
+          <p className="text-[10px] text-muted-foreground">$ {totalBalanceUSD.toFixed(2)}</p>
+        </Card>
+        <Card className="p-3 md:p-4">
+          <div className="text-xs text-muted-foreground">Total BRL</div>
+          <p className="text-lg md:text-xl font-bold text-green-500">R$ {totalBalanceBRL.toFixed(2)}</p>
+        </Card>
+        <Card className="p-3 md:p-4">
+          <div className="text-xs text-muted-foreground">Total USD</div>
+          <p className="text-lg md:text-xl font-bold text-blue-500">$ {totalBalanceUSD.toFixed(2)}</p>
+        </Card>
       </div>
+
+      {/* Search and Filters */}
+      <div className="flex flex-col md:flex-row gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("admin_search_placeholder")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 h-9 md:h-10 text-sm"
+          />
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={() => setShowFilters(!showFilters)}
+          className="h-9 md:h-10"
+        >
+          <Filter className="h-4 w-4 mr-2" />
+          Filtros
+        </Button>
+      </div>
+
+      {showFilters && (
+        <Card className="p-3 md:p-4">
+          <div className="flex flex-wrap gap-3">
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-xs mb-1 block">País</Label>
+              <Select value={countryFilter} onValueChange={setCountryFilter}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Todos" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todos os países</SelectItem>
+                  <SelectItem value="BR">🇧🇷 Brasil</SelectItem>
+                  {uniqueCountries.filter(c => c !== 'BR').map(country => (
+                    <SelectItem key={country} value={country}>{country}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex-1 min-w-[140px]">
+              <Label className="text-xs mb-1 block">Moeda</Label>
+              <Select value={currencyFilter} onValueChange={setCurrencyFilter}>
+                <SelectTrigger className="h-8 text-xs">
+                  <SelectValue placeholder="Todas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Todas as moedas</SelectItem>
+                  <SelectItem value="BRL">BRL (R$)</SelectItem>
+                  <SelectItem value="USD">USD ($)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-end">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => {
+                  setCountryFilter("all");
+                  setCurrencyFilter("all");
+                }}
+                className="h-8"
+              >
+                <X className="h-3 w-3 mr-1" />
+                Limpar
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
 
       <div className="grid gap-3 md:gap-4">
         {filteredUsers.map((user) => (
@@ -171,15 +285,22 @@ export default function AdminUsers() {
                       {t("admin_blocked")}
                     </Badge>
                   )}
+                  {user.country_code && (
+                    <Badge variant="outline" className="text-[10px] md:text-xs h-5">
+                      <Globe className="h-2 w-2 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                      {user.country_code === 'BR' ? '🇧🇷' : user.country_code}
+                    </Badge>
+                  )}
                 </div>
                 <p className="text-xs md:text-sm text-muted-foreground truncate">{user.document}</p>
-                <p className="text-[10px] md:text-xs text-muted-foreground">
-                  {new Date(user.created_at).toLocaleDateString("pt-BR")}
-                </p>
+                <div className="flex items-center gap-2 text-[10px] md:text-xs text-muted-foreground">
+                  <span>{new Date(user.created_at).toLocaleDateString("pt-BR")}</span>
+                  {user.country_name && <span>• {user.country_name}</span>}
+                </div>
               </div>
               <div className="flex flex-col items-start md:items-end gap-2">
                 <p className="text-lg md:text-2xl font-bold">
-                  R$ {Number(user.balance).toFixed(2)}
+                  {user.preferred_currency === 'BRL' ? 'R$' : '$'} {Number(user.balance).toFixed(2)}
                 </p>
                 <Badge
                   variant={
