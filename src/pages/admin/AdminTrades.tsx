@@ -86,13 +86,56 @@ export default function AdminTrades() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div>
-        <h1 className="text-4xl font-bold mb-2">{t("admin_trades_title")}</h1>
-        <p className="text-muted-foreground">{t("admin_trades_desc")}</p>
+        <h1 className="text-xl md:text-4xl font-bold mb-1 md:mb-2">{t("admin_trades_title")}</h1>
+        <p className="text-xs md:text-base text-muted-foreground">{t("admin_trades_desc")}</p>
       </div>
 
-      <Card>
+      {/* Mobile: Card layout */}
+      <div className="space-y-2 md:hidden">
+        {trades.map((trade) => (
+          <Card key={trade.id} className="p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="font-medium text-sm truncate">
+                  {trade.profiles?.full_name || "Usuário"}
+                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs font-medium">{trade.assets?.symbol || "N/A"}</span>
+                  <Badge variant={trade.trade_type === "call" ? "default" : "secondary"} className="text-[10px] h-5">
+                    {trade.trade_type.toUpperCase()}
+                  </Badge>
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {new Date(trade.created_at).toLocaleString("pt-BR", {
+                    timeZone: 'America/Sao_Paulo',
+                    day: '2-digit',
+                    month: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="font-bold text-sm">R$ {Number(trade.amount).toFixed(2)}</p>
+                <p className="text-[10px] text-muted-foreground">Pay: R$ {Number(trade.payout).toFixed(2)}</p>
+                <Badge variant={
+                  trade.status === "won" ? "default" :
+                  trade.status === "open" ? "secondary" : "destructive"
+                } className="text-[10px] h-5 mt-1">
+                  {trade.status === "won" && t("admin_won")}
+                  {trade.status === "lost" && t("admin_lost")}
+                  {trade.status === "open" && t("admin_open")}
+                </Badge>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop: Table layout */}
+      <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>

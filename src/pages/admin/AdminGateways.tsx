@@ -476,26 +476,26 @@ export default function AdminGateways() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col gap-2 md:gap-4">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Gateways de Pagamento</h1>
-          <p className="text-muted-foreground">
-            Configure os gateways de pagamento com segurança usando Supabase Secrets
+          <h1 className="text-xl md:text-4xl font-bold mb-1 md:mb-2">Gateways de Pagamento</h1>
+          <p className="text-xs md:text-base text-muted-foreground">
+            Configure os gateways de pagamento
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={openPixDialog} variant="default">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Gateway PIX
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={openPixDialog} variant="default" size="sm" className="h-8 md:h-10 text-xs md:text-sm">
+            <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+            PIX
           </Button>
-          <Button onClick={openCryptoDialog} variant="outline">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Gateway USDT
+          <Button onClick={openCryptoDialog} variant="outline" size="sm" className="h-8 md:h-10 text-xs md:text-sm">
+            <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+            USDT
           </Button>
-          <Button onClick={openWorldwideDialog} variant="secondary">
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Gateway Worldwide
+          <Button onClick={openWorldwideDialog} variant="secondary" size="sm" className="h-8 md:h-10 text-xs md:text-sm">
+            <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1" />
+            Worldwide
           </Button>
         </div>
       </div>

@@ -159,64 +159,67 @@ export default function AdminAssets() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Ativos</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-xl md:text-4xl font-bold mb-1 md:mb-2">Ativos</h1>
+          <p className="text-xs md:text-base text-muted-foreground">
             Gerencie os ativos disponíveis para negociação
           </p>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleOrganizeAssets} variant="outline">
-            Organizar Ativos
+          <Button onClick={handleOrganizeAssets} variant="outline" size="sm" className="h-8 md:h-10 text-xs md:text-sm">
+            Organizar
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={resetForm}>
-                <Plus className="h-4 w-4 mr-2" />
-                Novo Ativo
+              <Button onClick={resetForm} size="sm" className="h-8 md:h-10 text-xs md:text-sm">
+                <Plus className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+                Novo
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-[95vw] md:max-w-md">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-base md:text-lg">
                   {editingAsset ? "Editar Ativo" : "Novo Ativo"}
                 </DialogTitle>
               </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>Nome</Label>
+              <div className="space-y-3 md:space-y-4">
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="text-xs md:text-sm">Nome</Label>
                   <Input
                     value={formData.name}
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
                     placeholder="Bitcoin"
+                    className="h-9 md:h-10 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Símbolo</Label>
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="text-xs md:text-sm">Símbolo</Label>
                   <Input
                     value={formData.symbol}
                     onChange={(e) =>
                       setFormData({ ...formData, symbol: e.target.value })
                     }
                     placeholder="BTC"
+                    className="h-9 md:h-10 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>URL do Ícone</Label>
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="text-xs md:text-sm">URL do Ícone</Label>
                   <Input
                     value={formData.icon_url}
                     onChange={(e) =>
                       setFormData({ ...formData, icon_url: e.target.value })
                     }
                     placeholder="https://..."
+                    className="h-9 md:h-10 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Payout (%)</Label>
+                <div className="space-y-1 md:space-y-2">
+                  <Label className="text-xs md:text-sm">Payout (%)</Label>
                   <Input
                     type="number"
                     value={formData.payout_percentage}
@@ -226,10 +229,11 @@ export default function AdminAssets() {
                         payout_percentage: Number(e.target.value),
                       })
                     }
+                    className="h-9 md:h-10 text-sm"
                   />
                 </div>
                 <div className="flex items-center justify-between">
-                  <Label>Ativo</Label>
+                  <Label className="text-xs md:text-sm">Ativo</Label>
                   <Switch
                     checked={formData.is_active}
                     onCheckedChange={(checked) =>
@@ -237,7 +241,7 @@ export default function AdminAssets() {
                     }
                   />
                 </div>
-                <Button onClick={handleSave} className="w-full">
+                <Button onClick={handleSave} className="w-full h-9 md:h-10 text-sm">
                   {editingAsset ? "Atualizar" : "Criar"}
                 </Button>
               </div>
@@ -246,7 +250,52 @@ export default function AdminAssets() {
         </div>
       </div>
 
-      <Card>
+      {/* Mobile: Card layout */}
+      <div className="space-y-2 md:hidden">
+        {assets.map((asset) => (
+          <Card key={asset.id} className="p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-sm">{asset.name}</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="text-xs text-muted-foreground">{asset.symbol}</span>
+                  <span className="text-xs font-medium">{asset.payout_percentage}%</span>
+                  <span
+                    className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                      asset.is_active
+                        ? "bg-green-500/20 text-green-500"
+                        : "bg-red-500/20 text-red-500"
+                    }`}
+                  >
+                    {asset.is_active ? "Ativo" : "Inativo"}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleEdit(asset)}
+                  className="h-7 w-7 p-0"
+                >
+                  <Pencil className="h-3 w-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDelete(asset.id)}
+                  className="h-7 w-7 p-0"
+                >
+                  <Trash2 className="h-3 w-3 text-destructive" />
+                </Button>
+              </div>
+            </div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Desktop: Table layout */}
+      <Card className="hidden md:block">
         <Table>
           <TableHeader>
             <TableRow>

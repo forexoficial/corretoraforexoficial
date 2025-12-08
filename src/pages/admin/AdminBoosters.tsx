@@ -199,16 +199,16 @@ export default function AdminBoosters() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-2 md:gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{t("admin_boosters_title")}</h1>
-          <p className="text-muted-foreground">{t("admin_boosters_desc")}</p>
+          <h1 className="text-xl md:text-3xl font-bold">{t("admin_boosters_title")}</h1>
+          <p className="text-xs md:text-base text-muted-foreground">{t("admin_boosters_desc")}</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button onClick={openCreateDialog}>
-              <Plus className="mr-2 h-4 w-4" />
+            <Button onClick={openCreateDialog} size="sm" className="h-8 md:h-10 text-xs md:text-sm">
+              <Plus className="mr-1 md:mr-2 h-3 w-3 md:h-4 md:w-4" />
               {t("admin_new_booster")}
             </Button>
           </DialogTrigger>
@@ -377,40 +377,40 @@ export default function AdminBoosters() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-2 md:gap-4 grid-cols-3">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("admin_total_boosters")}</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+            <CardTitle className="text-[10px] md:text-sm font-medium">{t("admin_total_boosters")}</CardTitle>
+            <Zap className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.totalBoosters}</div>
-            <p className="text-xs text-muted-foreground">
-              {stats.activeBoosters} {t("admin_active_boosters")}
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">{stats.totalBoosters}</div>
+            <p className="text-[10px] md:text-xs text-muted-foreground">
+              {stats.activeBoosters} ativos
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("admin_average_price")}</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+            <CardTitle className="text-[10px] md:text-sm font-medium">{t("admin_average_price")}</CardTitle>
+            <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ {formatCurrency(stats.avgPrice)}</div>
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">R$ {formatCurrency(stats.avgPrice)}</div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("admin_average_duration")}</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+            <CardTitle className="text-[10px] md:text-sm font-medium">{t("admin_average_duration")}</CardTitle>
+            <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
+          <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+            <div className="text-lg md:text-2xl font-bold">
               {boosters.length > 0
                 ? Math.round(boosters.reduce((sum, b) => sum + b.duration_minutes, 0) / boosters.length)
-                : 0} min
+                : 0}m
             </div>
           </CardContent>
         </Card>
