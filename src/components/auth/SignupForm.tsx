@@ -75,10 +75,13 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // For non-Brazilian users, generate a unique document ID to avoid unique constraint violations
+    const internationalDocument = `INT-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    
     onSubmit({
       ...formData,
-      // For non-Brazilian users, set default document values
-      document: isBrazilian ? formData.document : "N/A",
+      // For non-Brazilian users, generate unique document to avoid constraint violation
+      document: isBrazilian ? formData.document : internationalDocument,
       documentType: isBrazilian ? formData.documentType : "international",
       affiliateCode: affiliateCode || undefined,
     });
