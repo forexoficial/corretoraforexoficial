@@ -44,7 +44,11 @@ export default function VerifyIdentity() {
   const [showCamera, setShowCamera] = useState(false);
   const [cameraMode, setCameraMode] = useState<"front" | "back" | "selfie" | null>(null);
 
+  // Debug: log language detection
+  console.log('[VerifyIdentity] Language detected:', language, '| isBrazilian:', language === 'pt');
+
   // Check if user is Brazilian (Portuguese language)
+  // isBrazilian is true ONLY when language is explicitly 'pt'
   const isBrazilian = language === 'pt';
 
   // For non-Brazilian users, force individual account type

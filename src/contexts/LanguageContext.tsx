@@ -30,19 +30,33 @@ interface LanguageProviderProps {
 export const LanguageProvider = ({ children }: LanguageProviderProps) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const stored = localStorage.getItem('app_language');
-    if (stored) return stored as Language;
+    
+    // Verificar se existe um idioma salvo E se é válido
+    if (stored && ['pt', 'en', 'es'].includes(stored)) {
+      console.log('[Language] Usando idioma salvo:', stored);
+      return stored as Language;
+    }
     
     // Detectar idioma do navegador
     const browserLang = navigator.language || navigator.languages?.[0] || 'en';
     const langCode = browserLang.toLowerCase().split('-')[0];
     
+    console.log('[Language] Detectando idioma do navegador:', browserLang, '-> código:', langCode);
+    
     // Português para países de língua portuguesa
-    if (langCode === 'pt') return 'pt';
+    if (langCode === 'pt') {
+      console.log('[Language] Idioma detectado: Português');
+      return 'pt';
+    }
     
     // Espanhol para países de língua espanhola
-    if (langCode === 'es') return 'es';
+    if (langCode === 'es') {
+      console.log('[Language] Idioma detectado: Espanhol');
+      return 'es';
+    }
     
     // Inglês para todos os outros
+    console.log('[Language] Idioma detectado: Inglês (padrão)');
     return 'en';
   });
 
