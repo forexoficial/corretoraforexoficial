@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, Mail, Phone, MapPin, Calendar, TrendingUp, DollarSign, Award, Settings, LogOut, Edit2, Save, X, Copy, Check, Shield, Crown, Zap, Users } from "lucide-react";
+import { Camera, Mail, Phone, MapPin, Calendar, TrendingUp, DollarSign, Award, Settings, LogOut, Edit2, Save, X, Copy, Check, Shield, Crown, Zap, Users, ShieldCheck } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useCurrency } from "@/hooks/useCurrency";
 import { Button } from "@/components/ui/button";
@@ -36,6 +36,7 @@ export default function Profile() {
   const [copiedId, setCopiedId] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const [isAffiliate, setIsAffiliate] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [stats, setStats] = useState({
     totalTrades: 0,
     successRate: 0,
@@ -59,8 +60,25 @@ export default function Profile() {
       loadRealStats();
       loadRecentActivity();
       checkAffiliateStatus();
+      checkAdminStatus();
     }
   }, [user]);
+
+  const checkAdminStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", user?.id)
+        .eq("role", "admin")
+        .maybeSingle();
+
+      if (error) throw error;
+      setIsAdmin(!!data);
+    } catch (error: any) {
+      console.error("Erro ao verificar status de admin:", error);
+    }
+  };
 
   const loadProfile = async () => {
     try {
@@ -415,9 +433,15 @@ export default function Profile() {
               )}
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               {!isEditing ? (
                 <>
+                  {isAdmin && (
+                    <Button onClick={() => navigate("/admin")} variant="default" className="gap-2 bg-amber-500 hover:bg-amber-600 text-black">
+                      <ShieldCheck className="h-4 w-4" />
+                      {t("admin_panel", "Painel Admin")}
+                    </Button>
+                  )}
                   <Button onClick={() => navigate("/")} variant="outline" className="gap-2">
                     <TrendingUp className="h-4 w-4" />
                     {t("back_to_trading", "Voltar a Negociar")}
