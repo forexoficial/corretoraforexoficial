@@ -6,11 +6,11 @@
 All colors MUST be HSL.
 */
 
-/* PWA Safe Area Support - Mobile only with reduced spacing */
+/* PWA Safe Area Support - Mobile only with minimal spacing */
 @supports (padding: max(0px)) {
   @media (max-width: 768px) {
     body {
-      padding-top: min(env(safe-area-inset-top), 24px);
+      padding-top: min(env(safe-area-inset-top), 8px);
       padding-bottom: env(safe-area-inset-bottom);
       padding-left: env(safe-area-inset-left);
       padding-right: env(safe-area-inset-right);
