@@ -2,12 +2,14 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
 
-// Register service worker for PWA (in a safer way)
+// Register service workers for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Silently fail if service worker is not available
-    });
+    // Register main PWA service worker
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+    
+    // Register push notifications service worker
+    navigator.serviceWorker.register('/sw-push.js').catch(() => {});
   });
 }
 

@@ -776,5 +776,16 @@
   "kyc_camera_back_title": "Document Back",
   "kyc_camera_selfie_title": "Selfie with Document",
   "kyc_camera_doc_subtitle": "Position the document within the frame",
-  "kyc_camera_selfie_subtitle": "Hold the document next to your face"
+  "kyc_camera_selfie_subtitle": "Hold the document next to your face",
+  "notifications": {
+    "pushNotifications": "Push Notifications",
+    "enabled": "Notifications enabled",
+    "enabledDescription": "You will receive push notifications even when the app is closed.",
+    "disabled": "Notifications disabled",
+    "disabledDescription": "You will no longer receive push notifications.",
+    "blocked": "Notifications blocked",
+    "blockedDescription": "Notifications are blocked in your browser. Enable them in settings.",
+    "active": "Notifications active",
+    "activate": "Enable notifications"
+  }
 }

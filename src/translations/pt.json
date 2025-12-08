@@ -779,5 +779,16 @@
   "kyc_camera_back_title": "Verso do Documento",
   "kyc_camera_selfie_title": "Selfie com Documento",
   "kyc_camera_doc_subtitle": "Posicione o documento dentro da área",
-  "kyc_camera_selfie_subtitle": "Segure o documento ao lado do rosto"
+  "kyc_camera_selfie_subtitle": "Segure o documento ao lado do rosto",
+  "notifications": {
+    "pushNotifications": "Notificações Push",
+    "enabled": "Notificações ativadas",
+    "enabledDescription": "Você receberá notificações push mesmo quando o app estiver fechado.",
+    "disabled": "Notificações desativadas",
+    "disabledDescription": "Você não receberá mais notificações push.",
+    "blocked": "Notificações bloqueadas",
+    "blockedDescription": "As notificações estão bloqueadas no seu navegador. Habilite-as nas configurações.",
+    "active": "Notificações ativas",
+    "activate": "Ativar notificações"
+  }
 }
