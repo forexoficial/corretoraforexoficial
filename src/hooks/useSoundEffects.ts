@@ -2,6 +2,55 @@ import { useRef, useCallback, useEffect } from 'react';
 
 type SoundType = 'trade-open' | 'trade-win' | 'trade-loss' | 'click';
 
+// Global flag to track if audio has been unlocked by user interaction
+let audioUnlocked = false;
+let audioContext: AudioContext | null = null;
+
+// Function to unlock audio on iOS/mobile PWA - must be called from user gesture
+function unlockAudio() {
+  if (audioUnlocked) return;
+  
+  try {
+    // Create and resume AudioContext (required for iOS)
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    
+    if (audioContext.state === 'suspended') {
+      audioContext.resume();
+    }
+    
+    // Play a silent sound to unlock audio on iOS
+    const silentBuffer = audioContext.createBuffer(1, 1, 22050);
+    const source = audioContext.createBufferSource();
+    source.buffer = silentBuffer;
+    source.connect(audioContext.destination);
+    source.start(0);
+    
+    audioUnlocked = true;
+    console.log('[Sound] Áudio desbloqueado para PWA mobile');
+  } catch (error) {
+    console.warn('[Sound] Erro ao desbloquear áudio:', error);
+  }
+}
+
+// Attach unlock to first user interaction
+if (typeof window !== 'undefined') {
+  const unlockEvents = ['touchstart', 'touchend', 'click', 'keydown'];
+  
+  const handleFirstInteraction = () => {
+    unlockAudio();
+    // Remove listeners after first interaction
+    unlockEvents.forEach(event => {
+      document.removeEventListener(event, handleFirstInteraction, true);
+    });
+  };
+  
+  unlockEvents.forEach(event => {
+    document.addEventListener(event, handleFirstInteraction, true);
+  });
+}
+
 export function useSoundEffects() {
   const soundsRef = useRef<Record<SoundType, HTMLAudioElement | null>>({
     'trade-open': null,
@@ -20,18 +69,27 @@ export function useSoundEffects() {
 
   useEffect(() => {
     // Initialize all audio objects with correct file extensions
-    soundsRef.current = {
+    const sounds: Record<SoundType, HTMLAudioElement> = {
       'trade-open': new Audio('/sounds/alert.MP3'),
       'trade-win': new Audio('/sounds/win.MP3'),
       'trade-loss': new Audio('/sounds/loss.MP3'),
       'click': new Audio('/sounds/volatility.MP3'),
     };
+    
+    // Configure each audio element for mobile compatibility
+    Object.entries(sounds).forEach(([key, audio]) => {
+      audio.preload = 'auto';
+      // Load the audio file
+      audio.load();
+    });
 
     // Set volumes
-    if (soundsRef.current['trade-open']) soundsRef.current['trade-open'].volume = 0.5;
-    if (soundsRef.current['trade-win']) soundsRef.current['trade-win'].volume = 0.6;
-    if (soundsRef.current['trade-loss']) soundsRef.current['trade-loss'].volume = 0.6;
-    if (soundsRef.current['click']) soundsRef.current['click'].volume = 0.2;
+    sounds['trade-open'].volume = 0.5;
+    sounds['trade-win'].volume = 0.6;
+    sounds['trade-loss'].volume = 0.6;
+    sounds['click'].volume = 0.2;
+    
+    soundsRef.current = sounds;
     
     console.log('[Sound] Efeitos sonoros inicializados');
 
@@ -63,11 +121,26 @@ export function useSoundEffects() {
     
     lastPlayTimeRef.current[type] = now;
     
-    // Reset and play
-    audio.currentTime = 0;
-    audio.play().catch((error) => {
-      console.warn(`[Sound] Erro ao reproduzir ${type}:`, error.message);
-    });
+    // Ensure audio is unlocked before playing
+    if (!audioUnlocked) {
+      unlockAudio();
+    }
+    
+    // Clone the audio for overlapping sounds support and better mobile compatibility
+    try {
+      audio.currentTime = 0;
+      const playPromise = audio.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch((error) => {
+          console.warn(`[Sound] Erro ao reproduzir ${type}:`, error.message);
+          // Try to unlock and play again on next interaction
+          audioUnlocked = false;
+        });
+      }
+    } catch (error) {
+      console.warn(`[Sound] Exceção ao reproduzir ${type}:`, error);
+    }
   }, []);
 
   return { playSound };
