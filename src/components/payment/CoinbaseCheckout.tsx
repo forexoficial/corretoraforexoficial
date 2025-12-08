@@ -147,7 +147,7 @@ export function CoinbaseCheckout({
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <Loader2 className="w-10 h-10 animate-spin text-primary" />
-        <p className="text-muted-foreground">{t("creating_payment") || "Creating payment..."}</p>
+        <p className="text-muted-foreground">{t("creating_payment")}</p>
       </div>
     );
   }
@@ -156,16 +156,16 @@ export function CoinbaseCheckout({
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <AlertCircle className="w-12 h-12 text-destructive" />
-        <h3 className="text-lg font-semibold">{t("payment_expired") || "Payment Expired"}</h3>
+        <h3 className="text-lg font-semibold">{t("payment_expired")}</h3>
         <p className="text-muted-foreground text-center">
-          {t("payment_expired_desc") || "This payment has expired. Please create a new payment."}
+          {t("payment_expired_desc")}
         </p>
         <div className="flex gap-3">
           <Button variant="outline" onClick={onCancel}>
-            {t("cancel") || "Cancel"}
+            {t("cancel")}
           </Button>
           <Button onClick={createCharge}>
-            {t("try_again") || "Try Again"}
+            {t("try_again")}
           </Button>
         </div>
       </div>
@@ -176,8 +176,8 @@ export function CoinbaseCheckout({
     return (
       <div className="flex flex-col items-center justify-center py-12 space-y-4">
         <AlertCircle className="w-12 h-12 text-destructive" />
-        <p className="text-muted-foreground">{t("payment_error") || "Failed to create payment"}</p>
-        <Button onClick={onCancel}>{t("back") || "Back"}</Button>
+        <p className="text-muted-foreground">{t("payment_error")}</p>
+        <Button onClick={onCancel}>{t("back")}</Button>
       </div>
     );
   }
@@ -188,16 +188,16 @@ export function CoinbaseCheckout({
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center gap-2">
           <Wallet className="w-6 h-6 text-primary" />
-          <h3 className="text-xl font-semibold">{t("crypto_payment") || "Crypto Payment"}</h3>
+          <h3 className="text-xl font-semibold">{t("crypto_payment")}</h3>
         </div>
         <p className="text-muted-foreground">
-          {t("pay_with_crypto") || "Pay with cryptocurrency"}
+          {t("pay_with_crypto")}
         </p>
       </div>
 
       {/* Amount Display */}
       <Card className="p-6 text-center bg-primary/5 border-primary/20">
-        <p className="text-sm text-muted-foreground mb-1">{t("amount_to_pay") || "Amount to Pay"}</p>
+        <p className="text-sm text-muted-foreground mb-1">{t("amount_to_pay")}</p>
         <p className="text-3xl font-bold text-primary">
           ${chargeData.amount.toFixed(2)} <span className="text-lg">{chargeData.currency}</span>
         </p>
@@ -206,13 +206,13 @@ export function CoinbaseCheckout({
       {/* Timer */}
       <div className="flex items-center justify-center gap-2 text-muted-foreground">
         <Clock className="w-4 h-4" />
-        <span>{t("expires_in") || "Expires in"}:</span>
+        <span>{t("expires_in")}:</span>
         <span className="font-mono font-semibold text-foreground">{timeLeft}</span>
       </div>
 
       {/* Charge Code */}
       <div className="space-y-2">
-        <label className="text-sm font-medium">{t("payment_code") || "Payment Code"}</label>
+        <label className="text-sm font-medium">{t("payment_code")}</label>
         <div className="flex gap-2">
           <div className="flex-1 bg-muted rounded-lg p-3 font-mono text-sm break-all">
             {chargeData.charge_code}
@@ -234,17 +234,17 @@ export function CoinbaseCheckout({
         onClick={openHostedPage}
       >
         <Wallet className="w-5 h-5" />
-        {t("pay_with_coinbase") || "Pay with Coinbase"}
+        {t("pay_with_coinbase")}
         <ExternalLink className="w-4 h-4" />
       </Button>
 
       <p className="text-xs text-center text-muted-foreground">
-        {t("coinbase_redirect_note") || "You will be redirected to Coinbase Commerce to complete your payment"}
+        {t("coinbase_redirect_note")}
       </p>
 
       {/* Supported Cryptocurrencies Info */}
       <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-        <p className="text-sm font-medium">{t("supported_crypto") || "Supported Cryptocurrencies"}</p>
+        <p className="text-sm font-medium">{t("supported_crypto")}</p>
         <div className="flex flex-wrap gap-2">
           {["BTC", "ETH", "USDC", "DAI", "USDT", "LTC"].map((coin) => (
             <span
@@ -263,7 +263,7 @@ export function CoinbaseCheckout({
         className="w-full"
         onClick={onCancel}
       >
-        {t("cancel") || "Cancel"}
+        {t("cancel")}
       </Button>
     </div>
   );

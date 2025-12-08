@@ -787,5 +787,27 @@
     "blockedDescription": "Las notificaciones están bloqueadas en tu navegador. Habilítalas en configuración.",
     "active": "Notificaciones activas",
     "activate": "Activar notificaciones"
-  }
+  },
+  "crypto_deposit_title": "Depósito con Criptomoneda",
+  "deposit_amount": "Monto del Depósito",
+  "accepted_cryptocurrencies": "Criptomonedas Aceptadas",
+  "payment_currency": "Moneda de Pago",
+  "minimum_deposit": "Depósito Mínimo",
+  "continue_to_crypto_payment": "Continuar al Pago Cripto",
+  "crypto_payment": "Pago con Criptomoneda",
+  "pay_with_crypto": "Paga con criptomoneda",
+  "amount_to_pay": "Monto a Pagar",
+  "expires_in": "Expira en",
+  "payment_code": "Código de Pago",
+  "pay_with_coinbase": "Pagar con Coinbase",
+  "coinbase_redirect_note": "Serás redirigido a Coinbase Commerce para completar tu pago",
+  "supported_crypto": "Criptomonedas Soportadas",
+  "creating_payment": "Creando pago...",
+  "payment_expired": "Pago Expirado",
+  "payment_expired_desc": "Este pago ha expirado. Por favor, crea un nuevo pago.",
+  "try_again": "Intentar de Nuevo",
+  "payment_error": "Error al crear pago",
+  "payment_completed": "¡Pago completado!",
+  "payment_failed": "Pago fallido",
+  "copied": "¡Copiado!"
 }

@@ -787,5 +787,27 @@
     "blockedDescription": "Notifications are blocked in your browser. Enable them in settings.",
     "active": "Notifications active",
     "activate": "Enable notifications"
-  }
+  },
+  "crypto_deposit_title": "Cryptocurrency Deposit",
+  "deposit_amount": "Deposit Amount",
+  "accepted_cryptocurrencies": "Accepted Cryptocurrencies",
+  "payment_currency": "Payment Currency",
+  "minimum_deposit": "Minimum Deposit",
+  "continue_to_crypto_payment": "Continue to Crypto Payment",
+  "crypto_payment": "Cryptocurrency Payment",
+  "pay_with_crypto": "Pay with cryptocurrency",
+  "amount_to_pay": "Amount to Pay",
+  "expires_in": "Expires in",
+  "payment_code": "Payment Code",
+  "pay_with_coinbase": "Pay with Coinbase",
+  "coinbase_redirect_note": "You will be redirected to Coinbase Commerce to complete your payment",
+  "supported_crypto": "Supported Cryptocurrencies",
+  "creating_payment": "Creating payment...",
+  "payment_expired": "Payment Expired",
+  "payment_expired_desc": "This payment has expired. Please create a new payment.",
+  "try_again": "Try Again",
+  "payment_error": "Failed to create payment",
+  "payment_completed": "Payment completed!",
+  "payment_failed": "Payment failed",
+  "copied": "Copied!"
 }
