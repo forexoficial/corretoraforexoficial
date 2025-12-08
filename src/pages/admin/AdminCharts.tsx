@@ -11,7 +11,8 @@ import { ActiveTradesMonitor } from "@/components/admin/charts/ActiveTradesMonit
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Zap } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -31,6 +32,10 @@ export default function AdminCharts() {
   const [timeframe, setTimeframe] = useState("1m");
   const [isGenerating, setIsGenerating] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [isGeneratingAll, setIsGeneratingAll] = useState(false);
+  const [generationProgress, setGenerationProgress] = useState(0);
+  const [currentGeneratingAsset, setCurrentGeneratingAsset] = useState("");
+  const [showGenerateAllDialog, setShowGenerateAllDialog] = useState(false);
 
   useEffect(() => {
     fetchAssets();
@@ -82,6 +87,65 @@ export default function AdminCharts() {
     }
   };
 
+  const handleGenerateAllCandles = async () => {
+    setShowGenerateAllDialog(false);
+    setIsGeneratingAll(true);
+    setGenerationProgress(0);
+    
+    const timeframes = ['10s', '30s', '1m', '5m'];
+    const totalOperations = assets.length * timeframes.length;
+    let completedOperations = 0;
+    let successCount = 0;
+    let errorCount = 0;
+    
+    try {
+      for (const asset of assets) {
+        for (const tf of timeframes) {
+          setCurrentGeneratingAsset(`${asset.name} (${tf})`);
+          
+          try {
+            const { error } = await supabase.functions.invoke('generate-candles', {
+              body: {
+                assetId: asset.id,
+                timeframe: tf,
+                count: 300
+              }
+            });
+            
+            if (error) {
+              console.error(`Erro em ${asset.name} ${tf}:`, error);
+              errorCount++;
+            } else {
+              successCount++;
+            }
+          } catch (err) {
+            console.error(`Erro em ${asset.name} ${tf}:`, err);
+            errorCount++;
+          }
+          
+          completedOperations++;
+          setGenerationProgress(Math.round((completedOperations / totalOperations) * 100));
+          
+          // Pequena pausa para não sobrecarregar
+          await new Promise(resolve => setTimeout(resolve, 200));
+        }
+      }
+      
+      if (errorCount === 0) {
+        toast.success(`Todos os candles gerados! ${successCount} operações concluídas.`);
+      } else {
+        toast.warning(`Geração concluída: ${successCount} sucesso, ${errorCount} erros.`);
+      }
+    } catch (error) {
+      console.error('Erro geral:', error);
+      toast.error('Erro durante a geração de candles');
+    } finally {
+      setIsGeneratingAll(false);
+      setGenerationProgress(0);
+      setCurrentGeneratingAsset("");
+    }
+  };
+
   const handleToggleAutoGenerate = async (checked: boolean) => {
     if (!selectedAsset) return;
 
@@ -112,10 +176,63 @@ export default function AdminCharts() {
           <h1 className="text-3xl font-bold">Controle de Gráficos</h1>
           <p className="text-muted-foreground">Gerencie e manipule os gráficos OTC</p>
         </div>
-        <Button onClick={() => navigate('/admin')}>
-          Voltar ao Admin
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => setShowGenerateAllDialog(true)}
+            disabled={isGeneratingAll || assets.length === 0}
+            variant="default"
+            className="bg-amber-600 hover:bg-amber-700"
+          >
+            <Zap className={`w-4 h-4 mr-2 ${isGeneratingAll ? 'animate-pulse' : ''}`} />
+            Gerar Todos os Candles
+          </Button>
+          <Button variant="outline" onClick={() => navigate('/admin')}>
+            Voltar ao Admin
+          </Button>
+        </div>
       </div>
+
+      {/* Progress Bar for Generate All */}
+      {isGeneratingAll && (
+        <Card className="p-4 border-amber-500/50 bg-amber-500/10">
+          <div className="space-y-3">
+            <div className="flex justify-between items-center">
+              <span className="text-sm font-medium">Gerando candles para todos os ativos...</span>
+              <span className="text-sm text-muted-foreground">{generationProgress}%</span>
+            </div>
+            <Progress value={generationProgress} className="h-2" />
+            <p className="text-xs text-muted-foreground">
+              Processando: {currentGeneratingAsset}
+            </p>
+          </div>
+        </Card>
+      )}
+
+      {/* Generate All Confirmation Dialog */}
+      <AlertDialog open={showGenerateAllDialog} onOpenChange={setShowGenerateAllDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Gerar Candles para Todos os Ativos</AlertDialogTitle>
+            <AlertDialogDescription>
+              Você tem certeza que deseja gerar 300 candles para <strong>todos os {assets.length} ativos</strong> em todos os 4 timeframes (10s, 30s, 1m, 5m)?
+              <br /><br />
+              <span className="text-muted-foreground">
+                Total de operações: {assets.length * 4} gerações
+              </span>
+              <br /><br />
+              <span className="text-amber-500 font-medium">
+                Esta operação pode levar alguns minutos.
+              </span>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleGenerateAllCandles} className="bg-amber-600 hover:bg-amber-700">
+              Confirmar e Gerar Todos
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Asset and Timeframe Selector */}
       <Card className="p-4">
