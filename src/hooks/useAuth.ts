@@ -19,6 +19,10 @@ export type SignupFormData = {
   documentType: string;
   password: string;
   affiliateCode?: string;
+  // Country detection fields
+  countryCode?: string;
+  countryName?: string;
+  preferredCurrency?: string;
 };
 
 export function useAuth() {
@@ -91,6 +95,10 @@ export function useAuth() {
             document: formData.document,
             document_type: formData.documentType,
             affiliate_code: formData.affiliateCode,
+            // Country detection data
+            country_code: formData.countryCode || 'XX',
+            country_name: formData.countryName || 'Unknown',
+            preferred_currency: formData.preferredCurrency || 'USD',
           },
           emailRedirectTo: `${window.location.origin}/preloader`,
         },

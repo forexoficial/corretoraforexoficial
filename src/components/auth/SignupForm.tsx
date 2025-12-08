@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import type { SignupFormData } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "@/hooks/useTranslation";
+import { detectUserCountry, type CountryInfo } from "@/utils/countryDetection";
 
 interface SignupFormProps {
   onSubmit: (formData: SignupFormData) => void;
@@ -19,6 +20,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
   const [searchParams] = useSearchParams();
   const [step, setStep] = useState(1);
   const [affiliateCode, setAffiliateCode] = useState<string | null>(null);
+  const [detectedCountry, setDetectedCountry] = useState<CountryInfo | null>(null);
   const [formData, setFormData] = useState<SignupFormData>({
     fullName: "",
     email: "",
@@ -32,6 +34,14 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
   // Only show document step for Brazilian users (Portuguese language)
   const isBrazilian = language === 'pt';
   const totalSteps = isBrazilian ? 4 : 3;
+
+  // Detect user's country on mount
+  useEffect(() => {
+    detectUserCountry().then(country => {
+      console.log('[Signup] Detected country:', country);
+      setDetectedCountry(country);
+    });
+  }, []);
 
   // Capture affiliate code from URL
   useEffect(() => {
@@ -84,6 +94,10 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       document: isBrazilian ? formData.document : internationalDocument,
       documentType: isBrazilian ? formData.documentType : "international",
       affiliateCode: affiliateCode || undefined,
+      // Country detection data
+      countryCode: detectedCountry?.countryCode || 'XX',
+      countryName: detectedCountry?.countryName || 'Unknown',
+      preferredCurrency: detectedCountry?.currency || 'USD',
     });
   };
 
