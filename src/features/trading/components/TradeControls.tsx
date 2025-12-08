@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useCreateTrade } from "../hooks/useCreateTrade";
 import { useTradeContext } from "../context/TradeContext";
+import { useCurrency } from "@/hooks/useCurrency";
 import type { Asset } from "../types/trade.types";
 
 interface TradeControlsProps {
@@ -26,6 +27,7 @@ export const TradeControls = ({
   onShowHistory,
 }: TradeControlsProps) => {
   const { t } = useTranslation();
+  const { formatCurrency, symbol } = useCurrency();
   const { settings } = usePlatformSettings();
   const navigate = useNavigate();
   const { hasOpenTrade } = useTradeContext();
@@ -63,7 +65,7 @@ export const TradeControls = ({
       return (value / 1000).toFixed(0) + 'k';
     }
     if (value >= 1000) {
-      return value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return value.toLocaleString(symbol === 'R$' ? 'pt-BR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
     return value.toFixed(2);
   };
@@ -181,7 +183,7 @@ export const TradeControls = ({
               className="flex items-baseline gap-1 cursor-text hover:text-primary transition-colors"
               onClick={handleAmountClick}
             >
-              <span className="text-[10px] text-muted-foreground font-normal">R$</span>
+              <span className="text-[10px] text-muted-foreground font-normal">{symbol}</span>
               <span className="text-lg font-bold">
                 {formatAmount(amount)}
               </span>
@@ -212,7 +214,7 @@ export const TradeControls = ({
           
           <div className="flex items-baseline gap-1.5 mb-1">
             <div className="text-lg font-bold text-success">
-              R$ {parseFloat(totalPayout).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(parseFloat(totalPayout))}
             </div>
             <div className="text-[9px] font-semibold text-success/80 bg-success/10 px-1.5 py-0.5 rounded-full">
               +{selectedAsset.payout_percentage}%
@@ -222,14 +224,14 @@ export const TradeControls = ({
           <div className="flex items-center justify-between text-[10px]">
             <span className="text-muted-foreground">{t("profit", "Lucro")}:</span>
             <span className="font-bold text-success">
-              +R$ {parseFloat(payout).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              +{formatCurrency(parseFloat(payout))}
             </span>
           </div>
           
           <div className="flex items-center justify-between text-[10px] mt-0.5 pt-1 border-t border-success/20">
             <span className="text-muted-foreground">{t("investment", "Investimento")}:</span>
             <span className="font-medium text-foreground/70">
-              R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              {formatCurrency(amount)}
             </span>
           </div>
         </div>
