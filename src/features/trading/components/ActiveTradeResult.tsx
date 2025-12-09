@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useTradeContext } from "../context/TradeContext";
 import { useTranslation } from "@/hooks/useTranslation";
 import { useCurrency } from "@/hooks/useCurrency";
-import { TrendingUp, TrendingDown, Clock, DollarSign, Target, ArrowUpDown } from "lucide-react";
+import { TrendingUp, TrendingDown } from "lucide-react";
 
 interface ActiveTradeResultProps {
   currentPrice: number;
@@ -54,91 +54,59 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
   };
 
   return (
-    <div className="mt-4 border-t border-border pt-4">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-3">
-        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+    <div className="mt-3 border-t border-border pt-3">
+      {/* Header compacto */}
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
           {t("active_result", "Resultado")}
         </span>
-        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+        <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold ${
           isCall 
             ? 'bg-success/20 text-success' 
             : 'bg-destructive/20 text-destructive'
         }`}>
-          {isCall ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+          {isCall ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
           {isCall ? 'CALL' : 'PUT'}
         </div>
       </div>
 
-      {/* P&L Card - Shows Potential Return */}
-      <div className="rounded-lg p-2 mb-2 bg-success/10 border border-success/30">
-        <div className="text-[8px] text-muted-foreground uppercase">
-          {t("current_pnl", "P&L Atual")}
+      {/* P&L + Timer em linha */}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        <div className="flex-1 rounded px-2 py-1.5 bg-success/10 border border-success/30">
+          <div className="text-[8px] text-muted-foreground uppercase">P&L</div>
+          <div className="text-sm font-bold text-success leading-tight">
+            +{formatCurrency(potentialProfit)}
+          </div>
         </div>
-        <div className="text-base font-bold text-success">
-          +{formatCurrency(potentialProfit)}
-        </div>
-        <div className="text-[9px] text-success/70">
-          +{payoutPercentage.toFixed(0)}%
-        </div>
-      </div>
-
-      {/* Time Remaining */}
-      <div className="flex items-center justify-between py-2 border-b border-border/50">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="w-3.5 h-3.5" />
-          {t("time_remaining", "Tempo Restante")}
-        </div>
-        <div className={`text-sm font-bold font-mono ${
-          timeRemaining < 10000 ? 'text-destructive animate-pulse' : 'text-foreground'
-        }`}>
-          {formatTime(timeRemaining)}
+        <div className="flex-1 rounded px-2 py-1.5 bg-muted/30 border border-border/50">
+          <div className="text-[8px] text-muted-foreground uppercase">Tempo</div>
+          <div className={`text-sm font-bold font-mono leading-tight ${
+            timeRemaining < 10000 ? 'text-destructive animate-pulse' : 'text-foreground'
+          }`}>
+            {formatTime(timeRemaining)}
+          </div>
         </div>
       </div>
 
-      {/* Entry Price */}
-      <div className="flex items-center justify-between py-2 border-b border-border/50">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <ArrowUpDown className="w-3.5 h-3.5" />
-          {t("entry_price", "Preço Entrada")}
+      {/* Grid compacto de infos */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Entrada</span>
+          <span className="font-medium">${entryPrice.toFixed(2)}</span>
         </div>
-        <div className="text-sm font-medium text-foreground">
-          ${entryPrice.toFixed(2)}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Atual</span>
+          <span className={`font-medium ${isWinning ? 'text-success' : 'text-destructive'}`}>
+            ${currentPrice.toFixed(2)}
+          </span>
         </div>
-      </div>
-
-      {/* Current Price */}
-      <div className="flex items-center justify-between py-2 border-b border-border/50">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Target className="w-3.5 h-3.5" />
-          {t("current_price", "Preço Atual")}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Investido</span>
+          <span className="font-medium">{formatCurrency(tradeAmount)}</span>
         </div>
-        <div className={`text-sm font-medium ${
-          isWinning ? 'text-success' : 'text-destructive'
-        }`}>
-          ${currentPrice.toFixed(2)}
-        </div>
-      </div>
-
-      {/* Investment Amount */}
-      <div className="flex items-center justify-between py-2 border-b border-border/50">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <DollarSign className="w-3.5 h-3.5" />
-          {t("invested", "Investido")}
-        </div>
-        <div className="text-sm font-medium text-foreground">
-          {formatCurrency(tradeAmount)}
-        </div>
-      </div>
-
-      {/* Potential Return */}
-      <div className="flex items-center justify-between py-2">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <TrendingUp className="w-3.5 h-3.5" />
-          {t("potential_return", "Retorno Potencial")}
-        </div>
-        <div className="text-sm font-bold text-success">
-          {formatCurrency(potentialReturn)}
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Retorno</span>
+          <span className="font-bold text-success">{formatCurrency(potentialReturn)}</span>
         </div>
       </div>
     </div>
