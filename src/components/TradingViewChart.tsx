@@ -607,22 +607,22 @@ export function TradingViewChart({
           // Calculate width from parent or container
           const newWidth = parent?.clientWidth || container.clientWidth || window.innerWidth - 400;
           
+          // Get configurable offsets from appearance settings
+          const offsetMobile = appearanceSettings?.chart_height_offset_mobile ?? 160;
+          const offsetFullscreen = appearanceSettings?.chart_height_offset_fullscreen ?? 96;
+          const offsetDesktop = appearanceSettings?.chart_height_offset_desktop ?? 180;
+          
           // Calculate height based on mode
           let newHeight: number;
           if (useResponsive) {
-            // For responsive mode, calculate based on viewport
+            // For responsive mode, calculate based on viewport with configurable offsets
             if (isMobile) {
-              newHeight = Math.max(300, window.innerHeight - 280);
+              newHeight = Math.max(300, window.innerHeight - offsetMobile);
             } else if (isFullscreen) {
-              newHeight = Math.max(400, window.innerHeight - 160);
+              newHeight = Math.max(400, window.innerHeight - offsetFullscreen);
             } else {
-              // Desktop: get parent height or calculate from viewport
-              const parentHeight = parent?.clientHeight;
-              if (parentHeight && parentHeight > 100) {
-                newHeight = parentHeight;
-              } else {
-                newHeight = Math.max(400, window.innerHeight - 320);
-              }
+              // Desktop: use configurable offset
+              newHeight = Math.max(400, window.innerHeight - offsetDesktop);
             }
           } else {
             newHeight = chartHeight;
