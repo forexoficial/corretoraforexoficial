@@ -71,8 +71,34 @@ Deno.serve(async (req) => {
     }
     
     // Helper para alinhar timestamp ao timeframe
+    // Para 10s: alinha a 0, 10, 20, 30, 40, 50 segundos de cada minuto
+    // Para 30s: alinha a 0, 30 segundos de cada minuto
+    // Para 1m: alinha ao início de cada minuto
+    // Para 5m: alinha a 0, 5, 10, 15, etc minutos de cada hora
     const alignToTimeframe = (timestamp: number, timeframeMs: number) => {
       return Math.floor(timestamp / timeframeMs) * timeframeMs
+    }
+    
+    // Função para verificar se um timestamp está no intervalo correto para o timeframe
+    const isValidTimestampForTimeframe = (timestamp: number, timeframeMs: number): boolean => {
+      const date = new Date(timestamp)
+      const seconds = date.getSeconds()
+      const minutes = date.getMinutes()
+      
+      if (timeframeMs === 10 * 1000) {
+        // 10s: deve ser 0, 10, 20, 30, 40, 50
+        return seconds % 10 === 0
+      } else if (timeframeMs === 30 * 1000) {
+        // 30s: deve ser 0 ou 30
+        return seconds % 30 === 0
+      } else if (timeframeMs === 60 * 1000) {
+        // 1m: deve ser 0 segundos
+        return seconds === 0
+      } else if (timeframeMs === 5 * 60 * 1000) {
+        // 5m: deve ser 0 segundos e minutos divisíveis por 5
+        return seconds === 0 && minutes % 5 === 0
+      }
+      return true
     }
     
     // Mapear timeframes para millisegundos (apenas operações curtas)
@@ -178,12 +204,22 @@ Deno.serve(async (req) => {
           const candleTimestamp = new Date(currentCandle.timestamp).getTime()
           const candleExpiry = candleTimestamp + timeframeMs
           
+          // Log para debug do timing
+          const timeUntilExpiry = candleExpiry - nowBrazil
+          console.log(`[${asset.symbol}][${timeframe}] Candle expires in ${Math.round(timeUntilExpiry / 1000)}s (timeframe: ${timeframeMs / 1000}s)`)
+          
           // Verificar se o candle atual expirou
           if (nowBrazil >= candleExpiry) {
             // Criar novo candle com o preço atual
-            console.log(`Creating new candle for ${asset.symbol} ${timeframe} - expired at ${new Date(candleExpiry).toISOString()}`)
-            
             const newCandleTimestamp = alignToTimeframe(nowBrazil, timeframeMs)
+            
+            // Verificar se o timestamp é válido para este timeframe
+            if (!isValidTimestampForTimeframe(newCandleTimestamp, timeframeMs)) {
+              console.warn(`[${asset.symbol}][${timeframe}] Invalid timestamp alignment, skipping`)
+              continue
+            }
+            
+            console.log(`[${asset.symbol}][${timeframe}] Creating new candle at ${new Date(newCandleTimestamp).toISOString()}`)
             const lastClose = Number(currentCandle.close)
             
             // O open do novo candle é o close do anterior, mas o close é o preço atual

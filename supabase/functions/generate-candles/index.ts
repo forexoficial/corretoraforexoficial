@@ -113,16 +113,26 @@ serve(async (req) => {
       console.log(`Using existing ${timeframe} candle price: ${basePrice}`)
     }
 
-    let startTimestamp = lastCandle 
-      ? new Date(lastCandle.timestamp).getTime() + timeframeMs
-      : alignedNow - (count * timeframeMs)
+    // Alinhar o startTimestamp ao intervalo correto do timeframe
+    let startTimestamp: number
+    if (lastCandle) {
+      // Próximo candle após o último existente
+      startTimestamp = new Date(lastCandle.timestamp).getTime() + timeframeMs
+    } else {
+      // Começar do timestamp alinhado atual menos o count de candles
+      startTimestamp = alignedNow - (count * timeframeMs)
+    }
+    
+    // Garantir que startTimestamp está alinhado ao timeframe
+    startTimestamp = alignToTimeframe(startTimestamp, timeframeMs)
 
     const candles = []
+    console.log(`Generating ${count} candles for timeframe ${timeframe} (${timeframeMs}ms each)`)
 
     for (let i = 0; i < count; i++) {
+      // Cada candle é exatamente um intervalo de timeframe após o anterior
       const candleTimestamp = startTimestamp + (i * timeframeMs)
-      const alignedTimestamp = alignToTimeframe(candleTimestamp, timeframeMs)
-      const timestamp = new Date(alignedTimestamp)
+      const timestamp = new Date(candleTimestamp)
       
       // Generate realistic OHLCV data com volatilidade reduzida para manter consistência
       const volatility = 0.0015 // 0.15% volatility (reduzido para maior estabilidade)
