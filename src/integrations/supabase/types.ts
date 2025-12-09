@@ -322,6 +322,8 @@ export type Database = {
           map_grid_opacity: number
           map_image_url: string | null
           map_image_url_dark: string | null
+          map_image_url_mobile: string | null
+          map_image_url_mobile_dark: string | null
           map_opacity: number
           map_primary_color: string
           map_secondary_color: string
@@ -400,6 +402,8 @@ export type Database = {
           map_grid_opacity?: number
           map_image_url?: string | null
           map_image_url_dark?: string | null
+          map_image_url_mobile?: string | null
+          map_image_url_mobile_dark?: string | null
           map_opacity?: number
           map_primary_color?: string
           map_secondary_color?: string
@@ -478,6 +482,8 @@ export type Database = {
           map_grid_opacity?: number
           map_image_url?: string | null
           map_image_url_dark?: string | null
+          map_image_url_mobile?: string | null
+          map_image_url_mobile_dark?: string | null
           map_opacity?: number
           map_primary_color?: string
           map_secondary_color?: string
