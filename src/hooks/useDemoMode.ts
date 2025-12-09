@@ -38,6 +38,8 @@ export const useDemoMode = () => {
   useEffect(() => {
     let channel: ReturnType<typeof supabase.channel> | null = null;
     let isMounted = true;
+    let reconnectTimeout: NodeJS.Timeout | null = null;
+    let pollingInterval: NodeJS.Timeout | null = null;
 
     const init = async () => {
       // First fetch balances
@@ -46,51 +48,109 @@ export const useDemoMode = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user || !isMounted) return;
 
-      // Setup realtime subscription
-      channel = supabase
-        .channel(`balance-updates-${user.id}-${Date.now()}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'UPDATE',
-            schema: 'public',
-            table: 'profiles',
-            filter: `user_id=eq.${user.id}`
-          },
-          (payload) => {
-            if (!isMounted) return;
-            
-            console.log('[useDemoMode] Balance update received:', payload.new);
-            
-            const newProfile = payload.new as {
-              balance?: number;
-              demo_balance?: number;
-              is_demo_mode?: boolean;
-            };
-            
-            // Show loading animation
-            setBalanceUpdating(true);
-            
-            // Update state
-            if (newProfile.balance !== undefined) {
-              setRealBalance(newProfile.balance);
+      const setupChannel = () => {
+        // Remove existing channel if any
+        if (channel) {
+          supabase.removeChannel(channel);
+        }
+
+        // Setup realtime subscription
+        channel = supabase
+          .channel(`balance-updates-${user.id}-${Date.now()}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'profiles',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              if (!isMounted) return;
+              
+              console.log('[useDemoMode] Balance update received:', payload.new);
+              
+              const newProfile = payload.new as {
+                balance?: number;
+                demo_balance?: number;
+                is_demo_mode?: boolean;
+              };
+              
+              // Show loading animation
+              setBalanceUpdating(true);
+              
+              // Update state
+              if (newProfile.balance !== undefined) {
+                setRealBalance(newProfile.balance);
+              }
+              if (newProfile.demo_balance !== undefined) {
+                setDemoBalance(newProfile.demo_balance);
+              }
+              if (newProfile.is_demo_mode !== undefined) {
+                setIsDemoMode(newProfile.is_demo_mode);
+              }
+              
+              // Hide loading after animation
+              setTimeout(() => {
+                if (isMounted) setBalanceUpdating(false);
+              }, 500);
             }
-            if (newProfile.demo_balance !== undefined) {
-              setDemoBalance(newProfile.demo_balance);
-            }
-            if (newProfile.is_demo_mode !== undefined) {
-              setIsDemoMode(newProfile.is_demo_mode);
-            }
+          )
+          .subscribe((status, err) => {
+            console.log('[useDemoMode] Subscription status:', status, err);
             
-            // Hide loading after animation
-            setTimeout(() => {
-              if (isMounted) setBalanceUpdating(false);
-            }, 500);
-          }
-        )
-        .subscribe((status) => {
-          console.log('[useDemoMode] Subscription status:', status);
-        });
+            // If subscription fails or closes, try to reconnect
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+              console.warn('[useDemoMode] Channel error, will reconnect...');
+              if (reconnectTimeout) clearTimeout(reconnectTimeout);
+              reconnectTimeout = setTimeout(() => {
+                if (isMounted) setupChannel();
+              }, 2000);
+            }
+          });
+      };
+
+      setupChannel();
+
+      // Fallback polling every 5 seconds as safety net
+      // This ensures balance updates even if Realtime has issues
+      pollingInterval = setInterval(async () => {
+        if (!isMounted) return;
+        
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('balance, demo_balance, is_demo_mode')
+          .eq('user_id', user.id)
+          .single();
+
+        if (profile && isMounted) {
+          // Only update if values changed
+          setRealBalance(prev => {
+            if (prev !== profile.balance) {
+              console.log('[useDemoMode] Polling detected balance change:', prev, '->', profile.balance);
+              setBalanceUpdating(true);
+              setTimeout(() => setBalanceUpdating(false), 500);
+              return profile.balance || 0;
+            }
+            return prev;
+          });
+          setDemoBalance(prev => {
+            if (prev !== profile.demo_balance) {
+              console.log('[useDemoMode] Polling detected demo_balance change:', prev, '->', profile.demo_balance);
+              setBalanceUpdating(true);
+              setTimeout(() => setBalanceUpdating(false), 500);
+              return profile.demo_balance || 10000;
+            }
+            return prev;
+          });
+          setIsDemoMode(prev => {
+            if (prev !== profile.is_demo_mode) {
+              return profile.is_demo_mode ?? true;
+            }
+            return prev;
+          });
+        }
+      }, 5000);
     };
 
     init();
@@ -99,6 +159,12 @@ export const useDemoMode = () => {
       isMounted = false;
       if (channel) {
         supabase.removeChannel(channel);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
       }
     };
   }, [fetchBalances]);
