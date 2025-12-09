@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
 
 type Currency = 'BRL' | 'USD';
 
@@ -6,7 +7,11 @@ interface CurrencyContextType {
   currency: Currency;
   symbol: string;
   formatCurrency: (value: number) => string;
+  formatBalance: (balanceInBRL: number) => string;
+  convertBalance: (balanceInBRL: number) => number;
   setCurrency: (currency: Currency) => void;
+  exchangeRate: number;
+  isLoadingRate: boolean;
 }
 
 const CurrencyContext = createContext<CurrencyContextType | undefined>(undefined);
@@ -24,6 +29,8 @@ interface CurrencyProviderProps {
 }
 
 export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
+  const { rate, isLoading: isLoadingRate, convertBRLtoUSD } = useExchangeRate();
+  
   const [currency, setCurrencyState] = useState<Currency>(() => {
     // Verificar se há preferência manual salva
     const stored = localStorage.getItem('app_currency');
@@ -45,16 +52,41 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
 
   const symbol = currency === 'BRL' ? 'R$' : '$';
 
-  const formatCurrency = (value: number): string => {
+  // Converte um valor em BRL para a moeda selecionada
+  const convertBalance = useCallback((balanceInBRL: number): number => {
+    if (currency === 'BRL') {
+      return balanceInBRL;
+    }
+    // Converter BRL para USD usando a cotação atual
+    return convertBRLtoUSD(balanceInBRL);
+  }, [currency, convertBRLtoUSD]);
+
+  // Formata um valor genérico na moeda selecionada
+  const formatCurrency = useCallback((value: number): string => {
     if (currency === 'BRL') {
       return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     } else {
       return `$ ${value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     }
-  };
+  }, [currency]);
+
+  // Formata um saldo (converte de BRL e formata)
+  const formatBalance = useCallback((balanceInBRL: number): string => {
+    const convertedValue = convertBalance(balanceInBRL);
+    return formatCurrency(convertedValue);
+  }, [convertBalance, formatCurrency]);
 
   return (
-    <CurrencyContext.Provider value={{ currency, symbol, formatCurrency, setCurrency }}>
+    <CurrencyContext.Provider value={{ 
+      currency, 
+      symbol, 
+      formatCurrency, 
+      formatBalance,
+      convertBalance,
+      setCurrency,
+      exchangeRate: rate,
+      isLoadingRate
+    }}>
       {children}
     </CurrencyContext.Provider>
   );

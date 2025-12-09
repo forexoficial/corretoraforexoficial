@@ -28,7 +28,7 @@ interface MobileTradingHeaderProps {
 
 export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps) {
   const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+  const { formatBalance } = useCurrency();
   const { customization } = usePlatformCustomization();
   const { isDemoMode, currentBalance, balanceUpdating, toggleDemoMode } = useDemoMode();
   const { user } = useAuth();
@@ -124,7 +124,7 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
             </DropdownMenu>
 
             <div className={`text-base font-bold leading-tight ${!isDemoMode ? 'text-green-500' : ''} ${balanceUpdating ? 'animate-pulse' : ''} transition-all duration-300`}>
-              {formatCurrency(currentBalance)}
+              {formatBalance(currentBalance)}
             </div>
           </div>
         </div>
