@@ -121,11 +121,11 @@ export const TradeControls = ({
       </div>
 
       {/* Duration */}
-      <div className="relative border border-border rounded-lg p-1.5 pt-3">
+      <div className="relative border border-border rounded-lg p-1 pt-2.5">
         <span className="absolute -top-2 left-3 px-1.5 bg-[hsl(var(--panel-bg))] text-[9px] text-muted-foreground uppercase">
           {t("time", "Tempo")}
         </span>
-        <div className="flex items-center justify-center gap-2.5 mb-0.5">
+        <div className="flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="icon"
@@ -133,11 +133,11 @@ export const TradeControls = ({
               const currentIndex = durations.indexOf(duration);
               if (currentIndex > 0) setDuration(durations[currentIndex - 1]);
             }}
-            className="h-6 w-6 rounded-full"
+            className="h-5 w-5 rounded-full"
           >
-            <Minus className="w-2.5 h-2.5" />
+            <Minus className="w-2 h-2" />
           </Button>
-          <div className="text-lg font-bold w-12 text-center">{duration}M</div>
+          <div className="text-base font-bold w-10 text-center">{duration}M</div>
           <Button
             variant="outline"
             size="icon"
@@ -145,29 +145,29 @@ export const TradeControls = ({
               const currentIndex = durations.indexOf(duration);
               if (currentIndex < durations.length - 1) setDuration(durations[currentIndex + 1]);
             }}
-            className="h-6 w-6 rounded-full"
+            className="h-5 w-5 rounded-full"
           >
-            <Plus className="w-2.5 h-2.5" />
+            <Plus className="w-2 h-2" />
           </Button>
         </div>
-        <div className="text-[9px] text-center text-green-500 uppercase font-semibold">
+        <div className="text-[8px] text-center text-green-500 uppercase font-semibold">
           {t("switch_time", "Tempo de Comutação")}
         </div>
       </div>
 
       {/* Amount */}
-      <div className="relative border border-border rounded-lg p-1.5 pt-3">
+      <div className="relative border border-border rounded-lg p-1 pt-2.5">
         <span className="absolute -top-2 left-3 px-1.5 bg-[hsl(var(--panel-bg))] text-[9px] text-muted-foreground uppercase">
           {t("investment", "Investimento")}
         </span>
-        <div className="flex items-center justify-center gap-2.5 mb-0.5">
+        <div className="flex items-center justify-center gap-2">
           <Button
             variant="outline"
             size="icon"
             onClick={() => handleAmountChange(-1)}
-            className="h-6 w-6 rounded-full"
+            className="h-5 w-5 rounded-full"
           >
-            <Minus className="w-2.5 h-2.5" />
+            <Minus className="w-2 h-2" />
           </Button>
           {isEditingAmount ? (
             <input
@@ -177,15 +177,15 @@ export const TradeControls = ({
               onChange={handleAmountInputChange}
               onBlur={handleAmountInputBlur}
               onKeyDown={handleAmountInputKeyDown}
-              className="text-lg font-bold w-20 text-center bg-transparent border-b border-primary focus:outline-none"
+              className="text-base font-bold w-16 text-center bg-transparent border-b border-primary focus:outline-none"
             />
           ) : (
             <div 
               className="flex items-baseline gap-1 cursor-text hover:text-primary transition-colors"
               onClick={handleAmountClick}
             >
-              <span className="text-[10px] text-muted-foreground font-normal">{symbol}</span>
-              <span className="text-lg font-bold">
+              <span className="text-[9px] text-muted-foreground font-normal">{symbol}</span>
+              <span className="text-base font-bold">
                 {formatAmount(amount)}
               </span>
             </div>
@@ -194,42 +194,42 @@ export const TradeControls = ({
             variant="outline"
             size="icon"
             onClick={() => handleAmountChange(1)}
-            className="h-6 w-6 rounded-full"
+            className="h-5 w-5 rounded-full"
           >
-            <Plus className="w-2.5 h-2.5" />
+            <Plus className="w-2 h-2" />
           </Button>
         </div>
-        <div className="text-[9px] text-center text-green-500 uppercase font-semibold">
+        <div className="text-[8px] text-center text-green-500 uppercase font-semibold">
           {t("trade", "Trocar")}
         </div>
       </div>
 
       {/* Payout Info */}
-      <div className="relative overflow-hidden rounded-lg border border-success/30 bg-gradient-to-br from-success/10 via-success/5 to-transparent p-2.5 space-y-1.5">
-        <div className="absolute top-0 right-0 w-16 h-16 bg-success/5 rounded-full blur-xl -translate-y-6 translate-x-6"></div>
+      <div className="relative overflow-hidden rounded-lg border border-success/30 bg-gradient-to-br from-success/10 via-success/5 to-transparent p-2 space-y-1">
+        <div className="absolute top-0 right-0 w-12 h-12 bg-success/5 rounded-full blur-xl -translate-y-4 translate-x-4"></div>
         
         <div className="relative">
-          <div className="text-[9px] text-muted-foreground uppercase tracking-wider mb-0.5">
+          <div className="text-[8px] text-muted-foreground uppercase tracking-wider">
             {t("potential_return", "Retorno Potencial")}
           </div>
           
-          <div className="flex items-baseline gap-1.5 mb-1">
-            <div className="text-lg font-bold text-success">
+          <div className="flex items-baseline gap-1.5">
+            <div className="text-base font-bold text-success">
               {formatCurrency(parseFloat(totalPayout))}
             </div>
-            <div className="text-[9px] font-semibold text-success/80 bg-success/10 px-1.5 py-0.5 rounded-full">
+            <div className="text-[8px] font-semibold text-success/80 bg-success/10 px-1 py-0.5 rounded-full">
               +{selectedAsset.payout_percentage}%
             </div>
           </div>
           
-          <div className="flex items-center justify-between text-[10px]">
+          <div className="flex items-center justify-between text-[9px]">
             <span className="text-muted-foreground">{t("profit", "Lucro")}:</span>
             <span className="font-bold text-success">
               +{formatCurrency(parseFloat(payout))}
             </span>
           </div>
           
-          <div className="flex items-center justify-between text-[10px] mt-0.5 pt-1 border-t border-success/20">
+          <div className="flex items-center justify-between text-[9px] pt-0.5 border-t border-success/20">
             <span className="text-muted-foreground">{t("investment", "Investimento")}:</span>
             <span className="font-medium text-foreground/70">
               {formatCurrency(amount)}
