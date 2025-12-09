@@ -7,6 +7,7 @@ import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { useCreateTrade } from "../hooks/useCreateTrade";
 import { useTradeContext } from "../context/TradeContext";
 import { useCurrency } from "@/hooks/useCurrency";
+import { ActiveTradeResult } from "./ActiveTradeResult";
 import type { Asset } from "../types/trade.types";
 
 interface TradeControlsProps {
@@ -321,6 +322,9 @@ export const TradeControls = ({
           <span className="relative z-10">{t("withdrawal", "Retirada")}</span>
         </Button>
       </div>
+
+      {/* Active Trade Result Section */}
+      <ActiveTradeResult currentPrice={currentPrice} />
     </div>
   );
 };
