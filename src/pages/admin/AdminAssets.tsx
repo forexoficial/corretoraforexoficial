@@ -1,11 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog,
@@ -38,6 +38,10 @@ export default function AdminAssets() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
+  const [iconFile, setIconFile] = useState<File | null>(null);
+  const [iconPreview, setIconPreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     name: "",
     symbol: "",
@@ -65,16 +69,66 @@ export default function AdminAssets() {
     setLoading(false);
   };
 
+  const handleIconSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Selecione apenas arquivos de imagem");
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    setIconFile(file);
+    setIconPreview(URL.createObjectURL(file));
+  };
+
+  const uploadIcon = async (): Promise<string | null> => {
+    if (!iconFile) return formData.icon_url || null;
+
+    setUploading(true);
+    try {
+      const fileExt = iconFile.name.split(".").pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const filePath = `assets/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("popup-images")
+        .upload(filePath, iconFile);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("popup-images")
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Erro ao fazer upload do ícone");
+      return null;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.name || !formData.symbol) {
       toast.error("Preencha todos os campos obrigatórios");
       return;
     }
 
+    const iconUrl = await uploadIcon();
+    const dataToSave = { ...formData, icon_url: iconUrl };
+
     if (editingAsset) {
       const { error } = await supabase
         .from("assets")
-        .update(formData)
+        .update(dataToSave)
         .eq("id", editingAsset.id);
 
       if (error) {
@@ -83,7 +137,7 @@ export default function AdminAssets() {
       }
       toast.success("Ativo atualizado com sucesso!");
     } else {
-      const { error } = await supabase.from("assets").insert(formData);
+      const { error } = await supabase.from("assets").insert(dataToSave);
 
       if (error) {
         toast.error("Erro ao criar ativo");
@@ -136,11 +190,15 @@ export default function AdminAssets() {
       payout_percentage: asset.payout_percentage,
       is_active: asset.is_active,
     });
+    setIconFile(null);
+    setIconPreview(asset.icon_url || null);
     setDialogOpen(true);
   };
 
   const resetForm = () => {
     setEditingAsset(null);
+    setIconFile(null);
+    setIconPreview(null);
     setFormData({
       name: "",
       symbol: "",
@@ -208,15 +266,47 @@ export default function AdminAssets() {
                   />
                 </div>
                 <div className="space-y-1 md:space-y-2">
-                  <Label className="text-xs md:text-sm">URL do Ícone</Label>
-                  <Input
-                    value={formData.icon_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, icon_url: e.target.value })
-                    }
-                    placeholder="https://..."
-                    className="h-9 md:h-10 text-sm"
+                  <Label className="text-xs md:text-sm">Ícone</Label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleIconSelect}
+                    className="hidden"
                   />
+                  {iconPreview ? (
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={iconPreview}
+                        alt="Preview"
+                        className="h-12 w-12 rounded-lg object-contain bg-muted border"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setIconFile(null);
+                          setIconPreview(null);
+                          setFormData({ ...formData, icon_url: "" });
+                        }}
+                        className="h-8"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Remover
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-9 md:h-10"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Selecionar Ícone
+                    </Button>
+                  )}
                 </div>
                 <div className="space-y-1 md:space-y-2">
                   <Label className="text-xs md:text-sm">Payout (%)</Label>
@@ -241,8 +331,13 @@ export default function AdminAssets() {
                     }
                   />
                 </div>
-                <Button onClick={handleSave} className="w-full h-9 md:h-10 text-sm">
-                  {editingAsset ? "Atualizar" : "Criar"}
+                <Button onClick={handleSave} disabled={uploading} className="w-full h-9 md:h-10 text-sm">
+                  {uploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : editingAsset ? "Atualizar" : "Criar"}
                 </Button>
               </div>
             </DialogContent>
