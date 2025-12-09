@@ -131,8 +131,11 @@ export function TradingViewChart({
       return Math.max(400, windowDimensions.height - 160);
     }
     if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
-      // Desktop responsive: use available viewport height
-      return Math.max(400, windowDimensions.height - 320);
+      // Desktop responsive: fill container height (use containerDimensions if available, fallback to viewport calculation)
+      if (containerDimensions.height > 0) {
+        return containerDimensions.height;
+      }
+      return Math.max(400, windowDimensions.height - 180);
     }
     
     // Fixed height mode
