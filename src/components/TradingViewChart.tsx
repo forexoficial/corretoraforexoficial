@@ -91,6 +91,22 @@ export function TradingViewChart({
   // Track container dimensions with ResizeObserver
   const [containerDimensions, setContainerDimensions] = useState({ width: 0, height: 0 });
   
+  // Track window dimensions for responsive recalculation
+  const [windowDimensions, setWindowDimensions] = useState({ 
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200, 
+    height: typeof window !== 'undefined' ? window.innerHeight : 800 
+  });
+  
+  // Listen for window resize to update dimensions
+  useEffect(() => {
+    const handleWindowResize = () => {
+      setWindowDimensions({ width: window.innerWidth, height: window.innerHeight });
+    };
+    
+    window.addEventListener('resize', handleWindowResize);
+    return () => window.removeEventListener('resize', handleWindowResize);
+  }, []);
+  
   // Check if responsive mode is enabled
   const isResponsiveMode = useMemo(() => {
     if (!appearanceSettings) return { desktop: false, mobile: true, fullscreen: true };
@@ -108,15 +124,15 @@ export function TradingViewChart({
     // If responsive mode is enabled, calculate based on viewport
     if (isMobile && isResponsiveMode.mobile) {
       // Mobile: use viewport height minus header and controls
-      return Math.max(300, window.innerHeight - 280);
+      return Math.max(300, windowDimensions.height - 280);
     }
     if (isFullscreen && isResponsiveMode.fullscreen) {
       // Fullscreen: use most of the viewport
-      return Math.max(400, window.innerHeight - 160);
+      return Math.max(400, windowDimensions.height - 160);
     }
     if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
       // Desktop responsive: use available viewport height
-      return Math.max(400, window.innerHeight - 320);
+      return Math.max(400, windowDimensions.height - 320);
     }
     
     // Fixed height mode
@@ -127,7 +143,7 @@ export function TradingViewChart({
       return appearanceSettings.chart_height_fullscreen || 800;
     }
     return appearanceSettings.chart_height_desktop || height;
-  }, [isMobile, isFullscreen, appearanceSettings, height, isResponsiveMode]);
+  }, [isMobile, isFullscreen, appearanceSettings, height, isResponsiveMode, windowDimensions.height]);
 
   // Calculate width percentage
   const widthPercentage = useMemo(() => {
@@ -1637,14 +1653,14 @@ export function TradingViewChart({
     
     // Always set a concrete height to ensure proper sizing
     if (useResponsive) {
-      // Calculate dynamic height based on viewport
+      // Calculate dynamic height based on tracked window dimensions (reactive)
       let dynamicHeight: number;
       if (isMobile) {
-        dynamicHeight = Math.max(300, window.innerHeight - 280);
+        dynamicHeight = Math.max(300, windowDimensions.height - 280);
       } else if (isFullscreen) {
-        dynamicHeight = Math.max(400, window.innerHeight - 160);
+        dynamicHeight = Math.max(400, windowDimensions.height - 160);
       } else {
-        dynamicHeight = Math.max(400, window.innerHeight - 320);
+        dynamicHeight = Math.max(400, windowDimensions.height - 320);
       }
       style.height = `${dynamicHeight}px`;
       style.minHeight = isMobile ? '300px' : '400px';
@@ -1658,7 +1674,7 @@ export function TradingViewChart({
     }
     
     return style;
-  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, isFullscreen, height]);
+  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, isFullscreen, height, windowDimensions.height]);
 
   return (
     <div className="relative" style={containerStyle}>
