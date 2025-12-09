@@ -73,20 +73,16 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
         </div>
       </div>
 
-      {/* P&L Card */}
-      <div className={`rounded-lg p-3 mb-3 ${
-        isWinning 
-          ? 'bg-success/10 border border-success/30' 
-          : 'bg-destructive/10 border border-destructive/30'
-      }`}>
+      {/* P&L Card - Shows Potential Return */}
+      <div className="rounded-lg p-3 mb-3 bg-success/10 border border-success/30">
         <div className="text-[10px] text-muted-foreground uppercase mb-1">
           {t("current_pnl", "P&L Atual")}
         </div>
-        <div className={`text-xl font-bold ${isWinning ? 'text-success' : 'text-destructive'}`}>
-          {isWinning ? '+' : ''}{formatCurrency(currentPnL)}
+        <div className="text-xl font-bold text-success">
+          +{formatCurrency(potentialProfit)}
         </div>
-        <div className={`text-xs ${isWinning ? 'text-success/70' : 'text-destructive/70'}`}>
-          {isWinning ? '+' : ''}{pnlPercentage.toFixed(0)}%
+        <div className="text-xs text-success/70">
+          +{payoutPercentage.toFixed(0)}%
         </div>
       </div>
 
