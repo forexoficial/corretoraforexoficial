@@ -615,14 +615,18 @@ export function TradingViewChart({
           // Calculate height based on mode
           let newHeight: number;
           if (useResponsive) {
-            // For responsive mode, calculate based on viewport with configurable offsets
             if (isMobile) {
               newHeight = Math.max(300, window.innerHeight - offsetMobile);
             } else if (isFullscreen) {
               newHeight = Math.max(400, window.innerHeight - offsetFullscreen);
             } else {
-              // Desktop: use configurable offset
-              newHeight = Math.max(400, window.innerHeight - offsetDesktop);
+              // Desktop: use parent container height (flex-based)
+              const parentHeight = parent?.clientHeight || container.clientHeight;
+              if (parentHeight > 0) {
+                newHeight = parentHeight;
+              } else {
+                newHeight = Math.max(400, window.innerHeight - offsetDesktop);
+              }
             }
           } else {
             newHeight = chartHeight;
@@ -1659,16 +1663,25 @@ export function TradingViewChart({
       margin: widthPercentage < 100 ? '0 auto' : undefined,
     };
     
-    // Always set a concrete height to ensure proper sizing
-    if (useResponsive) {
-      // Calculate dynamic height based on tracked window dimensions (reactive)
+    // Get configurable offsets from admin settings
+    const offsetMobile = appearanceSettings?.chart_height_offset_mobile ?? 160;
+    const offsetFullscreen = appearanceSettings?.chart_height_offset_fullscreen ?? 96;
+    const offsetDesktop = appearanceSettings?.chart_height_offset_desktop ?? 180;
+    
+    // For desktop in responsive mode, use 100% height to fill flex container
+    if (!isMobile && !isFullscreen && useResponsive) {
+      style.height = '100%';
+      style.minHeight = '400px';
+      style.overflow = 'hidden';
+    } else if (useResponsive) {
+      // Calculate dynamic height for mobile/fullscreen
       let dynamicHeight: number;
       if (isMobile) {
-        dynamicHeight = Math.max(300, windowDimensions.height - 280);
+        dynamicHeight = Math.max(300, windowDimensions.height - offsetMobile);
       } else if (isFullscreen) {
-        dynamicHeight = Math.max(400, windowDimensions.height - 160);
+        dynamicHeight = Math.max(400, windowDimensions.height - offsetFullscreen);
       } else {
-        dynamicHeight = Math.max(400, windowDimensions.height - 320);
+        dynamicHeight = Math.max(400, windowDimensions.height - offsetDesktop);
       }
       style.height = `${dynamicHeight}px`;
       style.minHeight = isMobile ? '300px' : '400px';
@@ -1682,7 +1695,7 @@ export function TradingViewChart({
     }
     
     return style;
-  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, isFullscreen, height, windowDimensions.height]);
+  }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, isFullscreen, height, windowDimensions.height, appearanceSettings]);
 
   return (
     <div className="relative" style={containerStyle}>
