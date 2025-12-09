@@ -121,21 +121,26 @@ export function TradingViewChart({
   const effectiveHeight = useMemo(() => {
     if (!appearanceSettings) return height;
     
+    // Get configurable offsets from admin settings (with defaults)
+    const offsetMobile = appearanceSettings.chart_height_offset_mobile ?? 160;
+    const offsetFullscreen = appearanceSettings.chart_height_offset_fullscreen ?? 96;
+    const offsetDesktop = appearanceSettings.chart_height_offset_desktop ?? 180;
+    
     // If responsive mode is enabled, calculate based on viewport
     if (isMobile && isResponsiveMode.mobile) {
-      // Mobile: use viewport height minus header and controls
-      return Math.max(300, windowDimensions.height - 280);
+      // Mobile: use viewport height minus configurable offset
+      return Math.max(300, windowDimensions.height - offsetMobile);
     }
     if (isFullscreen && isResponsiveMode.fullscreen) {
-      // Fullscreen: use most of the viewport
-      return Math.max(400, windowDimensions.height - 160);
+      // Fullscreen: use viewport minus configurable offset
+      return Math.max(400, windowDimensions.height - offsetFullscreen);
     }
     if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
-      // Desktop responsive: fill container height (use containerDimensions if available, fallback to viewport calculation)
+      // Desktop responsive: fill container height or use viewport minus configurable offset
       if (containerDimensions.height > 0) {
         return containerDimensions.height;
       }
-      return Math.max(400, windowDimensions.height - 180);
+      return Math.max(400, windowDimensions.height - offsetDesktop);
     }
     
     // Fixed height mode
@@ -146,7 +151,7 @@ export function TradingViewChart({
       return appearanceSettings.chart_height_fullscreen || 800;
     }
     return appearanceSettings.chart_height_desktop || height;
-  }, [isMobile, isFullscreen, appearanceSettings, height, isResponsiveMode, windowDimensions.height]);
+  }, [isMobile, isFullscreen, appearanceSettings, height, isResponsiveMode, windowDimensions.height, containerDimensions.height]);
 
   // Calculate width percentage
   const widthPercentage = useMemo(() => {
