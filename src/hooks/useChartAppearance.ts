@@ -80,6 +80,10 @@ interface ChartAppearanceSettings {
   chart_responsive_desktop: boolean;
   chart_responsive_mobile: boolean;
   chart_responsive_fullscreen: boolean;
+  // Responsive height offsets
+  chart_height_offset_desktop: number;
+  chart_height_offset_mobile: number;
+  chart_height_offset_fullscreen: number;
   // TradingView attribution
   show_tradingview_logo: boolean;
 }

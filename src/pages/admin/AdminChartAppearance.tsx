@@ -87,6 +87,10 @@ interface ChartAppearanceSettings {
   chart_responsive_desktop: boolean;
   chart_responsive_mobile: boolean;
   chart_responsive_fullscreen: boolean;
+  // Responsive height offsets
+  chart_height_offset_desktop: number;
+  chart_height_offset_mobile: number;
+  chart_height_offset_fullscreen: number;
   // TradingView attribution
   show_tradingview_logo: boolean;
 }
@@ -167,6 +171,10 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   chart_responsive_desktop: false,
   chart_responsive_mobile: true,
   chart_responsive_fullscreen: true,
+  // Responsive height offsets defaults
+  chart_height_offset_desktop: 180,
+  chart_height_offset_mobile: 160,
+  chart_height_offset_fullscreen: 96,
   // TradingView attribution
   show_tradingview_logo: false,
 };
@@ -1611,10 +1619,38 @@ export default function AdminChartAppearance() {
             </div>
             
             {settings.chart_responsive_desktop ? (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  ✨ <strong>Modo Responsivo Ativo:</strong> O gráfico ocupará automaticamente todo o espaço disponível no container, adaptando-se ao tamanho da tela do usuário.
-                </p>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    ✨ <strong>Modo Responsivo Ativo:</strong> O gráfico ocupará automaticamente todo o espaço disponível no container, adaptando-se ao tamanho da tela do usuário.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="chart_height_offset_desktop">Offset de Altura (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      id="chart_height_offset_desktop"
+                      type="range"
+                      min="50"
+                      max="400"
+                      step="10"
+                      value={settings.chart_height_offset_desktop ?? 180}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_desktop: parseInt(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={settings.chart_height_offset_desktop ?? 180}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_desktop: parseInt(e.target.value) || 180 })}
+                      className="w-20"
+                      min="50"
+                      max="400"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Pixels subtraídos da altura do viewport para calcular a altura do gráfico. Valores menores = gráfico maior.
+                  </p>
+                </div>
               </div>
             ) : (
               <>
@@ -1699,10 +1735,38 @@ export default function AdminChartAppearance() {
             </div>
             
             {(settings.chart_responsive_mobile ?? true) ? (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  ✨ <strong>Modo Responsivo Ativo:</strong> O gráfico ocupará automaticamente todo o espaço disponível, adaptando-se a diferentes tamanhos de tela de dispositivos móveis.
-                </p>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    ✨ <strong>Modo Responsivo Ativo:</strong> O gráfico ocupará automaticamente todo o espaço disponível, adaptando-se a diferentes tamanhos de tela de dispositivos móveis.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="chart_height_offset_mobile">Offset de Altura (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      id="chart_height_offset_mobile"
+                      type="range"
+                      min="100"
+                      max="400"
+                      step="10"
+                      value={settings.chart_height_offset_mobile ?? 160}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_mobile: parseInt(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={settings.chart_height_offset_mobile ?? 160}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_mobile: parseInt(e.target.value) || 160 })}
+                      className="w-20"
+                      min="100"
+                      max="400"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Pixels subtraídos da altura do viewport para calcular a altura do gráfico mobile.
+                  </p>
+                </div>
               </div>
             ) : (
               <>
@@ -1791,10 +1855,38 @@ export default function AdminChartAppearance() {
             </div>
             
             {(settings.chart_responsive_fullscreen ?? true) ? (
-              <div className="p-4 bg-muted/50 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  ✨ <strong>Modo Responsivo Ativo:</strong> O gráfico ocupará automaticamente toda a área disponível da tela cheia.
-                </p>
+              <div className="space-y-4">
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    ✨ <strong>Modo Responsivo Ativo:</strong> O gráfico ocupará automaticamente toda a área disponível da tela cheia.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="chart_height_offset_fullscreen">Offset de Altura (px)</Label>
+                  <div className="flex items-center gap-4">
+                    <input
+                      id="chart_height_offset_fullscreen"
+                      type="range"
+                      min="50"
+                      max="300"
+                      step="10"
+                      value={settings.chart_height_offset_fullscreen ?? 96}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_fullscreen: parseInt(e.target.value) })}
+                      className="flex-1"
+                    />
+                    <Input
+                      type="number"
+                      value={settings.chart_height_offset_fullscreen ?? 96}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_fullscreen: parseInt(e.target.value) || 96 })}
+                      className="w-20"
+                      min="50"
+                      max="300"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Pixels subtraídos da altura do viewport em tela cheia.
+                  </p>
+                </div>
               </div>
             ) : (
               <>
