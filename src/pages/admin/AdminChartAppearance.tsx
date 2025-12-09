@@ -65,6 +65,8 @@ interface ChartAppearanceSettings {
   map_grid_opacity: number;
   map_image_url: string | null;
   map_image_url_dark: string | null;
+  map_image_url_mobile: string | null;
+  map_image_url_mobile_dark: string | null;
   watermark_visible: boolean;
   watermark_text: string | null;
   trade_line_call_color: string;
@@ -149,6 +151,8 @@ const defaultSettings: Omit<ChartAppearanceSettings, 'id'> = {
   map_grid_opacity: 0.4,
   map_image_url: null,
   map_image_url_dark: null,
+  map_image_url_mobile: null,
+  map_image_url_mobile_dark: null,
   watermark_visible: false,
   watermark_text: null,
   trade_line_call_color: '#22c55e',
@@ -185,6 +189,8 @@ export default function AdminChartAppearance() {
   const [saving, setSaving] = useState(false);
   const [uploadingImageLight, setUploadingImageLight] = useState(false);
   const [uploadingImageDark, setUploadingImageDark] = useState(false);
+  const [uploadingImageMobileLight, setUploadingImageMobileLight] = useState(false);
+  const [uploadingImageMobileDark, setUploadingImageMobileDark] = useState(false);
 
   useEffect(() => {
     loadSettings();
@@ -207,7 +213,7 @@ export default function AdminChartAppearance() {
     }
   };
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, version: 'light' | 'dark') => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, version: 'light' | 'dark' | 'mobile-light' | 'mobile-dark') => {
     const file = e.target.files?.[0];
     if (!file || !settings) return;
 
@@ -221,13 +227,28 @@ export default function AdminChartAppearance() {
       return;
     }
 
-    const setUploading = version === 'light' ? setUploadingImageLight : setUploadingImageDark;
-    const urlField = version === 'light' ? 'map_image_url' : 'map_image_url_dark';
+    const uploadStateMap = {
+      'light': setUploadingImageLight,
+      'dark': setUploadingImageDark,
+      'mobile-light': setUploadingImageMobileLight,
+      'mobile-dark': setUploadingImageMobileDark,
+    };
+    
+    const urlFieldMap: Record<string, keyof ChartAppearanceSettings> = {
+      'light': 'map_image_url',
+      'dark': 'map_image_url_dark',
+      'mobile-light': 'map_image_url_mobile',
+      'mobile-dark': 'map_image_url_mobile_dark',
+    };
+    
+    const setUploading = uploadStateMap[version];
+    const urlField = urlFieldMap[version];
     
     setUploading(true);
     try {
-      if (settings[urlField]) {
-        const oldPath = settings[urlField]!.split('/').pop();
+      const currentUrl = settings[urlField] as string | null;
+      if (currentUrl) {
+        const oldPath = currentUrl.split('/').pop();
         if (oldPath) {
           await supabase.storage.from('chart-backgrounds').remove([oldPath]);
         }
@@ -247,7 +268,14 @@ export default function AdminChartAppearance() {
         .getPublicUrl(fileName);
 
       setSettings({ ...settings, [urlField]: publicUrl });
-      toast.success(`Imagem ${version === 'light' ? 'clara' : 'escura'} enviada com sucesso!`);
+      
+      const labelMap = {
+        'light': 'clara (desktop)',
+        'dark': 'escura (desktop)',
+        'mobile-light': 'clara (mobile)',
+        'mobile-dark': 'escura (mobile)',
+      };
+      toast.success(`Imagem ${labelMap[version]} enviada com sucesso!`);
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Erro ao enviar imagem');
@@ -256,11 +284,18 @@ export default function AdminChartAppearance() {
     }
   };
 
-  const handleRemoveImage = async (version: 'light' | 'dark') => {
+  const handleRemoveImage = async (version: 'light' | 'dark' | 'mobile-light' | 'mobile-dark') => {
     if (!settings) return;
     
-    const urlField = version === 'light' ? 'map_image_url' : 'map_image_url_dark';
-    const imageUrl = settings[urlField];
+    const urlFieldMap: Record<string, keyof ChartAppearanceSettings> = {
+      'light': 'map_image_url',
+      'dark': 'map_image_url_dark',
+      'mobile-light': 'map_image_url_mobile',
+      'mobile-dark': 'map_image_url_mobile_dark',
+    };
+    
+    const urlField = urlFieldMap[version];
+    const imageUrl = settings[urlField] as string | null;
     
     if (!imageUrl) return;
 
@@ -271,7 +306,14 @@ export default function AdminChartAppearance() {
       }
 
       setSettings({ ...settings, [urlField]: null });
-      toast.success(`Imagem ${version === 'light' ? 'clara' : 'escura'} removida com sucesso!`);
+      
+      const labelMap = {
+        'light': 'clara (desktop)',
+        'dark': 'escura (desktop)',
+        'mobile-light': 'clara (mobile)',
+        'mobile-dark': 'escura (mobile)',
+      };
+      toast.success(`Imagem ${labelMap[version]} removida com sucesso!`);
     } catch (error) {
       console.error('Error removing image:', error);
       toast.error('Erro ao remover imagem');
@@ -1411,6 +1453,162 @@ export default function AdminChartAppearance() {
                     className="hidden"
                     disabled={uploadingImageDark}
                   />
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Mobile Background Images */}
+              <div className="space-y-4">
+                <h3 className="text-sm font-semibold flex items-center gap-2">
+                  📱 Imagens de Fundo - Mobile
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Imagens específicas para o gráfico na versão mobile (opcional)
+                </p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Mobile Light Version */}
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <span className="text-lg">☀️</span>
+                      Versão Clara (Mobile)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Para fundos escuros no mobile
+                    </p>
+                    
+                    {settings.map_image_url_mobile ? (
+                      <div className="space-y-3">
+                        <div className="relative w-full h-40 border rounded-lg overflow-hidden bg-muted">
+                          <img 
+                            src={settings.map_image_url_mobile} 
+                            alt="Mapa mobile versão clara" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveImage('mobile-light')}
+                            className="flex-1"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Remover
+                          </Button>
+                          <Label htmlFor="map-image-mobile-light-upload" className="flex-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={uploadingImageMobileLight}
+                              className="w-full"
+                              asChild
+                            >
+                              <div>
+                                <Upload className="w-4 h-4 mr-2" />
+                                {uploadingImageMobileLight ? 'Enviando...' : 'Trocar'}
+                              </div>
+                            </Button>
+                          </Label>
+                        </div>
+                      </div>
+                    ) : (
+                      <Label htmlFor="map-image-mobile-light-upload">
+                        <div className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="text-center">
+                            <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              {uploadingImageMobileLight ? 'Enviando...' : 'Clique para upload'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              PNG, JPG, WEBP (max 5MB)
+                            </p>
+                          </div>
+                        </div>
+                      </Label>
+                    )}
+                    
+                    <input
+                      id="map-image-mobile-light-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'mobile-light')}
+                      className="hidden"
+                      disabled={uploadingImageMobileLight}
+                    />
+                  </div>
+
+                  {/* Mobile Dark Version */}
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-2">
+                      <span className="text-lg">🌙</span>
+                      Versão Escura (Mobile)
+                    </Label>
+                    <p className="text-sm text-muted-foreground">
+                      Para fundos claros no mobile
+                    </p>
+                    
+                    {settings.map_image_url_mobile_dark ? (
+                      <div className="space-y-3">
+                        <div className="relative w-full h-40 border rounded-lg overflow-hidden bg-muted">
+                          <img 
+                            src={settings.map_image_url_mobile_dark} 
+                            alt="Mapa mobile versão escura" 
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveImage('mobile-dark')}
+                            className="flex-1"
+                          >
+                            <X className="w-4 h-4 mr-2" />
+                            Remover
+                          </Button>
+                          <Label htmlFor="map-image-mobile-dark-upload" className="flex-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={uploadingImageMobileDark}
+                              className="w-full"
+                              asChild
+                            >
+                              <div>
+                                <Upload className="w-4 h-4 mr-2" />
+                                {uploadingImageMobileDark ? 'Enviando...' : 'Trocar'}
+                              </div>
+                            </Button>
+                          </Label>
+                        </div>
+                      </div>
+                    ) : (
+                      <Label htmlFor="map-image-mobile-dark-upload">
+                        <div className="flex items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                          <div className="text-center">
+                            <Upload className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                            <p className="text-sm text-muted-foreground">
+                              {uploadingImageMobileDark ? 'Enviando...' : 'Clique para upload'}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              PNG, JPG, WEBP (max 5MB)
+                            </p>
+                          </div>
+                        </div>
+                      </Label>
+                    )}
+                    
+                    <input
+                      id="map-image-mobile-dark-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, 'mobile-dark')}
+                      className="hidden"
+                      disabled={uploadingImageMobileDark}
+                    />
+                  </div>
                 </div>
               </div>
               

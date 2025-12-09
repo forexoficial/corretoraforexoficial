@@ -1,3 +1,5 @@
+import { useIsMobile } from "@/hooks/use-mobile";
+
 export function WorldMapBackground({ 
   opacity = 0.08,
   primaryColor = '#6366f1',
@@ -6,6 +8,8 @@ export function WorldMapBackground({
   gridOpacity = 0.4,
   imageUrl = null,
   imageUrlDark = null,
+  imageUrlMobile = null,
+  imageUrlMobileDark = null,
   bgColor = '#0a0a0a'
 }: {
   opacity?: number;
@@ -15,8 +19,12 @@ export function WorldMapBackground({
   gridOpacity?: number;
   imageUrl?: string | null;
   imageUrlDark?: string | null;
+  imageUrlMobile?: string | null;
+  imageUrlMobileDark?: string | null;
   bgColor?: string;
 }) {
+  const isMobile = useIsMobile();
+
   // Determinar se o fundo é claro ou escuro
   const isLightBackground = () => {
     // Remove # e converte hex para RGB
@@ -29,8 +37,28 @@ export function WorldMapBackground({
     return luminance > 0.5;
   };
 
-  // Escolher a imagem correta baseada no fundo
-  const selectedImage = isLightBackground() ? imageUrlDark : imageUrl;
+  // Escolher a imagem correta baseada no dispositivo e fundo
+  const getSelectedImage = () => {
+    const isLight = isLightBackground();
+    
+    if (isMobile) {
+      // Mobile: usar imagens mobile se disponíveis, senão fallback para desktop
+      if (isLight) {
+        return imageUrlMobileDark || imageUrlDark;
+      } else {
+        return imageUrlMobile || imageUrl;
+      }
+    } else {
+      // Desktop: usar imagens desktop
+      if (isLight) {
+        return imageUrlDark;
+      } else {
+        return imageUrl;
+      }
+    }
+  };
+
+  const selectedImage = getSelectedImage();
 
   // Se houver uma imagem, use ela ao invés do SVG
   if (selectedImage) {

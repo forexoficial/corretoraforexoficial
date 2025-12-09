@@ -1711,6 +1711,8 @@ export function TradingViewChart({
           gridOpacity={appearanceSettings.map_grid_opacity}
           imageUrl={appearanceSettings.map_image_url}
           imageUrlDark={appearanceSettings.map_image_url_dark}
+          imageUrlMobile={(appearanceSettings as any).map_image_url_mobile}
+          imageUrlMobileDark={(appearanceSettings as any).map_image_url_mobile_dark}
           bgColor={chartBgColor}
         />
       )}
