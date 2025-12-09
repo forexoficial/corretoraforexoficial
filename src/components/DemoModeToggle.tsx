@@ -26,16 +26,31 @@ export default function DemoModeToggle({
   realBalance,
 }: DemoModeToggleProps) {
   const { t } = useTranslation();
-  const { formatCurrency, symbol, currency } = useCurrency();
+  const { formatBalance, symbol, currency } = useCurrency();
   
   const formatCompact = (value: number): string => {
-    if (value >= 1000000) {
-      return symbol + ' ' + (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    // Converter o saldo para a moeda atual antes de formatar
+    const formattedFull = formatBalance(value);
+    
+    // Para valores grandes, usar formato compacto
+    if (currency === 'BRL') {
+      if (value >= 1000000) {
+        return symbol + ' ' + (value / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+      }
+      if (value >= 100000) {
+        return symbol + ' ' + (value / 1000).toFixed(0) + 'k';
+      }
+    } else {
+      // USD - valores já convertidos
+      const convertedValue = parseFloat(formattedFull.replace(/[^0-9.-]+/g, ''));
+      if (convertedValue >= 1000000) {
+        return symbol + ' ' + (convertedValue / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+      }
+      if (convertedValue >= 100000) {
+        return symbol + ' ' + (convertedValue / 1000).toFixed(0) + 'k';
+      }
     }
-    if (value >= 100000) {
-      return symbol + ' ' + (value / 1000).toFixed(0) + 'k';
-    }
-    return formatCurrency(value);
+    return formattedFull;
   };
   
   return (

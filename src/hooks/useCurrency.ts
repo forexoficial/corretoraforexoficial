@@ -1,7 +1,25 @@
 import { useCurrencyContext } from '@/contexts/CurrencyContext';
 
 export const useCurrency = () => {
-  const { currency, symbol, formatCurrency, setCurrency } = useCurrencyContext();
+  const { 
+    currency, 
+    symbol, 
+    formatCurrency, 
+    formatBalance,
+    convertBalance,
+    setCurrency,
+    exchangeRate,
+    isLoadingRate
+  } = useCurrencyContext();
 
-  return { currency, symbol, formatCurrency, setCurrency };
+  return { 
+    currency, 
+    symbol, 
+    formatCurrency, 
+    formatBalance,
+    convertBalance,
+    setCurrency,
+    exchangeRate,
+    isLoadingRate
+  };
 };
