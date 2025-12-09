@@ -284,11 +284,11 @@ export const TradeControls = ({
         <div className="grid grid-cols-2 gap-2">
           <Button
             variant="secondary"
-            className="h-10 font-bold text-sm rounded-xl relative overflow-hidden
+            className="h-8 font-bold text-xs rounded-xl relative overflow-hidden
                        bg-gradient-to-b from-[#a8a29e] via-[#78716c] to-[#57534e]
                        hover:from-[#78716c] hover:via-[#57534e] hover:to-[#44403c]
                        text-white
-                       shadow-[0_3px_0_0_#57534e,0_6px_10px_-2px_rgba(120,113,108,0.4)]"
+                       shadow-[0_2px_0_0_#57534e,0_4px_8px_-2px_rgba(120,113,108,0.4)]"
             onClick={onShowBoosterMenu}
             disableSound
           >
@@ -296,11 +296,11 @@ export const TradeControls = ({
           </Button>
           <Button
             variant="secondary"
-            className="h-10 font-bold text-sm rounded-xl relative overflow-hidden
+            className="h-8 font-bold text-xs rounded-xl relative overflow-hidden
                        bg-gradient-to-b from-[#a8a29e] via-[#78716c] to-[#57534e]
                        hover:from-[#78716c] hover:via-[#57534e] hover:to-[#44403c]
                        text-white
-                       shadow-[0_3px_0_0_#57534e,0_6px_10px_-2px_rgba(120,113,108,0.4)]"
+                       shadow-[0_2px_0_0_#57534e,0_4px_8px_-2px_rgba(120,113,108,0.4)]"
             onClick={onShowHistory}
             disableSound
           >
@@ -310,16 +310,16 @@ export const TradeControls = ({
 
         {/* Row 3: Withdrawal */}
         <Button
-          className="h-10 w-full font-bold text-sm rounded-xl relative overflow-hidden
+          className="h-8 w-full font-bold text-xs rounded-xl relative overflow-hidden
                      bg-gradient-to-b from-[#fbbf24] via-[#f59e0b] to-[#d97706]
                      hover:from-[#f59e0b] hover:via-[#d97706] hover:to-[#b45309]
                      text-black
-                     shadow-[0_3px_0_0_#d97706,0_6px_10px_-2px_rgba(251,191,36,0.4)]"
+                     shadow-[0_2px_0_0_#d97706,0_4px_8px_-2px_rgba(251,191,36,0.4)]"
           onClick={() => navigate('/withdrawal')}
           disableSound
         >
-          <Banknote className="w-4 h-4 mr-2 relative z-10" />
-          <span className="relative z-10">{t("withdrawal", "Retirada")}</span>
+          <Banknote className="w-3.5 h-3.5 mr-1.5 relative z-10" />
+          <span className="relative z-10">{t("withdrawal", "Saque")}</span>
         </Button>
       </div>
 
