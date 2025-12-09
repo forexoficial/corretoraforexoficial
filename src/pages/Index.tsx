@@ -343,8 +343,8 @@ const Index = () => {
         />
         
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <div className={`flex-1 p-4 overflow-hidden relative flex flex-col ${isFullscreen ? 'pb-4' : 'pb-[100px]'}`}>
-            <div className="relative w-full flex-1 flex flex-col min-h-0">
+          <div className={`flex-1 p-4 overflow-hidden relative flex flex-col ${isFullscreen ? 'pb-4' : 'pb-[140px]'}`}>
+            <div className="relative w-full h-full flex flex-col">
               {/* Chart Controls - Top Left (sempre visível) */}
               <div className="absolute top-4 left-4 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-50 shadow-lg">
                 <button 
@@ -381,20 +381,21 @@ const Index = () => {
                 />
               </div>
               
-              <TradingViewChart
-                assetId={selectedAsset.id}
-                assetName={selectedAsset.name}
-                timeframe={selectedTimeframe}
-                height={isFullscreen ? window.innerHeight - 96 : desktopChartHeight}
-                onAssetChange={setCurrentAssetId}
-                onCurrentPriceUpdate={setCurrentPrice}
-                indicatorSettings={indicatorSettings}
-                drawingTool={drawingTool}
-                onDrawingToolChange={setDrawingTool}
-                onHasDrawingsChange={setHasDrawings}
-                drawingStyle={drawingStyle}
-                priceLineConfig={priceLineConfig}
-              />
+              <div className="flex-1 w-full min-h-0">
+                <TradingViewChart
+                  assetId={selectedAsset.id}
+                  assetName={selectedAsset.name}
+                  timeframe={selectedTimeframe}
+                  onAssetChange={setCurrentAssetId}
+                  onCurrentPriceUpdate={setCurrentPrice}
+                  indicatorSettings={indicatorSettings}
+                  drawingTool={drawingTool}
+                  onDrawingToolChange={setDrawingTool}
+                  onHasDrawingsChange={setHasDrawings}
+                  drawingStyle={drawingStyle}
+                  priceLineConfig={priceLineConfig}
+                />
+              </div>
             </div>
           </div>
           
