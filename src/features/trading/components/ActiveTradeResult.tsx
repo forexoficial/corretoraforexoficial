@@ -36,18 +36,15 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
 
   const entryPrice = activeTrade.entry_price || 0;
   const tradeAmount = activeTrade.amount;
-  const payoutPercentage = activeTrade.payout;
-  const potentialReturn = tradeAmount + (tradeAmount * (payoutPercentage / 100));
-  const potentialProfit = tradeAmount * (payoutPercentage / 100);
+  // O payout armazenado no trade já é o valor do LUCRO em reais, não a porcentagem
+  const potentialProfit = activeTrade.payout;
+  const potentialReturn = tradeAmount + potentialProfit;
+  const payoutPercentage = (potentialProfit / tradeAmount) * 100;
 
   // Calculate P&L based on current price vs entry price
   const priceDiff = currentPrice - entryPrice;
   const isCall = activeTrade.trade_type === 'call';
   const isWinning = isCall ? priceDiff > 0 : priceDiff < 0;
-  
-  // P&L calculation: if winning, show potential profit, if losing show -amount
-  const currentPnL = isWinning ? potentialProfit : -tradeAmount;
-  const pnlPercentage = isWinning ? payoutPercentage : -100;
 
   const formatTime = (ms: number): string => {
     const totalSeconds = Math.floor(ms / 1000);
