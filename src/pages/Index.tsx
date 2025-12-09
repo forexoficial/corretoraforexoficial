@@ -343,7 +343,7 @@ const Index = () => {
         />
         
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <div className="flex-1 p-4 overflow-hidden relative flex flex-col">
+          <div className={`flex-1 p-4 overflow-hidden relative flex flex-col ${isFullscreen ? 'pb-4' : 'pb-[100px]'}`}>
             <div className="relative w-full flex-1 flex flex-col min-h-0">
               {/* Chart Controls - Top Left (sempre visível) */}
               <div className="absolute top-4 left-4 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-50 shadow-lg">
@@ -395,6 +395,34 @@ const Index = () => {
                 drawingStyle={drawingStyle}
                 priceLineConfig={priceLineConfig}
               />
+            </div>
+          </div>
+          
+          <div className="fixed bottom-8 left-0 right-0 border-t border-border bg-card z-20">
+            <div className="flex items-center justify-between px-4 py-1">
+              <h3 className="text-xs font-semibold">{t("recent_trades", "Recent Trades")}</h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsTradesListOpen(!isTradesListOpen)}
+                className="h-6 w-6 p-0"
+              >
+                {isTradesListOpen ? (
+                  <ChevronDown className="h-3 w-3" />
+                ) : (
+                  <ChevronUp className="h-3 w-3" />
+                )}
+              </Button>
+            </div>
+            
+            <div
+              className={`transition-all duration-300 ease-in-out overflow-hidden ${
+                isTradesListOpen ? "max-h-[200px] opacity-100" : "max-h-0 opacity-0"
+              }`}
+            >
+              <div className="overflow-y-auto max-h-[200px]">
+                <RecentTradesList />
+              </div>
             </div>
           </div>
         </div>
