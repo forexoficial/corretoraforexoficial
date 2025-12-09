@@ -74,14 +74,14 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
       </div>
 
       {/* P&L Card - Shows Potential Return */}
-      <div className="rounded-lg p-3 mb-3 bg-success/10 border border-success/30">
-        <div className="text-[10px] text-muted-foreground uppercase mb-1">
+      <div className="rounded-lg p-2 mb-2 bg-success/10 border border-success/30">
+        <div className="text-[8px] text-muted-foreground uppercase">
           {t("current_pnl", "P&L Atual")}
         </div>
-        <div className="text-xl font-bold text-success">
+        <div className="text-base font-bold text-success">
           +{formatCurrency(potentialProfit)}
         </div>
-        <div className="text-xs text-success/70">
+        <div className="text-[9px] text-success/70">
           +{payoutPercentage.toFixed(0)}%
         </div>
       </div>
