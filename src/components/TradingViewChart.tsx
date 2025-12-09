@@ -620,20 +620,21 @@ export function TradingViewChart({
             } else if (isFullscreen) {
               newHeight = Math.max(400, window.innerHeight - offsetFullscreen);
             } else {
-              // Desktop: use parent container height (flex-based)
-              const parentHeight = parent?.clientHeight || container.clientHeight;
-              if (parentHeight > 0) {
-                newHeight = parentHeight;
-              } else {
-                newHeight = Math.max(400, window.innerHeight - offsetDesktop);
-              }
+              // Desktop: ALWAYS use viewport-based calculation
+              // This prevents chart shrinking when loading state changes
+              newHeight = Math.max(400, window.innerHeight - offsetDesktop);
             }
           } else {
             newHeight = chartHeight;
           }
           
-          // Only update if dimensions actually changed
-          if (newWidth > 0 && newHeight > 0) {
+          // Only update if dimensions actually changed significantly (>5px)
+          const currentWidth = chartRef.current.options().width;
+          const currentHeight = chartRef.current.options().height;
+          const widthChanged = Math.abs(newWidth - currentWidth) > 5;
+          const heightChanged = Math.abs(newHeight - currentHeight) > 5;
+          
+          if (newWidth > 0 && newHeight > 0 && (widthChanged || heightChanged)) {
             chartRef.current.applyOptions({
               width: Math.floor(newWidth),
               height: Math.floor(newHeight),
@@ -1668,9 +1669,10 @@ export function TradingViewChart({
     const offsetFullscreen = appearanceSettings?.chart_height_offset_fullscreen ?? 96;
     const offsetDesktop = appearanceSettings?.chart_height_offset_desktop ?? 180;
     
-    // For desktop in responsive mode, use 100% height to fill flex container
+    // For desktop in responsive mode, use calculated height to prevent shrinking after load
     if (!isMobile && !isFullscreen && useResponsive) {
-      style.height = '100%';
+      const calculatedHeight = Math.max(400, windowDimensions.height - offsetDesktop);
+      style.height = `${calculatedHeight}px`;
       style.minHeight = '400px';
       style.overflow = 'hidden';
     } else if (useResponsive) {
