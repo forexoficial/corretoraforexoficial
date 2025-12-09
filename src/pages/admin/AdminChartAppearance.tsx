@@ -1631,7 +1631,7 @@ export default function AdminChartAppearance() {
                     <input
                       id="chart_height_offset_desktop"
                       type="range"
-                      min="50"
+                      min="0"
                       max="400"
                       step="10"
                       value={settings.chart_height_offset_desktop ?? 180}
@@ -1641,9 +1641,9 @@ export default function AdminChartAppearance() {
                     <Input
                       type="number"
                       value={settings.chart_height_offset_desktop ?? 180}
-                      onChange={(e) => setSettings({ ...settings, chart_height_offset_desktop: parseInt(e.target.value) || 180 })}
+                      onChange={(e) => setSettings({ ...settings, chart_height_offset_desktop: parseInt(e.target.value) || 0 })}
                       className="w-20"
-                      min="50"
+                      min="0"
                       max="400"
                     />
                   </div>
