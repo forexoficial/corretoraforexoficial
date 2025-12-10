@@ -189,12 +189,12 @@ export default function AdminLayout() {
               <DialogTitle>Acesso ao Painel Admin</DialogTitle>
             </div>
             <DialogDescription>
-              Digite a senha do painel administrativo para continuar.
+              Digite o PIN do painel administrativo para continuar.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Senha de Acesso</Label>
+              <Label>PIN de Acesso</Label>
               <Input
                 type="password"
                 value={password}
@@ -204,7 +204,7 @@ export default function AdminLayout() {
                     handleVerifyPassword();
                   }
                 }}
-                placeholder="Digite a senha"
+                placeholder="Digite o PIN"
                 disabled={verifyingPassword}
               />
             </div>
@@ -221,7 +221,7 @@ export default function AdminLayout() {
               ) : (
                 <>
                   <Lock className="h-4 w-4 mr-2" />
-                  Verificar Senha
+                  Verificar PIN
                 </>
               )}
             </Button>
