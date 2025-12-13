@@ -1668,16 +1668,30 @@ Copie todos os resultados (INSERTs) e cole no SQL Editor do projeto NOVO.
 
 ## ⚙️ PASSO 4: CONFIGURAR SECRETS
 
-No projeto NOVO, vá em **Settings > Edge Functions** e adicione:
+No projeto NOVO, vá em **Settings > Edge Functions > Secrets** e adicione:
 
-- `SUPABASE_URL` - URL do projeto (ex: https://XXXX.supabase.co)
-- `SUPABASE_ANON_KEY` - Chave anon do projeto
-- `SUPABASE_SERVICE_ROLE_KEY` - Service role key do projeto
-- `STRIPE_SECRET_KEY` - (se usar Stripe)
-- `STRIPE_PUBLISHABLE_KEY` - (se usar Stripe)
-- `VAPID_PUBLIC_KEY` - (se usar notificações push)
-- `VAPID_PRIVATE_KEY` - (se usar notificações push)
-- `ADMIN_PANEL_PASSWORD` - Senha do painel admin
+### ⚠️ IMPORTANTE: Secrets Automáticos vs Manuais
+
+Os seguintes secrets são **AUTOMÁTICOS** e já existem internamente no Supabase (NÃO adicione manualmente):
+- ❌ `SUPABASE_URL` - Já existe automaticamente
+- ❌ `SUPABASE_ANON_KEY` - Já existe automaticamente  
+- ❌ `SUPABASE_SERVICE_ROLE_KEY` - Já existe automaticamente
+- ❌ `SUPABASE_DB_URL` - Já existe automaticamente
+
+### ✅ Secrets que você DEVE adicionar manualmente:
+
+| Secret | Descrição | Quando usar |
+|--------|-----------|-------------|
+| `STRIPE_SECRET_KEY` | Chave secreta do Stripe | Se usar pagamentos Stripe |
+| `STRIPE_PUBLISHABLE_KEY` | Chave pública do Stripe | Se usar pagamentos Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe | Se usar pagamentos Stripe |
+| `VAPID_PUBLIC_KEY` | Chave pública VAPID | Se usar notificações push |
+| `VAPID_PRIVATE_KEY` | Chave privada VAPID | Se usar notificações push |
+| `ADMIN_PANEL_PASSWORD` | Senha do painel admin | Sempre necessário |
+| `COINBASE_API_KEY` | API key Coinbase Commerce | Se usar pagamentos Coinbase |
+| `COINBASE_WEBHOOK_SECRET` | Secret webhook Coinbase | Se usar pagamentos Coinbase |
+
+> **Nota:** A tela de Secrets pode parecer "em branco" mesmo após a criação do projeto. Isso é normal! Os secrets do Supabase existem internamente mas não aparecem na lista.
 
 ---
 
