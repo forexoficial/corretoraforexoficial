@@ -37,14 +37,31 @@ Deno.serve(async (req) => {
       .from('platform_settings')
       .select('value')
       .eq('key', 'admin_panel_password_hash')
-      .single();
+      .maybeSingle();
 
+    // If row doesn't exist, create it
     if (fetchError) {
       console.error('Error fetching password hash:', fetchError);
       return new Response(
         JSON.stringify({ error: 'Failed to verify password' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // If row doesn't exist, create it first
+    if (!settingData) {
+      console.log('admin_panel_password_hash row does not exist, creating...');
+      const { error: insertError } = await supabaseClient
+        .from('platform_settings')
+        .insert({ 
+          key: 'admin_panel_password_hash', 
+          value: '', 
+          description: 'Hash da senha do painel admin' 
+        });
+      
+      if (insertError) {
+        console.error('Error creating password hash row:', insertError);
+      }
     }
 
     let storedHash = settingData?.value;
