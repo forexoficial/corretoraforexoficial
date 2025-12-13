@@ -1733,7 +1733,8 @@ INSERT INTO platform_settings (key, value, description) VALUES
 ('success_color', '#22C55E', 'Cor de sucesso'),
 ('deposit_fee', '0', 'Taxa de depósito'),
 ('withdrawal_fee', '2.99', 'Taxa de saque'),
-('usdt_enabled', 'false', 'USDT habilitado')
+('usdt_enabled', 'false', 'USDT habilitado'),
+('admin_panel_password_hash', '', 'Hash da senha do painel admin - será gerado automaticamente no primeiro login')
 ON CONFLICT (key) DO NOTHING;
 ```
 
