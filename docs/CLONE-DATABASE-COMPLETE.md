@@ -1811,23 +1811,289 @@ INSERT INTO chart_appearance_settings (
 ON CONFLICT (id) DO NOTHING;
 ```
 
-### 4.1.4 - Gerar Candles Iniciais
+### 4.1.4 - Boosters (Opcional - mas recomendado)
 
-Após inserir os ativos, você precisa gerar candles para o gráfico funcionar. 
-Acesse o painel admin → Ativos → clique em "Gerar Todos os Candles" ou execute a edge function `generate-candles`.
+```sql
+-- Boosters de payout
+INSERT INTO boosters (name, description, price, duration_minutes, payout_increase_percentage, is_active, display_order, name_en, description_en, name_es, description_es) VALUES
+('Booster Básico', 'Aumente seu payout em 1% por 30 minutos', 20, 30, 1, true, 1, 'Basic Booster', 'Increase your payout by 1% for 30 minutes', 'Booster Básico', 'Aumenta tu payout en 1% por 30 minutos'),
+('Booster Pro', 'Aumente seu payout em 5% por 1 hora', 50, 60, 5, true, 2, 'Pro Booster', 'Increase your payout by 5% for 1 hour', 'Booster Pro', 'Aumenta tu payout en 5% por 1 hora'),
+('Booster Premium', 'Aumente seu payout em 10% por 2 horas', 80, 120, 10, true, 3, 'Premium Booster', 'Increase your payout by 10% for 2 hours', 'Booster Premium', 'Aumenta tu payout en 10% por 2 horas')
+ON CONFLICT DO NOTHING;
+```
+
+### 4.1.5 - Documentos Legais (Opcional)
+
+```sql
+-- Documentos legais
+INSERT INTO legal_documents (title, slug, description, icon, is_active, display_order, content) VALUES
+('Termos de Uso', 'termos-de-uso', 'Condições gerais de uso da plataforma', 'Scale', true, 1, '<h2>Termos de Uso</h2><p>Atualize este conteúdo no painel admin.</p>'),
+('Política de Privacidade', 'politica-privacidade', 'Como tratamos seus dados pessoais', 'Shield', true, 2, '<h2>Política de Privacidade</h2><p>Atualize este conteúdo no painel admin.</p>'),
+('Política de Cookies', 'politica-cookies', 'Como utilizamos cookies no site', 'Cookie', true, 3, '<h2>Política de Cookies</h2><p>Atualize este conteúdo no painel admin.</p>'),
+('Política de Segurança', 'politica-seguranca', 'Medidas de proteção e segurança', 'Lock', true, 4, '<h2>Política de Segurança</h2><p>Atualize este conteúdo no painel admin.</p>'),
+('Termos de Serviço', 'termos-servico', 'Acordo de prestação de serviços', 'FileText', true, 5, '<h2>Termos de Serviço</h2><p>Atualize este conteúdo no painel admin.</p>'),
+('Sobre Nós', 'sobre-nos', 'Conheça nossa empresa e missão', 'Info', true, 6, '<h2>Sobre Nós</h2><p>Atualize este conteúdo no painel admin.</p>')
+ON CONFLICT (slug) DO NOTHING;
+```
+
+### 4.1.6 - Informações da Empresa (Opcional)
+
+```sql
+-- Informações da empresa para documentos legais
+INSERT INTO company_info (key, value, description) VALUES
+('razao_social', 'Sua Empresa Ltda', 'Razão social da empresa'),
+('cnpj', '00.000.000/0001-00', 'CNPJ da empresa'),
+('endereco', 'Rua Exemplo, 123 - São Paulo/SP', 'Endereço completo'),
+('email_juridico', 'juridico@suaempresa.com', 'Email do departamento jurídico'),
+('versao_termos', '1.0', 'Versão atual dos termos'),
+('data_atualizacao_termos', 'Janeiro/2025', 'Data da última atualização')
+ON CONFLICT (key) DO NOTHING;
+```
+
+### 4.1.7 - Gateways de Pagamento (Configurar depois no admin)
+
+```sql
+-- Gateways de pagamento vazios (configure as credenciais no painel admin)
+INSERT INTO payment_gateways (name, type, is_active, api_key, api_secret, config) VALUES
+('Stripe', 'worldwide', false, '', '', '{}'),
+('PIX Gateway', 'pix', false, '', '', '{}'),
+('Coinbase Commerce', 'crypto', false, '', '', '{}')
+ON CONFLICT DO NOTHING;
+```
+
+### 4.1.8 - Provedores de Login Social (Opcional)
+
+```sql
+-- Provedores de login social (desativados por padrão)
+INSERT INTO social_auth_providers (provider, is_enabled, client_id, client_secret, config) VALUES
+('google', false, '', '', '{}'),
+('facebook', false, '', '', '{}'),
+('apple', false, '', '', '{}')
+ON CONFLICT (provider) DO NOTHING;
+```
+
+### 4.1.9 - Configurar Realtime (OBRIGATÓRIO)
+
+```sql
+-- Habilitar Realtime para tabelas críticas
+ALTER TABLE public.trades REPLICA IDENTITY FULL;
+ALTER TABLE public.profiles REPLICA IDENTITY FULL;
+ALTER TABLE public.candles REPLICA IDENTITY FULL;
+ALTER TABLE public.transactions REPLICA IDENTITY FULL;
+
+-- Adicionar tabelas ao Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.trades;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.candles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
+```
+
+### 4.1.10 - Criar Storage Buckets (OBRIGATÓRIO)
+
+No painel do Supabase, vá em **Storage** e crie estes buckets:
+
+| Bucket Name | Public |
+|-------------|--------|
+| `avatars` | ✅ Sim |
+| `verification-documents` | ❌ Não |
+| `popup-images` | ✅ Sim |
+| `chart-backgrounds` | ✅ Sim |
+
+Ou execute via SQL:
+```sql
+-- Criar buckets de storage
+INSERT INTO storage.buckets (id, name, public) VALUES 
+('avatars', 'avatars', true),
+('verification-documents', 'verification-documents', false),
+('popup-images', 'popup-images', true),
+('chart-backgrounds', 'chart-backgrounds', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Política para avatars (público para leitura)
+CREATE POLICY "Avatar images are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars');
+
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can update their own avatar"
+ON storage.objects FOR UPDATE
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Política para popup-images (admin apenas)
+CREATE POLICY "Popup images are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'popup-images');
+
+CREATE POLICY "Admins can manage popup images"
+ON storage.objects FOR ALL
+USING (bucket_id = 'popup-images');
+
+-- Política para chart-backgrounds (admin apenas)
+CREATE POLICY "Chart backgrounds are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'chart-backgrounds');
+
+CREATE POLICY "Admins can manage chart backgrounds"
+ON storage.objects FOR ALL
+USING (bucket_id = 'chart-backgrounds');
+
+-- Política para verification-documents (privado)
+CREATE POLICY "Users can upload their verification documents"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can view their own verification documents"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
+```
+
+### 4.1.11 - Gerar Candles Iniciais
+
+Após inserir os ativos, você **PRECISA** gerar candles para o gráfico funcionar:
+
+1. Faça login como admin no novo projeto
+2. Acesse o painel admin → **Ativos**
+3. Clique em **"Gerar Todos os Candles"**
+
+Ou chame a edge function diretamente:
+```bash
+curl -X POST "https://SEU_PROJETO.supabase.co/functions/v1/generate-candles" \
+  -H "Authorization: Bearer SEU_ANON_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"asset_id": "ID_DO_ATIVO", "timeframe": "1m", "count": 300}'
+```
 
 ---
 
-## ✅ CHECKLIST FINAL
+## 🔧 PASSO 5: CONFIGURAR CRON JOBS (Recomendado)
 
-- [ ] SQL do PASSO 1 executado no projeto NOVO
+No SQL Editor do novo projeto, configure os cron jobs para automação:
+
+```sql
+-- Habilitar extensão pg_cron (se não estiver habilitada)
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+
+-- Cron para processar trades expirados (a cada 3 segundos)
+SELECT cron.schedule(
+  'process-expired-trades',
+  '*/3 * * * * *',
+  $$SELECT net.http_post(
+    url := 'https://SEU_PROJETO.supabase.co/functions/v1/process-expired-trades',
+    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
+  )$$
+);
+
+-- Cron para atualizar candles (a cada 5 segundos)
+SELECT cron.schedule(
+  'update-current-candles',
+  '*/5 * * * * *',
+  $$SELECT net.http_post(
+    url := 'https://SEU_PROJETO.supabase.co/functions/v1/update-current-candles',
+    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
+  )$$
+);
+
+-- Cron para limpar trades demo (diariamente às 3h UTC)
+SELECT cron.schedule(
+  'cleanup-demo-trades',
+  '0 3 * * *',
+  $$SELECT net.http_post(
+    url := 'https://SEU_PROJETO.supabase.co/functions/v1/cleanup-demo-trades',
+    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
+  )$$
+);
+
+-- Cron para limpar candles antigos (diariamente às 4h UTC)
+SELECT cron.schedule(
+  'cleanup-old-candles',
+  '0 4 * * *',
+  $$SELECT net.http_post(
+    url := 'https://SEU_PROJETO.supabase.co/functions/v1/cleanup-old-candles',
+    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
+  )$$
+);
+```
+
+⚠️ **IMPORTANTE**: Substitua `SEU_PROJETO` e `SEU_SERVICE_ROLE_KEY` pelos valores do seu novo projeto!
+
+---
+
+## 🔧 PASSO 6: CONFIGURAR WEBHOOKS (Se usar pagamentos)
+
+### Stripe Webhook
+1. Acesse [Stripe Dashboard](https://dashboard.stripe.com/webhooks)
+2. Crie um novo endpoint: `https://SEU_PROJETO.supabase.co/functions/v1/stripe-webhook`
+3. Selecione eventos: `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`
+4. Copie o Signing Secret e adicione como `STRIPE_WEBHOOK_SECRET` nos Secrets do Supabase
+
+### Coinbase Webhook
+1. Acesse [Coinbase Commerce](https://commerce.coinbase.com/settings)
+2. Configure webhook URL: `https://SEU_PROJETO.supabase.co/functions/v1/coinbase-webhook`
+3. Copie o Webhook Shared Secret e adicione como `COINBASE_WEBHOOK_SECRET` nos Secrets
+
+---
+
+## ✅ CHECKLIST FINAL COMPLETO
+
+### Estrutura do Banco
+- [ ] SQL do PASSO 1 executado (tabelas, enums, funções, triggers, RLS)
 - [ ] Trigger de auth (PASSO 2) criado
-- [ ] Dados exportados do projeto ORIGINAL
-- [ ] Dados importados no projeto NOVO
-- [ ] Secrets configurados
-- [ ] .env atualizado no repositório
-- [ ] Deploy no Vercel configurado
+- [ ] Dados de configuração importados
+
+### Dados Essenciais (PASSO 4.1)
+- [ ] `platform_settings` - configurações da plataforma
+- [ ] `assets` - ativos de trading
+- [ ] `chart_appearance_settings` - aparência do gráfico
+- [ ] `boosters` - boosters de payout (opcional)
+- [ ] `legal_documents` - documentos legais (opcional)
+- [ ] `company_info` - informações da empresa (opcional)
+- [ ] `payment_gateways` - gateways de pagamento
+- [ ] `social_auth_providers` - provedores OAuth (opcional)
+
+### Realtime & Storage
+- [ ] Realtime habilitado para trades, profiles, candles, transactions
+- [ ] Storage buckets criados (avatars, verification-documents, popup-images, chart-backgrounds)
+- [ ] Políticas de storage configuradas
+
+### Edge Functions & Secrets
+- [ ] Edge functions deployadas
+- [ ] Secrets configurados (VAPID, Stripe, Admin Password, etc.)
+
+### Cron Jobs (PASSO 5)
+- [ ] `process-expired-trades` configurado
+- [ ] `update-current-candles` configurado
+- [ ] `cleanup-demo-trades` configurado
+- [ ] `cleanup-old-candles` configurado
+
+### Webhooks (PASSO 6)
+- [ ] Stripe webhook configurado (se usar Stripe)
+- [ ] Coinbase webhook configurado (se usar Coinbase)
+
+### Candles Iniciais
+- [ ] Candles gerados via admin ou edge function
+
+### Deploy
+- [ ] `.env` atualizado no repositório
+- [ ] Deploy no Vercel/hosting configurado
 
 ---
 
-**Pronto!** Seu banco de dados está clonado e pronto para uso.
+## 🚨 PROBLEMAS COMUNS
+
+| Problema | Solução |
+|----------|---------|
+| "Erro ao carregar ativos" | Execute o INSERT de `assets` |
+| Preloader infinito | Faltam assets ou chart_appearance_settings |
+| "Cadastro desativado" | Adicione `allow_registration = true` em platform_settings |
+| Gráfico não carrega | Gere candles via admin panel |
+| Trades não finalizam | Configure cron job `process-expired-trades` |
+| Balance não atualiza | Configure Realtime para `profiles` e `trades` |
+| Avatar não salva | Crie bucket `avatars` no Storage |
+| Webhooks não funcionam | Configure URL correta e Signing Secret |
+
+---
+
+**Pronto!** Seu banco de dados está completamente clonado e pronto para produção.
