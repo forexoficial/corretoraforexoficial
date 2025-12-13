@@ -1707,6 +1707,28 @@ VITE_STRIPE_PUBLISHABLE_KEY=sua_stripe_publishable_key
 
 ---
 
+## 🔧 PASSO 4.1: CONFIGURAÇÕES ESSENCIAIS
+
+Após criar as tabelas, execute este SQL para habilitar o registro de usuários:
+
+```sql
+-- Habilitar registro de novos usuários
+INSERT INTO platform_settings (key, value, description)
+VALUES ('allow_registration', 'true', 'Permite registro de novos usuários')
+ON CONFLICT (key) DO UPDATE SET value = 'true';
+
+-- Outras configurações essenciais (opcional)
+INSERT INTO platform_settings (key, value, description) VALUES
+('platform_name', 'Minha Plataforma', 'Nome da plataforma'),
+('min_deposit', '10', 'Depósito mínimo'),
+('min_trade', '1', 'Trade mínimo'),
+('max_trade', '10000', 'Trade máximo'),
+('maintenance_mode', 'false', 'Modo manutenção')
+ON CONFLICT (key) DO NOTHING;
+```
+
+---
+
 ## ✅ CHECKLIST FINAL
 
 - [ ] SQL do PASSO 1 executado no projeto NOVO
