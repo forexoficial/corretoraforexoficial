@@ -1707,25 +1707,114 @@ VITE_STRIPE_PUBLISHABLE_KEY=sua_stripe_publishable_key
 
 ---
 
-## 🔧 PASSO 4.1: CONFIGURAÇÕES ESSENCIAIS
+## 🔧 PASSO 4.1: DADOS ESSENCIAIS (OBRIGATÓRIO)
 
-Após criar as tabelas, execute este SQL para habilitar o registro de usuários:
+⚠️ **MUITO IMPORTANTE**: Sem estes dados, a plataforma NÃO funcionará!
+
+### 4.1.1 - Configurações da Plataforma
 
 ```sql
--- Habilitar registro de novos usuários
-INSERT INTO platform_settings (key, value, description)
-VALUES ('allow_registration', 'true', 'Permite registro de novos usuários')
-ON CONFLICT (key) DO UPDATE SET value = 'true';
-
--- Outras configurações essenciais (opcional)
+-- Configurações essenciais da plataforma
 INSERT INTO platform_settings (key, value, description) VALUES
+('allow_registration', 'true', 'Permite registro de novos usuários'),
 ('platform_name', 'Minha Plataforma', 'Nome da plataforma'),
 ('min_deposit', '10', 'Depósito mínimo'),
-('min_trade', '1', 'Trade mínimo'),
+('min_trade', '5', 'Trade mínimo'),
 ('max_trade', '10000', 'Trade máximo'),
-('maintenance_mode', 'false', 'Modo manutenção')
+('maintenance_mode', 'false', 'Modo manutenção'),
+('min_withdrawal', '60', 'Saque mínimo'),
+('max_withdrawal', '10000', 'Saque máximo'),
+('default_payout', '89', 'Payout padrão'),
+('require_verification', 'true', 'Exige verificação de identidade'),
+('support_email', 'suporte@suaplataforma.com', 'Email de suporte'),
+('support_phone', '+55 11 99999-9999', 'Telefone de suporte'),
+('primary_color', '#ffdd00', 'Cor primária'),
+('secondary_color', '#303030', 'Cor secundária'),
+('success_color', '#22C55E', 'Cor de sucesso'),
+('deposit_fee', '0', 'Taxa de depósito'),
+('withdrawal_fee', '2.99', 'Taxa de saque'),
+('usdt_enabled', 'false', 'USDT habilitado')
 ON CONFLICT (key) DO NOTHING;
 ```
+
+### 4.1.2 - Ativos de Trading (OBRIGATÓRIO)
+
+```sql
+-- Ativos principais - SEM ISSO O GRÁFICO NÃO CARREGA!
+INSERT INTO assets (symbol, name, payout_percentage, is_active, icon_url, auto_generate_candles) VALUES
+-- Criptomoedas
+('BTC-OTC', 'Bitcoin', 89, true, 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', true),
+('ETH-OTC', 'Ethereum', 89, true, 'https://cryptologos.cc/logos/ethereum-eth-logo.png', true),
+('BNB-OTC', 'BNB', 89, true, 'https://cryptologos.cc/logos/bnb-bnb-logo.png', true),
+('ADA-OTC', 'Cardano', 89, true, 'https://cryptologos.cc/logos/cardano-ada-logo.png', true),
+('SOL-OTC', 'Solana', 89, true, 'https://cryptologos.cc/logos/solana-sol-logo.png', true),
+('DOGE-OTC', 'Dogecoin', 89, true, 'https://cryptologos.cc/logos/dogecoin-doge-logo.png', true),
+('LTC-OTC', 'Litecoin', 89, true, 'https://cryptologos.cc/logos/litecoin-ltc-logo.png', true),
+-- Forex
+('EUR-USD-OTC', 'EUR/USD', 89, true, 'https://flagcdn.com/48x36/eu.png', true),
+('GBP-USD-OTC', 'GBP/USD', 89, true, 'https://flagcdn.com/48x36/gb.png', true),
+('USD-JPY-OTC', 'USD/JPY', 89, true, 'https://flagcdn.com/48x36/jp.png', true),
+('AUD-USD-OTC', 'AUD/USD', 89, true, 'https://flagcdn.com/48x36/au.png', true),
+-- Commodities
+('XAU-OTC', 'Gold', 89, true, 'https://cdn-icons-png.flaticon.com/512/3188/3188558.png', true),
+('WTI-OTC', 'Oil WTI', 89, true, 'https://cdn-icons-png.flaticon.com/512/3069/3069764.png', true),
+-- Ações
+('AAPL-OTC', 'Apple Inc.', 89, true, 'https://logo.clearbit.com/apple.com', true),
+('GOOGL-OTC', 'Alphabet Inc.', 89, true, 'https://logo.clearbit.com/google.com', true),
+('MSFT-OTC', 'Microsoft Corp.', 89, true, 'https://logo.clearbit.com/microsoft.com', true),
+('AMZN-OTC', 'Amazon.com Inc.', 89, true, 'https://logo.clearbit.com/amazon.com', true),
+('TSLA-OTC', 'Tesla Inc.', 89, true, 'https://logo.clearbit.com/tesla.com', true),
+('META-OTC', 'Meta Platforms', 89, true, 'https://logo.clearbit.com/meta.com', true),
+('NVDA-OTC', 'NVIDIA Corp.', 89, true, 'https://logo.clearbit.com/nvidia.com', true)
+ON CONFLICT (symbol) DO NOTHING;
+```
+
+### 4.1.3 - Configurações de Aparência do Gráfico
+
+```sql
+-- Configurações de aparência do gráfico
+INSERT INTO chart_appearance_settings (
+  id,
+  candle_up_color, candle_down_color,
+  candle_up_color_dark, candle_down_color_dark,
+  candle_up_color_light, candle_down_color_light,
+  chart_bg_color, chart_bg_color_dark, chart_bg_color_light,
+  chart_text_color, chart_text_color_dark, chart_text_color_light,
+  grid_horz_color, grid_horz_color_dark, grid_horz_color_light,
+  grid_vert_color, grid_vert_color_dark, grid_vert_color_light,
+  crosshair_color, crosshair_color_dark, crosshair_color_light,
+  map_enabled, map_opacity, map_show_grid, map_grid_opacity,
+  watermark_visible, show_tradingview_logo,
+  trade_line_width, trade_line_style, trade_line_show_label,
+  trade_line_call_color, trade_line_put_color,
+  candle_border_visible, candle_border_width,
+  chart_height_offset_desktop, chart_height_offset_mobile, chart_height_offset_fullscreen,
+  chart_responsive_desktop, chart_responsive_mobile, chart_responsive_fullscreen
+) VALUES (
+  '00000000-0000-0000-0000-000000000001',
+  '#ffffff', '#000000',
+  '#ffffff', '#000000',
+  '#ffffff', '#000000',
+  '#0a0a0a', '#000000', '#ffffff',
+  '#d1d4dc', '#d1d4dc', '#1a1a1a',
+  '#1e1e1e', '#1e1e1e', '#e5e5e5',
+  '#1e1e1e', '#1e1e1e', '#e5e5e5',
+  '#758696', '#758696', '#6b7280',
+  true, 0.07, true, 0.1,
+  false, false,
+  5, 0, true,
+  '#22c55e', '#ef4444',
+  true, 2,
+  150, 160, 150,
+  true, false, true
+)
+ON CONFLICT (id) DO NOTHING;
+```
+
+### 4.1.4 - Gerar Candles Iniciais
+
+Após inserir os ativos, você precisa gerar candles para o gráfico funcionar. 
+Acesse o painel admin → Ativos → clique em "Gerar Todos os Candles" ou execute a edge function `generate-candles`.
 
 ---
 
