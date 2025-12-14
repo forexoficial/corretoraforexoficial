@@ -1659,9 +1659,9 @@ export function TradingViewChart({
   // Calculate container style based on settings
   const containerStyle = useMemo(() => {
     const style: React.CSSProperties = {
-      backgroundColor: chartBgColor,
       width: `${widthPercentage}%`,
       margin: widthPercentage < 100 ? '0 auto' : undefined,
+      backgroundColor: chartBgColor,
     };
     
     // Get configurable offsets from admin settings
@@ -1701,7 +1701,7 @@ export function TradingViewChart({
 
   return (
     <div className="relative" style={containerStyle}>
-      {/* World Map Background */}
+      {/* World Map Background - positioned above background color but below chart */}
       {appearanceSettings?.map_enabled && (
         <WorldMapBackground 
           opacity={appearanceSettings.map_opacity}
@@ -1722,7 +1722,7 @@ export function TradingViewChart({
           <div className="text-muted-foreground">{t("loading_chart", "Loading chart...")}</div>
         </div>
       )}
-      <div ref={chartContainerRef} className="w-full h-full relative z-[1]" style={{ backgroundColor: 'transparent' }} />
+      <div ref={chartContainerRef} className="w-full h-full relative z-[1]" />
       
       {/* Candle Time Indicator */}
       <CandleTimeIndicator 
