@@ -23,6 +23,11 @@ All colors MUST be HSL.
   .mobile-header-safe-offset {
     padding-top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
   }
+
+  /* Offset for mobile modal close buttons below fixed header */
+  .mobile-modal-close-offset {
+    top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
+  }
 }
 
 @layer base {
