@@ -84,20 +84,7 @@ serve(async (req) => {
       );
     }
 
-    // Update affiliate total_referrals
-    const { error: updateError } = await supabase
-      .from("affiliates")
-      .update({
-        total_referrals: supabase.rpc("increment", { x: 1 }),
-      })
-      .eq("id", affiliate.id);
-
-    if (updateError) {
-      console.error("Error updating affiliate stats:", updateError);
-      // Continue anyway, referral was created
-    }
-
-    // Increment total_referrals manually since RPC might not work
+    // Increment total_referrals manually
     const { data: currentAffiliate } = await supabase
       .from("affiliates")
       .select("total_referrals")
@@ -105,12 +92,19 @@ serve(async (req) => {
       .single();
 
     if (currentAffiliate) {
-      await supabase
+      const { error: updateError } = await supabase
         .from("affiliates")
         .update({
           total_referrals: (currentAffiliate.total_referrals || 0) + 1,
+          updated_at: new Date().toISOString(),
         })
         .eq("id", affiliate.id);
+
+      if (updateError) {
+        console.error("Error updating affiliate stats:", updateError);
+      } else {
+        console.log(`Updated affiliate ${affiliate.id} total_referrals to ${(currentAffiliate.total_referrals || 0) + 1}`);
+      }
     }
 
     console.log("Referral created successfully:", referral);
