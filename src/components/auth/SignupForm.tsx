@@ -43,17 +43,13 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
     });
   }, []);
 
-  // Capture affiliate code from URL
+  // Capture affiliate code from URL silently (no notification to user)
   useEffect(() => {
     const refCode = searchParams.get("ref");
     if (refCode) {
       setAffiliateCode(refCode);
-      toast({
-        title: t('affiliate_link_detected'),
-        description: `${t('registering_with_code')} ${refCode}`,
-      });
     }
-  }, [searchParams, toast, t]);
+  }, [searchParams]);
 
   // Map current step to actual form step based on whether document step is shown
   const getActualStep = (currentStep: number) => {
@@ -127,15 +123,6 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
 
   return (
     <>
-      {affiliateCode && (
-        <Alert className="mb-6 bg-primary/10 border-primary/20">
-          <Gift className="h-4 w-4 text-primary" />
-          <AlertDescription className="text-sm">
-            <strong>{t('affiliate_link_active')}</strong> {affiliateCode}
-          </AlertDescription>
-        </Alert>
-      )}
-      
       <div className="mb-8">
         <Progress value={progress} className="h-2 mb-4" />
         <div className="flex justify-between">
