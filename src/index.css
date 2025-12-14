@@ -18,6 +18,13 @@ All colors MUST be HSL.
   }
 }
 
+/* Offset for mobile sheets/dialogs below fixed header */
+@media (max-width: 768px) {
+  .mobile-header-safe-offset {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 3.5rem);
+  }
+}
+
 @layer base {
   :root {
     --background: 45 10% 8%;

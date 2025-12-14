@@ -147,7 +147,7 @@ export const TradingSidebar = ({
     
     {/* Analytics Sheet */}
     <Sheet open={showAnalytics} onOpenChange={setShowAnalytics}>
-      <SheetContent side="right" className="w-full sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] p-0 overflow-hidden">
+      <SheetContent side="right" className="w-full sm:max-w-[500px] md:max-w-[600px] lg:max-w-[700px] xl:max-w-[800px] p-0 overflow-hidden mobile-header-safe-offset">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-3 sm:p-4 md:p-6 border-b bg-gradient-to-r from-primary/5 to-primary/10">

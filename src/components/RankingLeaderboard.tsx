@@ -82,7 +82,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card">
+      <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card mobile-header-safe-offset">
         <SheetHeader className="border-b border-border p-4 pb-3">
           <div className="flex items-center gap-2">
             <Medal className="h-5 w-5 text-primary" />

@@ -264,7 +264,7 @@ export function CopyTradeSubscribe({ open, onOpenChange }: CopyTradeSubscribePro
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-md p-0">
+      <SheetContent side="right" className="w-full sm:max-w-md p-0 mobile-header-safe-offset">
         <SheetHeader className="p-6 border-b bg-gradient-to-r from-blue-500/10 to-cyan-500/10">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-blue-500/20 rounded-xl">

@@ -74,7 +74,7 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="p-0 w-[85vw] max-w-[320px]" style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 60px)' }}>
+            <SheetContent side="left" className="p-0 w-[85vw] max-w-[320px] mobile-header-safe-offset">
               <div className="py-4 px-6 border-b border-border bg-background/95 backdrop-blur-sm">
                 <h2 className="text-lg font-semibold">{t("menu", "Menu")}</h2>
                 <p className="text-xs text-muted-foreground mt-1">{t("all_features", "Acesse todas as funcionalidades")}</p>
