@@ -105,7 +105,7 @@ export default function AffiliateDashboard() {
       const activeReferrals = referrals?.filter(r => r.status === 'active').length || 0;
       const periodEarnings = totalCommissions;
 
-      const affiliateLink = `${window.location.origin}/auth?ref=${affiliate.affiliate_code}`;
+      const affiliateLink = `${window.location.origin}/signup?ref=${affiliate.affiliate_code}`;
 
       setStats({
         totalReferrals: filteredReferrals.length,

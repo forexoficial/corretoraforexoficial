@@ -68,7 +68,7 @@ export default function AffiliateTools() {
       if (affiliate) {
         setAffiliateId(affiliate.id);
         setAffiliateCode(affiliate.affiliate_code);
-        setAffiliateLink(`${window.location.origin}/auth?ref=${affiliate.affiliate_code}`);
+        setAffiliateLink(`${window.location.origin}/signup?ref=${affiliate.affiliate_code}`);
       }
     } catch (error) {
       console.error("Error fetching affiliate info:", error);
@@ -165,7 +165,7 @@ export default function AffiliateTools() {
   };
 
   const getCustomLink = (slug: string) => {
-    return `${window.location.origin}/auth?ref=${affiliateCode}&campaign=${slug}`;
+    return `${window.location.origin}/signup?ref=${affiliateCode}&campaign=${slug}`;
   };
 
   const copyToClipboard = (text: string, label: string) => {
