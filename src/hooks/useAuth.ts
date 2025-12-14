@@ -131,9 +131,7 @@ export function useAuth() {
 
       toast({
         title: t("signup_success", "Registration complete!"),
-        description: formData.affiliateCode 
-          ? t("signup_success_affiliate", "You signed up via affiliate link. You can now login!")
-          : t("signup_success_desc", "You can now login to the platform."),
+        description: t("signup_success_desc", "You can now login to the platform."),
       });
       return true;
     } catch (error: any) {
