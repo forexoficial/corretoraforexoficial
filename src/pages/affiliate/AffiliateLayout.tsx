@@ -1,5 +1,5 @@
 import { Outlet, useNavigate } from "react-router-dom";
-import { LogOut, LayoutDashboard, Users, DollarSign } from "lucide-react";
+import { LogOut, LayoutDashboard, Users } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -69,14 +69,6 @@ export default function AffiliateLayout() {
                 >
                   <Users className="w-4 h-4" />
                   <span className="hidden xs:inline">Referidos</span>
-                </NavLink>
-                <NavLink
-                  to="/affiliate/commissions"
-                  className="flex items-center gap-1.5 px-3 py-2.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors border-b-2 border-transparent whitespace-nowrap"
-                  activeClassName="text-primary border-primary"
-                >
-                  <DollarSign className="w-4 h-4" />
-                  <span className="hidden xs:inline">Comissões</span>
                 </NavLink>
               </div>
             </div>

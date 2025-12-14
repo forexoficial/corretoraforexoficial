@@ -48,7 +48,7 @@ import CopyTrade from "./pages/CopyTrade";
 import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
 import AffiliateReferrals from "./pages/affiliate/AffiliateReferrals";
-import AffiliateCommissions from "./pages/affiliate/AffiliateCommissions";
+
 import AffiliateTools from "./pages/affiliate/AffiliateTools";
 import AffiliateSettings from "./pages/affiliate/AffiliateSettings";
 import AffiliateWithdrawals from "./pages/affiliate/AffiliateWithdrawals";
@@ -180,7 +180,7 @@ const App = () => (
               >
                 <Route index element={<AffiliateDashboard />} />
                 <Route path="referrals" element={<AffiliateReferrals />} />
-                <Route path="commissions" element={<AffiliateCommissions />} />
+                
                 <Route path="tools" element={<AffiliateTools />} />
                 <Route path="withdrawals" element={<AffiliateWithdrawals />} />
                 <Route path="settings" element={<AffiliateSettings />} />
