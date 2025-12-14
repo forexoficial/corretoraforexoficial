@@ -90,6 +90,18 @@ export default function AffiliateDashboard() {
 
       if (commissionsError) throw commissionsError;
 
+      // Get approved/completed withdrawals to calculate available balance
+      const { data: withdrawals, error: withdrawalsError } = await supabase
+        .from("withdrawal_requests")
+        .select("amount, status")
+        .eq("affiliate_id", affiliate.id)
+        .in("status", ["approved", "completed", "pending"]);
+
+      if (withdrawalsError) throw withdrawalsError;
+
+      // Calculate total withdrawn (approved + completed + pending)
+      const totalWithdrawn = withdrawals?.reduce((sum, w) => sum + Number(w.amount), 0) || 0;
+
       // Filter data by selected date range
       const filteredCommissions = commissions?.filter(c => {
         const commissionDate = new Date(c.created_at);
@@ -105,13 +117,16 @@ export default function AffiliateDashboard() {
       const activeReferrals = referrals?.filter(r => r.status === 'active').length || 0;
       const periodEarnings = totalCommissions;
 
+      // Available balance = total commission - already withdrawn
+      const availableBalance = Math.max(0, Number(affiliate.total_commission) - totalWithdrawn);
+
       const affiliateLink = `${window.location.origin}/signup?ref=${affiliate.affiliate_code}`;
 
       setStats({
         totalReferrals: filteredReferrals.length,
         activeReferrals,
         totalCommissions,
-        pendingCommissions: Number(affiliate.total_commission) - totalCommissions,
+        pendingCommissions: availableBalance,
         monthlyEarnings: periodEarnings,
         conversionRate: referrals?.length ? (activeReferrals / referrals.length) * 100 : 0,
         affiliateCode: affiliate.affiliate_code,
@@ -462,7 +477,7 @@ export default function AffiliateDashboard() {
                 R$ {formatCurrency(stats.pendingCommissions)}
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Comissões pendentes
+                Saldo disponível para saque
               </p>
             </CardContent>
           </Card>
