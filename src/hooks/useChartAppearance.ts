@@ -57,8 +57,6 @@ interface ChartAppearanceSettings {
   map_grid_opacity: number;
   map_image_url: string | null;
   map_image_url_dark: string | null;
-  map_image_url_mobile: string | null;
-  map_image_url_mobile_dark: string | null;
   watermark_visible: boolean;
   watermark_text: string | null;
   // Trade line settings

@@ -37,26 +37,25 @@ export function WorldMapBackground({
     return luminance > 0.5;
   };
 
-  // Escolher a imagem correta baseada no dispositivo E tema (claro/escuro)
+  // Escolher a imagem correta baseada no dispositivo e fundo
   const getSelectedImage = () => {
     const isLight = isLightBackground();
-
+    
     if (isMobile) {
-      // MOBILE: usar versão clara ou escura baseado no bgColor
+      // Mobile: usar imagens mobile se disponíveis, senão fallback para desktop
       if (isLight) {
-        // Fundo claro → priorizar imagem mobile clara
-        return imageUrlMobile || imageUrl || imageUrlMobileDark || imageUrlDark || null;
+        return imageUrlMobileDark || imageUrlDark;
       } else {
-        // Fundo escuro → priorizar imagem mobile escura
-        return imageUrlMobileDark || imageUrlDark || imageUrlMobile || imageUrl || null;
+        return imageUrlMobile || imageUrl;
+      }
+    } else {
+      // Desktop: usar imagens desktop
+      if (isLight) {
+        return imageUrlDark;
+      } else {
+        return imageUrl;
       }
     }
-
-    // DESKTOP: usar versão clara ou escura baseado no bgColor
-    if (isLight) {
-      return imageUrl || imageUrlDark || null;
-    }
-    return imageUrlDark || imageUrl || null;
   };
 
   const selectedImage = getSelectedImage();
@@ -69,7 +68,7 @@ export function WorldMapBackground({
         style={{
           backgroundImage: `url(${selectedImage})`,
           backgroundSize: 'cover',
-          backgroundPosition: 'center center',
+          backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           opacity: opacity,
           zIndex: 0
