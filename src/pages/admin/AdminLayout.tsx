@@ -13,7 +13,6 @@ import {
   LogOut,
   Menu,
   X,
-  Lock,
   UserCheck,
   DollarSign,
   FileText,
@@ -28,16 +27,6 @@ import {
   RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -74,14 +63,8 @@ export default function AdminLayout() {
   const isMobile = useIsMobile();
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
-  // Default to closed on mobile, open on desktop
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
-  const [password, setPassword] = useState("");
-  const [verifyingPassword, setVerifyingPassword] = useState(false);
-  const [passwordVerified, setPasswordVerified] = useState(false);
 
-  // Set sidebar state based on device after initial render
   useEffect(() => {
     setSidebarOpen(!isMobile);
   }, [isMobile]);
@@ -107,62 +90,10 @@ export default function AdminLayout() {
 
       setIsAdmin(true);
       setLoading(false);
-      
-      // Check if password is already verified in session
-      const verified = sessionStorage.getItem("admin_password_verified");
-      if (verified === "true") {
-        setPasswordVerified(true);
-      } else {
-        setPasswordDialogOpen(true);
-      }
     };
 
     checkAdmin();
-
-    // Cleanup: Clear password verification when leaving admin panel
-    return () => {
-      sessionStorage.removeItem("admin_password_verified");
-    };
   }, [user, navigate]);
-
-  const handleVerifyPassword = async () => {
-    if (!password) {
-      toast.error("Digite a senha");
-      return;
-    }
-
-    setVerifyingPassword(true);
-
-    try {
-      const { data, error } = await supabase.functions.invoke(
-        "verify-admin-password",
-        {
-          body: { password },
-        }
-      );
-
-      if (error) {
-        toast.error("Erro ao verificar senha");
-        setVerifyingPassword(false);
-        return;
-      }
-
-      if (data?.success) {
-        sessionStorage.setItem("admin_password_verified", "true");
-        setPasswordVerified(true);
-        setPasswordDialogOpen(false);
-        toast.success("Acesso autorizado!");
-      } else {
-        toast.error("Senha incorreta");
-        setPassword("");
-      }
-    } catch (err) {
-      toast.error("Erro ao verificar senha");
-      console.error(err);
-    }
-
-    setVerifyingPassword(false);
-  };
 
   if (loading) {
     return (
@@ -173,73 +104,8 @@ export default function AdminLayout() {
   }
 
   const handleLogout = () => {
-    // Clear admin password verification
-    sessionStorage.removeItem("admin_password_verified");
     signOut();
   };
-
-  // Show password dialog if not verified
-  if (!passwordVerified) {
-    return (
-      <Dialog open={passwordDialogOpen} onOpenChange={() => {}}>
-        <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
-            <div className="flex items-center gap-2 mb-2">
-              <Lock className="h-6 w-6 text-primary" />
-              <DialogTitle>Acesso ao Painel Admin</DialogTitle>
-            </div>
-            <DialogDescription>
-              Digite o PIN do painel administrativo para continuar.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label>PIN de Acesso</Label>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    handleVerifyPassword();
-                  }
-                }}
-                placeholder="Digite o PIN"
-                disabled={verifyingPassword}
-              />
-            </div>
-            <Button
-              onClick={handleVerifyPassword}
-              disabled={verifyingPassword}
-              className="w-full"
-            >
-              {verifyingPassword ? (
-                <>
-                  <Lock className="h-4 w-4 mr-2 animate-pulse" />
-                  Verificando...
-                </>
-              ) : (
-                <>
-                  <Lock className="h-4 w-4 mr-2" />
-                  Verificar PIN
-                </>
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                signOut();
-                navigate("/");
-              }}
-              className="w-full"
-            >
-              Voltar
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
@@ -251,7 +117,7 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* Mobile Menu Toggle Button - Always visible on mobile when sidebar is closed */}
+      {/* Mobile Menu Toggle Button */}
       {isMobile && !sidebarOpen && (
         <Button
           variant="ghost"
