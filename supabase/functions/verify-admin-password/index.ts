@@ -66,8 +66,13 @@ Deno.serve(async (req) => {
 
     let storedHash = settingData?.value;
 
-    // If no hash exists, initialize it with the environment password
-    if (!storedHash || storedHash === '') {
+    const normalizedHash = typeof storedHash === 'string' ? storedHash.trim() : '';
+
+    // If no hash exists (null, empty string, or legacy 'EMPTY' placeholder),
+    // initialize it with the environment password from secrets
+    const isHashMissing = !normalizedHash || normalizedHash === 'EMPTY';
+
+    if (isHashMissing) {
       const adminPassword = Deno.env.get('ADMIN_PANEL_PASSWORD');
       
       if (!adminPassword) {
