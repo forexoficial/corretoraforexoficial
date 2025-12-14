@@ -352,41 +352,53 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
           />
         </div>
 
-        {/* Chart Controls - Bottom Left */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-50">
-          <button 
-            onClick={withClickSound(() => setIsTimeframeModalOpen(true))}
-            className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted text-xs font-semibold text-foreground transition-colors active:scale-95"
-          >
-            {getTimeframeLabel(selectedTimeframe)}
-          </button>
-          <button 
-            onClick={withClickSound(() => setIsChartTypeModalOpen(true))}
-            className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors active:scale-95"
-          >
-            <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
-          </button>
-          <button 
-            onClick={withClickSound(() => setIsDrawingToolsOpen(true))}
-            className={`h-11 w-11 flex items-center justify-center rounded-lg transition-colors active:scale-95 ${
-              selectedDrawingTool !== 'select' 
-                ? 'bg-primary/20 border border-primary/50 text-primary' 
-                : 'bg-muted/60 hover:bg-muted'
-            }`}
-          >
-            <Pencil className="h-5 w-5" />
-          </button>
-          <button 
-            onClick={withClickSound(() => setIsIndicatorsOpen(true))}
-            className={`h-11 w-11 flex items-center justify-center rounded-lg transition-colors active:scale-95 ${
-              Object.values(indicatorSettings).some(i => i.enabled)
-                ? 'bg-primary/20 border border-primary/50 text-primary' 
-                : 'bg-muted/60 hover:bg-muted'
-            }`}
-          >
-            <Activity className="h-5 w-5" />
-          </button>
-        </div>
+        {/* Chart Controls - Bottom Left - Hidden when drawing tool is active */}
+        {selectedDrawingTool === 'select' && (
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-50">
+            <button 
+              onClick={withClickSound(() => setIsTimeframeModalOpen(true))}
+              className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted text-xs font-semibold text-foreground transition-colors active:scale-95"
+            >
+              {getTimeframeLabel(selectedTimeframe)}
+            </button>
+            <button 
+              onClick={withClickSound(() => setIsChartTypeModalOpen(true))}
+              className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors active:scale-95"
+            >
+              <SlidersHorizontal className="h-5 w-5 text-muted-foreground" />
+            </button>
+            <button 
+              onClick={withClickSound(() => setIsDrawingToolsOpen(true))}
+              className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted transition-colors active:scale-95"
+            >
+              <Pencil className="h-5 w-5" />
+            </button>
+            <button 
+              onClick={withClickSound(() => setIsIndicatorsOpen(true))}
+              className={`h-11 w-11 flex items-center justify-center rounded-lg transition-colors active:scale-95 ${
+                Object.values(indicatorSettings).some(i => i.enabled)
+                  ? 'bg-primary/20 border border-primary/50 text-primary' 
+                  : 'bg-muted/60 hover:bg-muted'
+              }`}
+            >
+              <Activity className="h-5 w-5" />
+            </button>
+          </div>
+        )}
+
+        {/* Drawing Mode Controls - Show when drawing tool is active */}
+        {selectedDrawingTool !== 'select' && (
+          <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-primary/50 z-50">
+            <span className="text-xs text-primary font-medium px-2">{t("drawing_mode", "Modo Desenho")}</span>
+            <button 
+              onClick={withClickSound(() => setSelectedDrawingTool('select'))}
+              className="h-10 px-3 flex items-center justify-center rounded-lg bg-destructive/20 hover:bg-destructive/30 text-destructive transition-colors active:scale-95"
+            >
+              <X className="h-4 w-4 mr-1" />
+              <span className="text-xs font-medium">{t("exit", "Sair")}</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Current Time */}
