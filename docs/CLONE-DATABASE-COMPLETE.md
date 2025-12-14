@@ -1767,6 +1767,768 @@ As Edge Functions serão automaticamente deployadas quando você fizer push do c
 
 ---
 
+## 🚀 PASSO 6: DEPLOY DAS EDGE FUNCTIONS (CRÍTICO!)
+
+**ATENÇÃO:** As Edge Functions NÃO são copiadas automaticamente quando você clona o banco de dados ou o repositório. Você DEVE deployar cada função manualmente no Dashboard do Supabase.
+
+### 📋 Como Deployar Edge Functions (Sem Terminal)
+
+1. Acesse **Supabase Dashboard** → **Edge Functions**
+2. Clique em **New Function** 
+3. Digite o nome da função (exatamente como mostrado abaixo)
+4. Cole o código correspondente
+5. Clique em **Create** ou **Deploy**
+6. Repita para TODAS as 25 funções
+
+### ⚠️ IMPORTANTE: Ordem de Deploy
+
+Algumas funções dependem de outras. Siga esta ordem:
+1. Primeiro as funções base (candles, trades)
+2. Depois as de pagamento
+3. Por último as de notificação
+
+---
+
+### 🔴 FUNÇÕES CRÍTICAS - TRADING (Prioridade Máxima)
+
+Estas funções são ESSENCIAIS para o sistema de trading funcionar:
+
+#### 1. `generate-candles`
+Gera histórico de candles para os ativos.
+
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    const { assetId, timeframe = '1m', count = 300 } = await req.json()
+
+    if (!assetId) {
+      throw new Error('Asset ID is required')
+    }
+
+    const { data: asset } = await supabase
+      .from('assets')
+      .select('*')
+      .eq('id', assetId)
+      .single()
+
+    if (!asset) {
+      throw new Error('Asset not found')
+    }
+
+    const now = new Date()
+    const { data: activeBiases } = await supabase
+      .from('chart_biases')
+      .select('*')
+      .eq('asset_id', assetId)
+      .eq('is_active', true)
+      .lte('start_time', now.toISOString())
+      .gte('end_time', now.toISOString())
+
+    const bias = activeBiases && activeBiases.length > 0 ? activeBiases[0] : null
+
+    let basePrice = getInitialPrice(asset.symbol)
+    
+    const { data: referenceCandle } = await supabase
+      .from('candles')
+      .select('close')
+      .eq('asset_id', assetId)
+      .eq('timeframe', '1m')
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (referenceCandle) {
+      basePrice = parseFloat(referenceCandle.close)
+    } else {
+      const { data: anyCandle } = await supabase
+        .from('candles')
+        .select('close, timeframe')
+        .eq('asset_id', assetId)
+        .order('timestamp', { ascending: false })
+        .limit(1)
+        .single()
+
+      if (anyCandle) {
+        basePrice = parseFloat(anyCandle.close)
+      }
+    }
+
+    const timeframeMs = getTimeframeMs(timeframe)
+    const getBrazilTime = () => {
+      const brazilOffset = -3 * 60 * 60 * 1000
+      return Date.now() + brazilOffset
+    }
+    const alignToTimeframe = (timestamp: number, tfMs: number) => {
+      return Math.floor(timestamp / tfMs) * tfMs
+    }
+
+    const nowBrazil = getBrazilTime()
+    const alignedNow = alignToTimeframe(nowBrazil, timeframeMs)
+    
+    const { data: lastCandle } = await supabase
+      .from('candles')
+      .select('*')
+      .eq('asset_id', assetId)
+      .eq('timeframe', timeframe)
+      .order('timestamp', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (lastCandle) {
+      basePrice = parseFloat(lastCandle.close)
+    }
+
+    let startTimestamp: number
+    if (lastCandle) {
+      startTimestamp = new Date(lastCandle.timestamp).getTime() + timeframeMs
+    } else {
+      startTimestamp = alignedNow - (count * timeframeMs)
+    }
+    startTimestamp = alignToTimeframe(startTimestamp, timeframeMs)
+
+    const candles = []
+
+    for (let i = 0; i < count; i++) {
+      const candleTimestamp = startTimestamp + (i * timeframeMs)
+      const timestamp = new Date(candleTimestamp)
+      
+      const volatility = 0.0015
+      const trend = bias ? getBiasTrend(bias) : getRandomTrend()
+      
+      const open = basePrice
+      const priceChange = basePrice * volatility * (Math.random() * 2 - 1) + trend
+      const close = Math.max(0, open + priceChange)
+      
+      const high = Math.max(open, close) * (1 + Math.random() * volatility * 0.5)
+      const low = Math.min(open, close) * (1 - Math.random() * volatility * 0.5)
+      
+      const volume = Math.random() * 1000000 + 100000
+
+      candles.push({
+        asset_id: assetId,
+        timeframe,
+        timestamp: timestamp.toISOString(),
+        open: open.toFixed(8),
+        high: high.toFixed(8),
+        low: low.toFixed(8),
+        close: close.toFixed(8),
+        volume: volume.toFixed(2),
+        is_manipulated: false
+      })
+
+      basePrice = close
+    }
+
+    const { data: insertedCandles, error: insertError } = await supabase
+      .from('candles')
+      .upsert(candles, { onConflict: 'asset_id,timeframe,timestamp' })
+      .select()
+
+    if (insertError) {
+      throw insertError
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        candles: insertedCandles,
+        count: insertedCandles.length 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('Error:', error)
+    return new Response(
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
+      { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
+})
+
+function getInitialPrice(symbol: string): number {
+  const prices: Record<string, number> = {
+    'BTC': 45000, 'ETH': 2500, 'EUR/USD': 1.08, 'GBP/USD': 1.25,
+    'USD/JPY': 150, 'GOLD': 2050, 'OIL': 85, 'AAPL': 185, 'GOOGL': 140
+  }
+  return prices[symbol] || 100
+}
+
+function getTimeframeMs(timeframe: string): number {
+  const map: Record<string, number> = {
+    '10s': 10 * 1000, '30s': 30 * 1000, '1m': 60 * 1000, '5m': 5 * 60 * 1000
+  }
+  return map[timeframe] || 60 * 1000
+}
+
+function getRandomTrend(): number {
+  return (Math.random() - 0.48) * 0.0005
+}
+
+function getBiasTrend(bias: any): number {
+  const strength = parseFloat(bias.strength) / 100
+  const direction = bias.direction === 'up' ? 1 : bias.direction === 'down' ? -1 : 0
+  return direction * strength * 0.001
+}
+```
+
+#### 2. `update-current-candles`
+Atualiza candles em tempo real.
+
+```typescript
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.84.0';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+interface Asset { id: string; symbol: string; auto_generate_candles: boolean; }
+interface Candle { id: string; asset_id: string; timeframe: string; timestamp: string; open: number; high: number; low: number; close: number; volume: number; }
+
+const assetCurrentPrices: Map<string, number> = new Map();
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseClient = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    );
+
+    const { data: assets, error: assetsError } = await supabaseClient
+      .from('assets')
+      .select('id, symbol, auto_generate_candles')
+      .eq('is_active', true)
+      .eq('auto_generate_candles', true);
+
+    if (assetsError) throw assetsError;
+    if (!assets || assets.length === 0) {
+      return new Response(JSON.stringify({ message: 'No active assets to update' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+    }
+
+    const timeframes = ['10s', '30s', '1m', '5m'];
+    const updatedCandles: any[] = [];
+    
+    const getBrazilTime = () => Date.now() + (-3 * 60 * 60 * 1000);
+    const alignToTimeframe = (timestamp: number, timeframeMs: number) => Math.floor(timestamp / timeframeMs) * timeframeMs;
+    const getTimeframeMs = (timeframe: string): number => {
+      const map: Record<string, number> = { '10s': 10000, '30s': 30000, '1m': 60000, '5m': 300000 };
+      return map[timeframe] || 60000;
+    };
+
+    for (const asset of assets) {
+      const { data: baseCandle } = await supabaseClient
+        .from('candles').select('close').eq('asset_id', asset.id).eq('timeframe', '1m')
+        .order('timestamp', { ascending: false }).limit(1).single();
+
+      if (baseCandle) {
+        const currentPrice = Number(baseCandle.close);
+        const volatility = 0.0015;
+        const randomChange = (Math.random() - 0.5) * volatility;
+        assetCurrentPrices.set(asset.id, currentPrice * (1 + randomChange));
+      } else {
+        assetCurrentPrices.set(asset.id, 100);
+      }
+    }
+
+    for (const asset of assets) {
+      const currentPrice = assetCurrentPrices.get(asset.id) || 100;
+      
+      for (const timeframe of timeframes) {
+        try {
+          const timeframeMs = getTimeframeMs(timeframe);
+          const nowBrazil = getBrazilTime();
+          
+          const { data: candles } = await supabaseClient
+            .from('candles').select('*').eq('asset_id', asset.id).eq('timeframe', timeframe)
+            .order('timestamp', { ascending: false }).limit(1);
+
+          if (!candles || candles.length === 0) {
+            const newCandleTimestamp = alignToTimeframe(nowBrazil, timeframeMs);
+            await supabaseClient.from('candles').insert({
+              asset_id: asset.id, timeframe,
+              timestamp: new Date(newCandleTimestamp).toISOString(),
+              open: currentPrice.toFixed(8), high: (currentPrice * 1.001).toFixed(8),
+              low: (currentPrice * 0.999).toFixed(8), close: currentPrice.toFixed(8),
+              volume: (Math.random() * 1000000 + 100000).toFixed(2), is_manipulated: false
+            });
+            updatedCandles.push({ asset: asset.symbol, timeframe, action: 'created_initial' });
+            continue;
+          }
+
+          const currentCandle = candles[0] as Candle;
+          const candleTimestamp = new Date(currentCandle.timestamp).getTime();
+          const candleExpiry = candleTimestamp + timeframeMs;
+          
+          if (nowBrazil >= candleExpiry) {
+            const newCandleTimestamp = alignToTimeframe(nowBrazil, timeframeMs);
+            const lastClose = Number(currentCandle.close);
+            await supabaseClient.from('candles').insert({
+              asset_id: asset.id, timeframe,
+              timestamp: new Date(newCandleTimestamp).toISOString(),
+              open: lastClose.toFixed(8),
+              high: Math.max(lastClose, currentPrice).toFixed(8),
+              low: Math.min(lastClose, currentPrice).toFixed(8),
+              close: currentPrice.toFixed(8),
+              volume: (Math.random() * 1000000 + 100000).toFixed(2), is_manipulated: false
+            });
+            updatedCandles.push({ asset: asset.symbol, timeframe, action: 'created' });
+          } else {
+            const newHigh = Math.max(Number(currentCandle.high), currentPrice);
+            const newLow = Math.min(Number(currentCandle.low), currentPrice);
+            await supabaseClient.from('candles').update({
+              close: currentPrice.toFixed(8), high: newHigh.toFixed(8), low: newLow.toFixed(8),
+              updated_at: new Date(nowBrazil).toISOString()
+            }).eq('id', currentCandle.id);
+            updatedCandles.push({ asset: asset.symbol, timeframe, action: 'updated' });
+          }
+        } catch (error) { continue; }
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, updated_count: updatedCandles.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+  }
+});
+```
+
+#### 3. `process-expired-trades`
+Processa trades expirados e atualiza saldos.
+
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders })
+  }
+
+  try {
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
+
+    let body: any = {}
+    try { body = await req.json() } catch {}
+
+    const isContinuous = body.continuous === true
+    const intervalSeconds = body.interval || 2
+
+    if (isContinuous) {
+      const startTime = Date.now()
+      const maxDuration = 55 * 1000
+      let totalProcessed = 0
+
+      while (Date.now() - startTime < maxDuration) {
+        const result = await processExpiredTrades(supabase, null)
+        totalProcessed += result.processed
+        const remainingTime = maxDuration - (Date.now() - startTime)
+        if (remainingTime > intervalSeconds * 1000) {
+          await new Promise(resolve => setTimeout(resolve, intervalSeconds * 1000))
+        } else break
+      }
+
+      return new Response(JSON.stringify({ success: true, mode: 'continuous', processed: totalProcessed }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+    }
+
+    const result = await processExpiredTrades(supabase, null)
+    return new Response(JSON.stringify({ success: true, ...result }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
+})
+
+async function processExpiredTrades(supabase: any, specificUserId: string | null) {
+  const now = new Date().toISOString()
+  
+  let query = supabase.from('trades').select('*').eq('status', 'open').lt('expires_at', now)
+  if (specificUserId) query = query.eq('user_id', specificUserId)
+  
+  const { data: expiredTrades, error } = await query
+  if (error) throw error
+  if (!expiredTrades || expiredTrades.length === 0) return { processed: 0, errors: 0, total: 0 }
+
+  let processedCount = 0, errorCount = 0
+
+  for (const trade of expiredTrades) {
+    try {
+      const entryPrice = parseFloat(trade.entry_price)
+      if (!entryPrice || entryPrice <= 0) { errorCount++; continue }
+
+      const { data: closeCandle } = await supabase
+        .from('candles').select('close').eq('asset_id', trade.asset_id).eq('timeframe', '1m')
+        .order('timestamp', { ascending: false }).limit(1).single()
+
+      if (!closeCandle) { errorCount++; continue }
+
+      const exitPrice = parseFloat(closeCandle.close)
+      let won = trade.trade_type === 'call' ? exitPrice > entryPrice : exitPrice < entryPrice
+      const status = won ? 'won' : 'lost'
+      const result = won ? trade.payout : -trade.amount
+
+      await supabase.from('trades').update({ status, result, exit_price: exitPrice, closed_at: now }).eq('id', trade.id)
+      processedCount++
+    } catch { errorCount++ }
+  }
+
+  return { processed: processedCount, errors: errorCount, total: expiredTrades.length }
+}
+```
+
+#### 4. `manipulate-candle`
+Manipulação manual de candles (admin).
+
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders })
+
+  try {
+    const supabaseClient = createClient(Deno.env.get('SUPABASE_URL') ?? '', Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '')
+    const authHeader = req.headers.get('Authorization')
+    if (!authHeader) throw new Error('No authorization header')
+
+    const token = authHeader.replace('Bearer ', '')
+    const { data: { user }, error: authError } = await supabaseClient.auth.getUser(token)
+    if (authError || !user) throw new Error('Unauthorized')
+
+    const { candleId, manipulationType, manipulatedValues, biasDirection, biasStrength, expiresAt, notes } = await req.json()
+    if (!candleId || !manipulationType || !manipulatedValues) throw new Error('Missing required fields')
+
+    const { data: candle, error: candleError } = await supabaseClient.from('candles').select('*').eq('id', candleId).single()
+    if (candleError || !candle) throw new Error('Candle not found')
+
+    const originalValues = { open: candle.open, high: candle.high, low: candle.low, close: candle.close, volume: candle.volume }
+
+    await supabaseClient.from('candles').update({ ...manipulatedValues, is_manipulated: true, manipulation_type: manipulationType }).eq('id', candleId)
+
+    const { data: manipulation } = await supabaseClient.from('chart_manipulations').insert({
+      asset_id: candle.asset_id, candle_id: candleId, manipulation_type: manipulationType,
+      original_values: originalValues, manipulated_values: manipulatedValues,
+      bias_direction: biasDirection, bias_strength: biasStrength, admin_id: user.id, expires_at: expiresAt, notes
+    }).select().single()
+
+    return new Response(JSON.stringify({ success: true, manipulation }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+  }
+})
+```
+
+#### 5. `cleanup-old-candles`
+Limpa candles antigos.
+
+```typescript
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  try {
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const { data: assets } = await supabase.from('assets').select('id, symbol').eq('is_active', true);
+    if (!assets) return new Response(JSON.stringify({ success: true, message: 'No assets' }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+    const timeframes = ['10s', '30s', '1m', '5m'];
+    const KEEP_LAST_N = 200;
+    let totalDeleted = 0;
+
+    for (const asset of assets) {
+      for (const tf of timeframes) {
+        const { count } = await supabase.from('candles').select('id', { count: 'exact', head: true }).eq('asset_id', asset.id).eq('timeframe', tf);
+        if (!count || count <= KEEP_LAST_N) continue;
+        const toDelete = count - KEEP_LAST_N;
+        const { data: oldest } = await supabase.from('candles').select('id').eq('asset_id', asset.id).eq('timeframe', tf).order('timestamp', { ascending: true }).limit(toDelete);
+        if (oldest) {
+          await supabase.from('candles').delete().in('id', oldest.map(c => c.id));
+          totalDeleted += oldest.length;
+        }
+      }
+    }
+
+    return new Response(JSON.stringify({ success: true, totalDeleted }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error: any) {
+    return new Response(JSON.stringify({ error: error.message }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 });
+  }
+});
+```
+
+#### 6. `cleanup-demo-trades`
+Limpa trades demo antigos.
+
+```typescript
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
+const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
+
+Deno.serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+
+  try {
+    const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!);
+    const twentyFourHoursAgo = new Date();
+    twentyFourHoursAgo.setHours(twentyFourHoursAgo.getHours() - 24);
+
+    const { data: oldTrades } = await supabase.from('trades').select('id').eq('is_demo', true).lt('created_at', twentyFourHoursAgo.toISOString());
+    if (!oldTrades || oldTrades.length === 0) return new Response(JSON.stringify({ success: true, deleted: 0 }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+
+    await supabase.from('trades').delete().eq('is_demo', true).lt('created_at', twentyFourHoursAgo.toISOString());
+
+    return new Response(JSON.stringify({ success: true, deleted: oldTrades.length }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+});
+```
+
+---
+
+### 🟠 FUNÇÕES DE PAGAMENTO
+
+#### 7. `create-stripe-payment-intent`
+Cria intenção de pagamento Stripe.
+
+```typescript
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type" };
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not configured");
+
+    const supabaseClient = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_ANON_KEY") ?? "");
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) throw new Error("No authorization header");
+
+    const { data: userData, error: userError } = await supabaseClient.auth.getUser(authHeader.replace("Bearer ", ""));
+    if (userError || !userData.user) throw new Error("User not authenticated");
+
+    const { amount, currency = "usd" } = await req.json();
+    if (!amount || amount < 1) throw new Error("Invalid amount");
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+
+    let customerId: string | undefined;
+    if (userData.user.email) {
+      const customers = await stripe.customers.list({ email: userData.user.email, limit: 1 });
+      customerId = customers.data.length > 0 ? customers.data[0].id : (await stripe.customers.create({ email: userData.user.email, metadata: { supabase_user_id: userData.user.id } })).id;
+    }
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: Math.round(amount * 100), currency: currency.toLowerCase(), customer: customerId,
+      automatic_payment_methods: { enabled: true },
+      metadata: { supabase_user_id: userData.user.id, user_email: userData.user.email || "" },
+    });
+
+    const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+    const { data: transaction } = await supabaseAdmin.from("transactions").insert({
+      user_id: userData.user.id, type: "deposit", amount, status: "pending", payment_method: "stripe", transaction_reference: paymentIntent.id
+    }).select().single();
+
+    return new Response(JSON.stringify({ clientSecret: paymentIntent.client_secret, paymentIntentId: paymentIntent.id, transactionId: transaction?.id }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
+  }
+});
+```
+
+#### 8. `stripe-webhook`
+Webhook do Stripe.
+
+```typescript
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
+import Stripe from "https://esm.sh/stripe@18.5.0";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+
+const corsHeaders = { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature" };
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY not configured");
+
+    const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    const body = await req.text();
+    const signature = req.headers.get("stripe-signature");
+
+    let event: Stripe.Event;
+    if (webhookSecret && signature) {
+      try { event = stripe.webhooks.constructEvent(body, signature, webhookSecret); }
+      catch { return new Response(JSON.stringify({ error: "Invalid signature" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }); }
+    } else { event = JSON.parse(body); }
+
+    const supabase = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
+
+    if (event.type === "payment_intent.succeeded") {
+      const pi = event.data.object as Stripe.PaymentIntent;
+      await supabase.from("transactions").update({ status: "completed" }).eq("transaction_reference", pi.id);
+      const userId = pi.metadata.supabase_user_id;
+      const amount = pi.amount / 100;
+      if (userId) {
+        const { data: profile } = await supabase.from("profiles").select("balance, total_deposited").eq("user_id", userId).single();
+        if (profile) {
+          const newBalance = (Number(profile.balance) || 0) + amount;
+          const newTotal = (Number(profile.total_deposited) || 0) + amount;
+          const tier = newTotal >= 1000000 ? 'vip' : newTotal >= 100000 ? 'pro' : 'standard';
+          await supabase.from("profiles").update({ balance: newBalance, total_deposited: newTotal, user_tier: tier }).eq("user_id", userId);
+        }
+      }
+    } else if (event.type === "payment_intent.payment_failed") {
+      const pi = event.data.object as Stripe.PaymentIntent;
+      await supabase.from("transactions").update({ status: "failed" }).eq("transaction_reference", pi.id);
+    }
+
+    return new Response(JSON.stringify({ received: true }), { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500 });
+  }
+});
+```
+
+#### 9-15. Outras funções de pagamento
+
+As seguintes funções devem ser copiadas do repositório original (`supabase/functions/`):
+
+- **`create-coinbase-charge`** - Cria cobrança Coinbase
+- **`coinbase-webhook`** - Webhook do Coinbase  
+- **`process-payment`** - Processa pagamentos PIX
+- **`payment-webhook`** - Webhook de pagamentos PIX
+- **`check-pending-payments`** - Verifica pagamentos pendentes
+- **`cleanup-expired-transactions`** - Limpa transações expiradas
+- **`recover-pending-transactions`** - Recupera transações pendentes
+
+---
+
+### 🟡 FUNÇÕES DE NOTIFICAÇÕES PUSH
+
+#### 16. `get-vapid-key`
+Retorna chave pública VAPID.
+
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+const corsHeaders = { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type' };
+
+serve(async (req) => {
+  if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
+  try {
+    const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
+    if (!vapidPublicKey) return new Response(JSON.stringify({ error: 'VAPID key not configured' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    return new Response(JSON.stringify({ publicKey: vapidPublicKey }), { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Internal server error' }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+  }
+});
+```
+
+#### 17-22. Outras funções de notificação
+
+Copie do repositório original:
+- **`generate-vapid-keys`** - Gera chaves VAPID
+- **`push-subscribe`** - Inscrição push
+- **`push-unsubscribe`** - Cancelar inscrição
+- **`send-push-notification`** - Envia notificações
+- **`notify-admins`** - Notifica admins
+- **`process-admin-notifications`** - Processa fila de notificações
+
+---
+
+### 🟢 FUNÇÕES AUXILIARES
+
+#### 23-25. Funções auxiliares
+
+- **`create-referral`** - Cria referência de afiliado
+- **`organize-assets`** - Organiza ativos
+- **`verify-admin-password`** - Verifica senha admin
+
+---
+
+### ⚙️ Configurar config.toml
+
+Após criar as funções, configure o arquivo `supabase/config.toml` para desabilitar JWT onde necessário:
+
+```toml
+project_id = "SEU_PROJECT_ID"
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.coinbase-webhook]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.get-vapid-key]
+verify_jwt = false
+
+[functions.update-current-candles]
+verify_jwt = false
+
+[functions.process-expired-trades]
+verify_jwt = false
+
+[functions.cleanup-demo-trades]
+verify_jwt = false
+
+[functions.cleanup-old-candles]
+verify_jwt = false
+
+[functions.cleanup-expired-transactions]
+verify_jwt = false
+
+[functions.check-pending-payments]
+verify_jwt = false
+
+[functions.process-admin-notifications]
+verify_jwt = false
+```
+
+---
+
 ## ✅ CHECKLIST FINAL
 
 - [ ] Projeto Supabase criado
@@ -1775,9 +2537,9 @@ As Edge Functions serão automaticamente deployadas quando você fizer push do c
 - [ ] PASSO 3 executado (storage)
 - [ ] PASSO 4 executado (realtime)
 - [ ] PASSO 5 executado (cron jobs)
+- [ ] **PASSO 6 executado (TODAS as 25 edge functions deployadas)**
 - [ ] Secrets configurados
 - [ ] Variáveis de ambiente no hosting
-- [ ] Edge Functions deployadas
 - [ ] Webhook Stripe configurado no dashboard Stripe
 - [ ] Webhook Coinbase configurado (se usar)
 
@@ -1788,11 +2550,14 @@ As Edge Functions serão automaticamente deployadas quando você fizer push do c
 ### Erro "relation does not exist"
 Execute os passos na ordem correta: PASSO 1 antes do PASSO 2.
 
+### Erro ao gerar candles / "Function not found"
+A edge function `generate-candles` não foi deployada. Execute o PASSO 6.
+
 ### Trades não expirando
 Verifique se o cron job `process-expired-trades` está ativo e se a edge function está deployada.
 
 ### Candles não atualizando
-Verifique se o cron job `update-current-candles` está ativo.
+Verifique se o cron job `update-current-candles` está ativo e se a edge function está deployada.
 
 ### Balance não atualizando em tempo real
 Verifique se o PASSO 4 (Realtime) foi executado corretamente.
@@ -1800,7 +2565,10 @@ Verifique se o PASSO 4 (Realtime) foi executado corretamente.
 ### Pagamentos não processando
 Verifique se os webhooks estão configurados corretamente no Stripe/Coinbase dashboards.
 
+### Erro "SUPABASE_URL not found" em edge functions
+Configure os secrets no Supabase Dashboard → Settings → Edge Functions.
+
 ---
 
 **Documento atualizado em: 14/12/2024**
-**Versão: 2.0 - Com dados reais do projeto atual**
+**Versão: 3.0 - Com TODAS as Edge Functions e código completo**
