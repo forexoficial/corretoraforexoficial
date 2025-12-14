@@ -67,8 +67,8 @@ export function WorldMapBackground({
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage: `url(${selectedImage})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
+          backgroundSize: isMobile ? 'contain' : 'cover',
+          backgroundPosition: 'center center',
           backgroundRepeat: 'no-repeat',
           opacity: opacity,
           zIndex: 0
