@@ -40,25 +40,50 @@ export function WorldMapBackground({
   // Escolher a imagem correta baseada no dispositivo e fundo
   const getSelectedImage = () => {
     const isLight = isLightBackground();
-    
+
+    // MOBILE: sempre priorizar as imagens específicas de mobile quando existirem
     if (isMobile) {
-      // Mobile: usar imagens mobile se disponíveis, senão fallback para desktop
       if (isLight) {
-        return imageUrlMobileDark || imageUrlDark;
-      } else {
-        return imageUrlMobile || imageUrl;
+        // Fundo claro: usar versão "clara" se existir, senão fallback para desktop
+        return (
+          imageUrlMobile ||
+          imageUrl ||
+          imageUrlMobileDark ||
+          imageUrlDark
+        );
       }
-    } else {
-      // Desktop: usar imagens desktop
-      if (isLight) {
-        return imageUrlDark;
-      } else {
-        return imageUrl;
-      }
+
+      // Fundo escuro: usar versão "escura" se existir, senão fallback para desktop
+      return (
+        imageUrlMobileDark ||
+        imageUrlDark ||
+        imageUrlMobile ||
+        imageUrl
+      );
     }
+
+    // DESKTOP: manter comportamento padrão com light/dark
+    if (isLight) {
+      return imageUrl || imageUrlDark;
+    }
+
+    return imageUrlDark || imageUrl;
   };
 
   const selectedImage = getSelectedImage();
+
+  // Debug: log which image is being used (desktop vs mobile)
+  if (typeof window !== 'undefined') {
+    console.debug('[WorldMapBackground]', {
+      isMobile,
+      bgColor,
+      imageUrl,
+      imageUrlDark,
+      imageUrlMobile,
+      imageUrlMobileDark,
+      selectedImage,
+    });
+  }
 
   // Se houver uma imagem, use ela ao invés do SVG
   if (selectedImage) {
