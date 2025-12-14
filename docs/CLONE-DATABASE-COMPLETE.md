@@ -34,7 +34,23 @@ CREATE TYPE public.app_role AS ENUM ('admin', 'user');
 
 
 -- ============================================
--- PARTE 2: FUNÇÕES AUXILIARES
+-- PARTE 2: TABELA USER_ROLES (DEVE SER CRIADA PRIMEIRO)
+-- ============================================
+-- IMPORTANTE: Esta tabela precisa existir ANTES da função has_role()
+
+CREATE TABLE public.user_roles (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  role app_role NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  UNIQUE(user_id, role)
+);
+
+ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+
+-- ============================================
+-- PARTE 3: FUNÇÕES AUXILIARES
 -- ============================================
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -74,9 +90,14 @@ AS $$
   )
 $$;
 
+-- Policies para user_roles (após has_role estar definida)
+CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 
 -- ============================================
--- PARTE 3: TABELAS PRINCIPAIS
+-- PARTE 4: TABELAS PRINCIPAIS
 -- ============================================
 
 -- Tabela: assets
@@ -137,20 +158,6 @@ CREATE TRIGGER update_profiles_updated_at
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
 
--- Tabela: user_roles
-CREATE TABLE public.user_roles (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL,
-  role app_role NOT NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  UNIQUE(user_id, role)
-);
-
-ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: trades
 CREATE TABLE public.trades (
