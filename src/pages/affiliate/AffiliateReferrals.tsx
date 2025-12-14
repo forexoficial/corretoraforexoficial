@@ -22,7 +22,6 @@ interface Referral {
   status: string;
   created_at: string;
   user_name: string;
-  user_email: string;
   total_deposits: number;
   total_commissions: number;
 }
@@ -68,11 +67,6 @@ export default function AffiliateReferrals() {
             .eq("user_id", referral.referred_user_id)
             .single();
 
-          // Get user auth data
-          const { data: { user: authUser } } = await supabase.auth.admin.getUserById(
-            referral.referred_user_id
-          );
-
           // Get transactions for this user
           const { data: transactions } = await supabase
             .from("transactions")
@@ -90,7 +84,6 @@ export default function AffiliateReferrals() {
           return {
             ...referral,
             user_name: profile?.full_name || "Usuário",
-            user_email: authUser?.email || "",
             total_deposits: transactions?.reduce((sum, t) => sum + Number(t.amount), 0) || 0,
             total_commissions: commissions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0,
           };
@@ -107,8 +100,7 @@ export default function AffiliateReferrals() {
 
   const filteredReferrals = referrals.filter(
     (referral) =>
-      referral.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      referral.user_email.toLowerCase().includes(searchTerm.toLowerCase())
+      referral.user_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -144,7 +136,6 @@ export default function AffiliateReferrals() {
             <TableHeader>
               <TableRow>
                 <TableHead className="text-xs sm:text-sm">Nome</TableHead>
-                <TableHead className="hidden sm:table-cell text-xs sm:text-sm">Email</TableHead>
                 <TableHead className="text-xs sm:text-sm">Data</TableHead>
                 <TableHead className="text-xs sm:text-sm">Depósitos</TableHead>
                 <TableHead className="text-xs sm:text-sm">Comissões</TableHead>
@@ -154,7 +145,7 @@ export default function AffiliateReferrals() {
             <TableBody>
               {filteredReferrals.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground text-sm">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground text-sm">
                     Nenhum referido encontrado
                   </TableCell>
                 </TableRow>
@@ -162,7 +153,6 @@ export default function AffiliateReferrals() {
                 filteredReferrals.map((referral) => (
                   <TableRow key={referral.id}>
                     <TableCell className="font-medium text-xs sm:text-sm">{referral.user_name}</TableCell>
-                    <TableCell className="hidden sm:table-cell text-xs sm:text-sm">{referral.user_email}</TableCell>
                     <TableCell className="text-xs sm:text-sm">
                       {new Date(referral.created_at).toLocaleDateString("pt-BR", { 
                         day: '2-digit', 
