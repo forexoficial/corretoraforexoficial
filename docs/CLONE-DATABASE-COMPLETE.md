@@ -1,19 +1,24 @@
 # 🗄️ Guia Completo: Clone do Banco de Dados Supabase
 
 Este documento contém TUDO que você precisa para clonar o banco de dados para um novo projeto Supabase.
+**Atualizado em: 14/12/2024 com todos os dados reais do projeto atual.**
 
 ---
 
 ## 📋 PASSOS RESUMIDOS
 
 1. **Criar novo projeto Supabase** em [supabase.com](https://supabase.com)
-2. **Copiar o SQL do PASSO 1** (este documento) e rodar no SQL Editor do NOVO projeto
-3. **Rodar o script de exportação** no projeto ORIGINAL
-4. **Colar os dados exportados** no projeto NOVO
+2. **Executar PASSO 1** - Estrutura do banco de dados
+3. **Executar PASSO 2** - Dados seed (configurações, assets, etc.)
+4. **Executar PASSO 3** - Configurar Storage Buckets
+5. **Executar PASSO 4** - Configurar Realtime
+6. **Executar PASSO 5** - Configurar Cron Jobs
+7. **Configurar Secrets** no Supabase
+8. **Deploy das Edge Functions**
 
 ---
 
-## 🔧 PASSO 1: SQL COMPLETO PARA CRIAR ESTRUTURA
+## 🔧 PASSO 1: ESTRUTURA DO BANCO DE DADOS
 
 Cole TODO o SQL abaixo no **SQL Editor do seu NOVO projeto Supabase**:
 
@@ -22,21 +27,14 @@ Cole TODO o SQL abaixo no **SQL Editor do seu NOVO projeto Supabase**:
 -- PARTE 1: CRIAR ENUMS E TIPOS
 -- ============================================
 
--- Enum para status de verificação
 CREATE TYPE public.verification_status AS ENUM ('pending', 'under_review', 'approved', 'rejected');
-
--- Enum para tipos de documento
 CREATE TYPE public.document_type AS ENUM ('rg', 'cnh');
-
--- Enum para tipos de entidade
 CREATE TYPE public.entity_type AS ENUM ('individual', 'business');
-
--- Enum para roles da aplicação
 CREATE TYPE public.app_role AS ENUM ('admin', 'user');
 
 
 -- ============================================
--- PARTE 2: CRIAR FUNÇÃO AUXILIAR DE TIMESTAMP
+-- PARTE 2: FUNÇÕES AUXILIARES
 -- ============================================
 
 CREATE OR REPLACE FUNCTION public.update_updated_at_column()
@@ -47,6 +45,35 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
+CREATE OR REPLACE FUNCTION public.calculate_user_tier(deposited numeric)
+RETURNS text
+LANGUAGE plpgsql
+IMMUTABLE
+AS $$
+BEGIN
+  IF deposited >= 1000000 THEN
+    RETURN 'vip';
+  ELSIF deposited >= 100000 THEN
+    RETURN 'pro';
+  ELSE
+    RETURN 'standard';
+  END IF;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION public.has_role(_user_id uuid, _role app_role)
+RETURNS boolean
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.user_roles
+    WHERE user_id = _user_id AND role = _role
+  )
+$$;
+
 
 -- ============================================
 -- PARTE 3: TABELAS PRINCIPAIS
@@ -56,7 +83,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 CREATE TABLE public.assets (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   name TEXT NOT NULL,
-  symbol TEXT NOT NULL UNIQUE,
+  symbol TEXT NOT NULL,
   icon_url TEXT,
   payout_percentage INTEGER NOT NULL DEFAULT 91,
   is_active BOOLEAN NOT NULL DEFAULT true,
@@ -66,9 +93,10 @@ CREATE TABLE public.assets (
 
 ALTER TABLE public.assets ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Assets are viewable by everyone"
-ON public.assets FOR SELECT
-USING (true);
+CREATE POLICY "Assets are viewable by everyone" ON public.assets FOR SELECT USING (true);
+CREATE POLICY "Admins can insert assets" ON public.assets FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update assets" ON public.assets FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete assets" ON public.assets FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: profiles
 CREATE TABLE public.profiles (
@@ -98,66 +126,16 @@ CREATE TABLE public.profiles (
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Constraint para document_type aceitar internacional
-ALTER TABLE public.profiles ADD CONSTRAINT profiles_document_type_check 
-  CHECK (document_type IN ('cpf', 'cnpj', 'CPF', 'CNPJ', 'international', 'N/A', 'na', ''));
+CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
 
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
-
--- Tabela: trades
-CREATE TABLE public.trades (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL,
-  asset_id UUID NOT NULL REFERENCES public.assets(id),
-  trade_type TEXT NOT NULL CHECK (trade_type IN ('call', 'put')),
-  amount NUMERIC NOT NULL,
-  payout NUMERIC NOT NULL,
-  duration_minutes INTEGER NOT NULL,
-  entry_price NUMERIC,
-  exit_price NUMERIC,
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'won', 'lost')),
-  result NUMERIC,
-  is_demo BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  closed_at TIMESTAMP WITH TIME ZONE
-);
-
-ALTER TABLE public.trades ENABLE ROW LEVEL SECURITY;
-
-CREATE INDEX idx_trades_user_id ON public.trades(user_id);
-CREATE INDEX idx_trades_status ON public.trades(status);
-CREATE INDEX idx_trades_created_at ON public.trades(created_at DESC);
-CREATE INDEX idx_trades_user_status ON public.trades(user_id, status);
-
--- Tabela: transactions
-CREATE TABLE public.transactions (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('deposit', 'withdrawal', 'commission')),
-  amount NUMERIC NOT NULL CHECK (amount > 0),
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'completed', 'failed', 'cancelled')),
-  payment_method TEXT,
-  payment_currency TEXT DEFAULT 'USD',
-  transaction_reference TEXT,
-  notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
-
-CREATE TRIGGER update_transactions_updated_at
-BEFORE UPDATE ON public.transactions
-FOR EACH ROW
-EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_transactions_user_id ON public.transactions(user_id);
-CREATE INDEX idx_transactions_status ON public.transactions(status);
-CREATE INDEX idx_transactions_payment_currency ON public.transactions(payment_currency);
 
 -- Tabela: user_roles
 CREATE TABLE public.user_roles (
@@ -169,6 +147,76 @@ CREATE TABLE public.user_roles (
 );
 
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
+-- Tabela: trades
+CREATE TABLE public.trades (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
+  asset_id UUID NOT NULL REFERENCES public.assets(id),
+  trade_type TEXT NOT NULL,
+  amount NUMERIC NOT NULL,
+  payout NUMERIC NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  entry_price NUMERIC,
+  exit_price NUMERIC,
+  status TEXT NOT NULL DEFAULT 'open',
+  result NUMERIC,
+  is_demo BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+  closed_at TIMESTAMP WITH TIME ZONE
+);
+
+ALTER TABLE public.trades ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own trades" ON public.trades FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own trades" ON public.trades FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own trades" ON public.trades FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Admins can view all trades" ON public.trades FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update all trades" ON public.trades FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete trades" ON public.trades FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE INDEX idx_trades_user_id ON public.trades(user_id);
+CREATE INDEX idx_trades_status ON public.trades(status);
+CREATE INDEX idx_trades_created_at ON public.trades(created_at DESC);
+CREATE INDEX idx_trades_user_status ON public.trades(user_id, status);
+CREATE INDEX idx_trades_user_status_expires ON public.trades(user_id, status, expires_at);
+CREATE INDEX idx_trades_expired_open ON public.trades(status, expires_at) WHERE status = 'open';
+
+-- Tabela: transactions
+CREATE TABLE public.transactions (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
+  type TEXT NOT NULL,
+  amount NUMERIC NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  payment_method TEXT,
+  payment_currency TEXT DEFAULT 'USD',
+  transaction_reference TEXT,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.transactions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own transactions" ON public.transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admins can view all transactions" ON public.transactions FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update all transactions" ON public.transactions FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete transactions" ON public.transactions FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE TRIGGER update_transactions_updated_at
+BEFORE UPDATE ON public.transactions
+FOR EACH ROW
+EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE INDEX idx_transactions_user_id ON public.transactions(user_id);
+CREATE INDEX idx_transactions_status ON public.transactions(status);
 
 -- Tabela: verification_requests
 CREATE TABLE public.verification_requests (
@@ -190,6 +238,11 @@ CREATE TABLE public.verification_requests (
 
 ALTER TABLE public.verification_requests ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Users can view their own verification requests" ON public.verification_requests FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own verification requests" ON public.verification_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admins can view all verification requests" ON public.verification_requests FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update verification requests" ON public.verification_requests FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE TRIGGER update_verification_requests_updated_at
   BEFORE UPDATE ON public.verification_requests
   FOR EACH ROW
@@ -207,11 +260,32 @@ CREATE TABLE public.platform_settings (
 
 ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Allow public read access to platform settings" ON public.platform_settings FOR SELECT USING (true);
+CREATE POLICY "Admins can manage platform settings" ON public.platform_settings FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
+CREATE OR REPLACE FUNCTION public.update_platform_settings_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  NEW.updated_at = now();
+  NEW.updated_by = auth.uid();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER update_platform_settings_trigger
+  BEFORE UPDATE ON public.platform_settings
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_platform_settings_updated_at();
+
 -- Tabela: payment_gateways
 CREATE TABLE public.payment_gateways (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('pix', 'crypto', 'worldwide', 'coinbase')),
+  type TEXT NOT NULL,
   api_key TEXT,
   api_secret TEXT,
   webhook_url TEXT,
@@ -222,6 +296,8 @@ CREATE TABLE public.payment_gateways (
 );
 
 ALTER TABLE public.payment_gateways ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can manage payment gateways" ON public.payment_gateways FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: platform_popups
 CREATE TABLE public.platform_popups (
@@ -239,6 +315,9 @@ CREATE TABLE public.platform_popups (
 
 ALTER TABLE public.platform_popups ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Users can view active popups" ON public.platform_popups FOR SELECT USING ((is_active = true) AND ((start_date IS NULL) OR (start_date <= now())) AND ((end_date IS NULL) OR (end_date >= now())));
+CREATE POLICY "Admins can manage popups" ON public.platform_popups FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 -- Tabela: affiliates
 CREATE TABLE public.affiliates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -254,13 +333,13 @@ CREATE TABLE public.affiliates (
 
 ALTER TABLE public.affiliates ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Users can view their own affiliate data" ON public.affiliates FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Admins can manage all affiliates" ON public.affiliates FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE TRIGGER update_affiliates_updated_at
 BEFORE UPDATE ON public.affiliates
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_affiliates_user_id ON public.affiliates(user_id);
-CREATE INDEX idx_affiliates_code ON public.affiliates(affiliate_code);
 
 -- Tabela: referrals
 CREATE TABLE public.referrals (
@@ -273,8 +352,7 @@ CREATE TABLE public.referrals (
 
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
 
-CREATE INDEX idx_referrals_affiliate_id ON public.referrals(affiliate_id);
-CREATE INDEX idx_referrals_referred_user_id ON public.referrals(referred_user_id);
+CREATE POLICY "Admins can manage all referrals" ON public.referrals FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: commissions
 CREATE TABLE public.commissions (
@@ -288,15 +366,15 @@ CREATE TABLE public.commissions (
 
 ALTER TABLE public.commissions ENABLE ROW LEVEL SECURITY;
 
-CREATE INDEX idx_commissions_affiliate_id ON public.commissions(affiliate_id);
+CREATE POLICY "Admins can manage all commissions" ON public.commissions FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
--- Tabela: withdrawal_requests (affiliate)
+-- Tabela: withdrawal_requests
 CREATE TABLE public.withdrawal_requests (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   affiliate_id UUID NOT NULL REFERENCES public.affiliates(id) ON DELETE CASCADE,
-  amount NUMERIC NOT NULL CHECK (amount > 0),
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected', 'processing')),
-  payment_method TEXT NOT NULL CHECK (payment_method IN ('pix', 'bank_transfer')),
+  amount NUMERIC NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  payment_method TEXT NOT NULL,
   payment_details JSONB NOT NULL DEFAULT '{}',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   processed_at TIMESTAMP WITH TIME ZONE,
@@ -308,13 +386,14 @@ CREATE TABLE public.withdrawal_requests (
 
 ALTER TABLE public.withdrawal_requests ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Affiliates can view their own withdrawal requests" ON public.withdrawal_requests FOR SELECT USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+CREATE POLICY "Affiliates can create their own withdrawal requests" ON public.withdrawal_requests FOR INSERT WITH CHECK (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can manage all withdrawal requests" ON public.withdrawal_requests FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE TRIGGER update_withdrawal_requests_updated_at
   BEFORE UPDATE ON public.withdrawal_requests
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_withdrawal_requests_affiliate_id ON public.withdrawal_requests(affiliate_id);
-CREATE INDEX idx_withdrawal_requests_status ON public.withdrawal_requests(status);
 
 -- Tabela: affiliate_custom_links
 CREATE TABLE public.affiliate_custom_links (
@@ -332,13 +411,16 @@ CREATE TABLE public.affiliate_custom_links (
 
 ALTER TABLE public.affiliate_custom_links ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Affiliates can view their own custom links" ON public.affiliate_custom_links FOR SELECT USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+CREATE POLICY "Affiliates can create their own custom links" ON public.affiliate_custom_links FOR INSERT WITH CHECK (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+CREATE POLICY "Affiliates can update their own custom links" ON public.affiliate_custom_links FOR UPDATE USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+CREATE POLICY "Affiliates can delete their own custom links" ON public.affiliate_custom_links FOR DELETE USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can manage all custom links" ON public.affiliate_custom_links FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE TRIGGER update_affiliate_custom_links_updated_at
 BEFORE UPDATE ON public.affiliate_custom_links
 FOR EACH ROW
 EXECUTE FUNCTION public.update_updated_at_column();
-
-CREATE INDEX idx_affiliate_custom_links_affiliate_id ON public.affiliate_custom_links(affiliate_id);
-CREATE INDEX idx_affiliate_custom_links_slug ON public.affiliate_custom_links(custom_slug);
 
 -- Tabela: legal_documents
 CREATE TABLE public.legal_documents (
@@ -355,6 +437,9 @@ CREATE TABLE public.legal_documents (
 );
 
 ALTER TABLE public.legal_documents ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Todos podem visualizar documentos legais ativos" ON public.legal_documents FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins podem gerenciar documentos legais" ON public.legal_documents FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 CREATE TRIGGER update_legal_documents_updated_at
   BEFORE UPDATE ON public.legal_documents
@@ -373,6 +458,9 @@ CREATE TABLE public.company_info (
 
 ALTER TABLE public.company_info ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Todos podem visualizar informações da empresa" ON public.company_info FOR SELECT USING (true);
+CREATE POLICY "Admins podem gerenciar informações da empresa" ON public.company_info FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE TRIGGER update_company_info_updated_at
   BEFORE UPDATE ON public.company_info
   FOR EACH ROW
@@ -387,9 +475,9 @@ CREATE TABLE public.boosters (
   name_es TEXT,
   description_en TEXT,
   description_es TEXT,
-  payout_increase_percentage INTEGER NOT NULL CHECK (payout_increase_percentage > 0 AND payout_increase_percentage <= 100),
-  duration_minutes INTEGER NOT NULL CHECK (duration_minutes > 0),
-  price NUMERIC NOT NULL CHECK (price >= 0),
+  payout_increase_percentage INTEGER NOT NULL,
+  duration_minutes INTEGER NOT NULL,
+  price NUMERIC NOT NULL,
   icon TEXT DEFAULT 'Zap',
   is_active BOOLEAN NOT NULL DEFAULT true,
   display_order INTEGER NOT NULL DEFAULT 0,
@@ -399,7 +487,8 @@ CREATE TABLE public.boosters (
 
 ALTER TABLE public.boosters ENABLE ROW LEVEL SECURITY;
 
-CREATE INDEX idx_boosters_active ON public.boosters(is_active) WHERE is_active = true;
+CREATE POLICY "Boosters are viewable by everyone" ON public.boosters FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage boosters" ON public.boosters FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 CREATE TRIGGER update_boosters_updated_at
 BEFORE UPDATE ON public.boosters
@@ -420,9 +509,13 @@ CREATE TABLE public.user_boosters (
 
 ALTER TABLE public.user_boosters ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Users can view their own active boosters" ON public.user_boosters FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own boosters" ON public.user_boosters FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admins can view all user boosters" ON public.user_boosters FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update all user boosters" ON public.user_boosters FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete user boosters" ON public.user_boosters FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE INDEX idx_user_boosters_user_id ON public.user_boosters(user_id);
-CREATE INDEX idx_user_boosters_expires_at ON public.user_boosters(expires_at);
-CREATE INDEX idx_user_boosters_active ON public.user_boosters(is_active) WHERE is_active = true;
 
 -- Tabela: candles
 CREATE TABLE public.candles (
@@ -444,8 +537,12 @@ CREATE TABLE public.candles (
 
 ALTER TABLE public.candles ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Candles are viewable by everyone" ON public.candles FOR SELECT USING (true);
+CREATE POLICY "Admins can manage candles" ON public.candles FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 CREATE INDEX idx_candles_asset_timeframe ON public.candles(asset_id, timeframe, timestamp DESC);
-CREATE INDEX idx_candles_timestamp ON public.candles(timestamp DESC);
+CREATE INDEX idx_candles_asset_timeframe_timestamp ON public.candles(asset_id, timeframe, timestamp);
+CREATE INDEX idx_candles_recent ON public.candles(asset_id, timeframe, timestamp DESC);
 
 CREATE OR REPLACE FUNCTION update_candles_updated_at()
 RETURNS TRIGGER AS $$
@@ -480,8 +577,10 @@ CREATE TABLE public.chart_manipulations (
 
 ALTER TABLE public.chart_manipulations ENABLE ROW LEVEL SECURITY;
 
-CREATE INDEX idx_chart_manipulations_asset ON public.chart_manipulations(asset_id, applied_at DESC);
-CREATE INDEX idx_chart_manipulations_candle ON public.chart_manipulations(candle_id);
+CREATE POLICY "Admins can view all manipulations" ON public.chart_manipulations FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can create manipulations" ON public.chart_manipulations FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update manipulations" ON public.chart_manipulations FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete manipulations" ON public.chart_manipulations FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: chart_biases
 CREATE TABLE public.chart_biases (
@@ -492,74 +591,102 @@ CREATE TABLE public.chart_biases (
   strength NUMERIC NOT NULL DEFAULT 50,
   start_time TIMESTAMP WITH TIME ZONE NOT NULL,
   end_time TIMESTAMP WITH TIME ZONE NOT NULL,
-  is_active BOOLEAN NOT NULL DEFAULT true,
   admin_id UUID NOT NULL,
+  is_active BOOLEAN NOT NULL DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.chart_biases ENABLE ROW LEVEL SECURITY;
 
-CREATE INDEX idx_chart_biases_asset ON public.chart_biases(asset_id, start_time, end_time);
-CREATE INDEX idx_chart_biases_active ON public.chart_biases(is_active, start_time, end_time);
+CREATE POLICY "Admins can view all biases" ON public.chart_biases FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can create biases" ON public.chart_biases FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can update biases" ON public.chart_biases FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Admins can delete biases" ON public.chart_biases FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
 
-CREATE OR REPLACE FUNCTION update_chart_biases_updated_at()
-RETURNS TRIGGER AS $$
+CREATE OR REPLACE FUNCTION public.update_chart_biases_updated_at()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+$$;
 
-CREATE TRIGGER trigger_update_chart_biases_updated_at
+CREATE TRIGGER update_chart_biases_updated_at_trigger
   BEFORE UPDATE ON public.chart_biases
   FOR EACH ROW
-  EXECUTE FUNCTION update_chart_biases_updated_at();
+  EXECUTE FUNCTION public.update_chart_biases_updated_at();
+
+-- Tabela: chart_drawings
+CREATE TABLE public.chart_drawings (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
+  asset_id UUID NOT NULL REFERENCES public.assets(id) ON DELETE CASCADE,
+  drawing_type TEXT NOT NULL,
+  points JSONB NOT NULL,
+  color TEXT NOT NULL DEFAULT '#22c55e',
+  line_width INTEGER NOT NULL DEFAULT 2,
+  line_style TEXT NOT NULL DEFAULT 'solid',
+  timeframe TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.chart_drawings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view their own drawings" ON public.chart_drawings FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own drawings" ON public.chart_drawings FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Users can update their own drawings" ON public.chart_drawings FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Users can delete their own drawings" ON public.chart_drawings FOR DELETE USING (auth.uid() = user_id);
 
 -- Tabela: chart_appearance_settings
 CREATE TABLE public.chart_appearance_settings (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  chart_bg_color TEXT NOT NULL DEFAULT '#0a0a0a',
-  chart_bg_color_dark TEXT DEFAULT '#0a0a0a',
-  chart_bg_color_light TEXT DEFAULT '#ffffff',
-  chart_text_color TEXT NOT NULL DEFAULT '#d1d4dc',
-  chart_text_color_dark TEXT DEFAULT '#d1d4dc',
-  chart_text_color_light TEXT DEFAULT '#1a1a1a',
-  grid_vert_color TEXT NOT NULL DEFAULT '#1e1e1e',
-  grid_vert_color_dark TEXT DEFAULT '#1e1e1e',
-  grid_vert_color_light TEXT DEFAULT '#e5e5e5',
-  grid_horz_color TEXT NOT NULL DEFAULT '#1e1e1e',
-  grid_horz_color_dark TEXT DEFAULT '#1e1e1e',
-  grid_horz_color_light TEXT DEFAULT '#e5e5e5',
+  id UUID PRIMARY KEY DEFAULT '00000000-0000-0000-0000-000000000001',
   candle_up_color TEXT NOT NULL DEFAULT '#22c55e',
-  candle_up_color_dark TEXT DEFAULT '#22c55e',
-  candle_up_color_light TEXT DEFAULT '#22c55e',
   candle_down_color TEXT NOT NULL DEFAULT '#ef4444',
+  candle_up_color_dark TEXT DEFAULT '#22c55e',
   candle_down_color_dark TEXT DEFAULT '#ef4444',
+  candle_up_color_light TEXT DEFAULT '#22c55e',
   candle_down_color_light TEXT DEFAULT '#ef4444',
-  candle_border_visible BOOLEAN DEFAULT false,
-  candle_border_up_color TEXT DEFAULT '#22c55e',
-  candle_border_down_color TEXT DEFAULT '#ef4444',
-  candle_border_width INTEGER DEFAULT 1,
-  candle_border_up_color_dark TEXT DEFAULT '#22c55e',
-  candle_border_down_color_dark TEXT DEFAULT '#ef4444',
-  candle_border_up_color_light TEXT DEFAULT '#22c55e',
-  candle_border_down_color_light TEXT DEFAULT '#ef4444',
   wick_up_color TEXT DEFAULT '#22c55e',
   wick_down_color TEXT DEFAULT '#ef4444',
   wick_up_color_dark TEXT DEFAULT '#22c55e',
   wick_down_color_dark TEXT DEFAULT '#ef4444',
   wick_up_color_light TEXT DEFAULT '#22c55e',
   wick_down_color_light TEXT DEFAULT '#ef4444',
+  candle_border_up_color TEXT DEFAULT '#22c55e',
+  candle_border_down_color TEXT DEFAULT '#ef4444',
+  candle_border_up_color_dark TEXT DEFAULT '#22c55e',
+  candle_border_down_color_dark TEXT DEFAULT '#ef4444',
+  candle_border_up_color_light TEXT DEFAULT '#22c55e',
+  candle_border_down_color_light TEXT DEFAULT '#ef4444',
+  candle_border_visible BOOLEAN DEFAULT false,
+  candle_border_width INTEGER DEFAULT 1,
+  chart_bg_color TEXT NOT NULL DEFAULT '#0a0a0a',
+  chart_bg_color_dark TEXT DEFAULT '#0a0a0a',
+  chart_bg_color_light TEXT DEFAULT '#ffffff',
+  chart_text_color TEXT NOT NULL DEFAULT '#d1d4dc',
+  chart_text_color_dark TEXT DEFAULT '#d1d4dc',
+  chart_text_color_light TEXT DEFAULT '#1a1a1a',
+  grid_horz_color TEXT NOT NULL DEFAULT '#1e1e1e',
+  grid_vert_color TEXT NOT NULL DEFAULT '#1e1e1e',
+  grid_horz_color_dark TEXT DEFAULT '#1e1e1e',
+  grid_vert_color_dark TEXT DEFAULT '#1e1e1e',
+  grid_horz_color_light TEXT DEFAULT '#e5e5e5',
+  grid_vert_color_light TEXT DEFAULT '#e5e5e5',
+  crosshair_color TEXT NOT NULL DEFAULT '#758696',
+  crosshair_color_dark TEXT DEFAULT '#758696',
+  crosshair_color_light TEXT DEFAULT '#6b7280',
   price_scale_border_color TEXT NOT NULL DEFAULT '#2B2B43',
   price_scale_border_color_dark TEXT DEFAULT '#2B2B43',
   price_scale_border_color_light TEXT DEFAULT '#d1d5db',
   time_scale_border_color TEXT NOT NULL DEFAULT '#2B2B43',
   time_scale_border_color_dark TEXT DEFAULT '#2B2B43',
   time_scale_border_color_light TEXT DEFAULT '#d1d5db',
-  crosshair_color TEXT NOT NULL DEFAULT '#758696',
-  crosshair_color_dark TEXT DEFAULT '#758696',
-  crosshair_color_light TEXT DEFAULT '#6b7280',
   map_enabled BOOLEAN NOT NULL DEFAULT true,
   map_opacity NUMERIC NOT NULL DEFAULT 0.08,
   map_primary_color TEXT NOT NULL DEFAULT '#6366f1',
@@ -572,11 +699,11 @@ CREATE TABLE public.chart_appearance_settings (
   map_image_url_mobile_dark TEXT,
   watermark_visible BOOLEAN NOT NULL DEFAULT false,
   watermark_text TEXT,
-  trade_line_call_color TEXT DEFAULT '#22c55e',
-  trade_line_put_color TEXT DEFAULT '#ef4444',
   trade_line_width INTEGER DEFAULT 2,
   trade_line_style INTEGER DEFAULT 2,
   trade_line_show_label BOOLEAN DEFAULT true,
+  trade_line_call_color TEXT DEFAULT '#22c55e',
+  trade_line_put_color TEXT DEFAULT '#ef4444',
   show_tradingview_logo BOOLEAN DEFAULT false,
   chart_height_desktop INTEGER DEFAULT 600,
   chart_height_mobile INTEGER DEFAULT 350,
@@ -584,15 +711,15 @@ CREATE TABLE public.chart_appearance_settings (
   chart_width_percentage_desktop INTEGER DEFAULT 100,
   chart_width_percentage_mobile INTEGER DEFAULT 100,
   chart_width_percentage_fullscreen INTEGER DEFAULT 100,
-  chart_aspect_ratio_desktop TEXT DEFAULT '16:9',
-  chart_aspect_ratio_mobile TEXT DEFAULT '4:3',
-  chart_aspect_ratio_fullscreen TEXT DEFAULT '21:9',
   chart_responsive_desktop BOOLEAN DEFAULT false,
   chart_responsive_mobile BOOLEAN DEFAULT true,
   chart_responsive_fullscreen BOOLEAN DEFAULT true,
   chart_height_offset_desktop INTEGER DEFAULT 180,
   chart_height_offset_mobile INTEGER DEFAULT 160,
   chart_height_offset_fullscreen INTEGER DEFAULT 96,
+  chart_aspect_ratio_desktop TEXT DEFAULT '16:9',
+  chart_aspect_ratio_mobile TEXT DEFAULT '4:3',
+  chart_aspect_ratio_fullscreen TEXT DEFAULT '21:9',
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_by UUID
@@ -600,66 +727,14 @@ CREATE TABLE public.chart_appearance_settings (
 
 ALTER TABLE public.chart_appearance_settings ENABLE ROW LEVEL SECURITY;
 
-CREATE TRIGGER update_chart_appearance_updated_at
-  BEFORE UPDATE ON public.chart_appearance_settings
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
-
--- Inserir configuração padrão
-INSERT INTO public.chart_appearance_settings (id)
-VALUES ('00000000-0000-0000-0000-000000000001')
-ON CONFLICT (id) DO NOTHING;
-
--- Tabela: chart_drawings
-CREATE TABLE public.chart_drawings (
-  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
-  user_id UUID NOT NULL,
-  asset_id UUID NOT NULL REFERENCES public.assets(id) ON DELETE CASCADE,
-  timeframe TEXT NOT NULL,
-  drawing_type TEXT NOT NULL CHECK (drawing_type IN ('trendline', 'horizontal', 'vertical', 'rectangle', 'fibonacci')),
-  points JSONB NOT NULL,
-  color TEXT NOT NULL DEFAULT '#22c55e',
-  line_width INTEGER NOT NULL DEFAULT 2 CHECK (line_width >= 1 AND line_width <= 10),
-  line_style TEXT NOT NULL DEFAULT 'solid' CHECK (line_style IN ('solid', 'dashed', 'dotted')),
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.chart_drawings ENABLE ROW LEVEL SECURITY;
-
-CREATE INDEX idx_chart_drawings_user_asset ON public.chart_drawings(user_id, asset_id, timeframe);
-
-CREATE TRIGGER update_chart_drawings_updated_at
-BEFORE UPDATE ON public.chart_drawings
-FOR EACH ROW
-EXECUTE FUNCTION public.update_updated_at_column();
-
--- Tabela: social_auth_providers
-CREATE TABLE public.social_auth_providers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  provider TEXT NOT NULL UNIQUE CHECK (provider IN ('google', 'facebook', 'apple')),
-  is_enabled BOOLEAN NOT NULL DEFAULT false,
-  client_id TEXT,
-  client_secret TEXT,
-  config JSONB DEFAULT '{}'::jsonb,
-  instructions TEXT,
-  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_by UUID
-);
-
-ALTER TABLE public.social_auth_providers ENABLE ROW LEVEL SECURITY;
-
-CREATE TRIGGER update_social_auth_providers_updated_at
-  BEFORE UPDATE ON public.social_auth_providers
-  FOR EACH ROW
-  EXECUTE FUNCTION update_updated_at_column();
+CREATE POLICY "Everyone can view chart appearance" ON public.chart_appearance_settings FOR SELECT USING (true);
+CREATE POLICY "Admins can manage chart appearance" ON public.chart_appearance_settings FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: copy_trade_requests
 CREATE TABLE public.copy_trade_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+  status TEXT NOT NULL DEFAULT 'pending',
   description TEXT,
   rejection_reason TEXT,
   reviewed_by UUID,
@@ -670,14 +745,14 @@ CREATE TABLE public.copy_trade_requests (
 
 ALTER TABLE public.copy_trade_requests ENABLE ROW LEVEL SECURITY;
 
-CREATE TRIGGER update_copy_trade_requests_updated_at
-  BEFORE UPDATE ON public.copy_trade_requests
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE POLICY "Users can view their own requests" ON public.copy_trade_requests FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can create their own requests" ON public.copy_trade_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Admins can manage all requests" ON public.copy_trade_requests FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: copy_traders
 CREATE TABLE public.copy_traders (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL UNIQUE,
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL,
   display_name TEXT NOT NULL,
   description TEXT,
   total_followers INTEGER DEFAULT 0,
@@ -690,50 +765,57 @@ CREATE TABLE public.copy_traders (
 
 ALTER TABLE public.copy_traders ENABLE ROW LEVEL SECURITY;
 
-CREATE TRIGGER update_copy_traders_updated_at
-  BEFORE UPDATE ON public.copy_traders
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE POLICY "Everyone can view active copy traders" ON public.copy_traders FOR SELECT USING (is_active = true);
+CREATE POLICY "Users can view their own copy trader profile" ON public.copy_traders FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Users can update their own copy trader profile" ON public.copy_traders FOR UPDATE USING (auth.uid() = user_id);
+CREATE POLICY "Admins can manage all copy traders" ON public.copy_traders FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: copy_trade_followers
 CREATE TABLE public.copy_trade_followers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   copy_trader_id UUID NOT NULL REFERENCES public.copy_traders(id) ON DELETE CASCADE,
   follower_user_id UUID NOT NULL,
-  allocation_percentage NUMERIC NOT NULL DEFAULT 100 CHECK (allocation_percentage > 0 AND allocation_percentage <= 100),
+  allocation_percentage NUMERIC NOT NULL DEFAULT 100,
   max_trade_amount NUMERIC,
   is_active BOOLEAN DEFAULT true,
   total_copied_trades INTEGER DEFAULT 0,
   total_profit NUMERIC DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
-  UNIQUE(copy_trader_id, follower_user_id)
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.copy_trade_followers ENABLE ROW LEVEL SECURITY;
 
-CREATE TRIGGER update_copy_trade_followers_updated_at
-  BEFORE UPDATE ON public.copy_trade_followers
-  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+CREATE POLICY "Followers can view their own subscriptions" ON public.copy_trade_followers FOR SELECT USING (auth.uid() = follower_user_id);
+CREATE POLICY "Followers can subscribe to copy traders" ON public.copy_trade_followers FOR INSERT WITH CHECK (auth.uid() = follower_user_id);
+CREATE POLICY "Followers can update their own subscriptions" ON public.copy_trade_followers FOR UPDATE USING (auth.uid() = follower_user_id);
+CREATE POLICY "Followers can unsubscribe" ON public.copy_trade_followers FOR DELETE USING (auth.uid() = follower_user_id);
+CREATE POLICY "Copy traders can manage their followers" ON public.copy_trade_followers FOR ALL USING (copy_trader_id IN (SELECT id FROM copy_traders WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can manage all followers" ON public.copy_trade_followers FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
 -- Tabela: copied_trades
 CREATE TABLE public.copied_trades (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   original_trade_id UUID NOT NULL REFERENCES public.trades(id) ON DELETE CASCADE,
   copy_trader_id UUID NOT NULL REFERENCES public.copy_traders(id) ON DELETE CASCADE,
   follower_user_id UUID NOT NULL,
   copied_trade_id UUID REFERENCES public.trades(id) ON DELETE SET NULL,
-  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'executed', 'failed', 'skipped')),
+  status TEXT NOT NULL DEFAULT 'pending',
   failure_reason TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
 
 ALTER TABLE public.copied_trades ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Users can view their own copied trades" ON public.copied_trades FOR SELECT USING (auth.uid() = follower_user_id);
+CREATE POLICY "Copy traders can view copies of their trades" ON public.copied_trades FOR SELECT USING (copy_trader_id IN (SELECT id FROM copy_traders WHERE user_id = auth.uid()));
+CREATE POLICY "Admins can manage all copied trades" ON public.copied_trades FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 -- Tabela: push_subscriptions
 CREATE TABLE public.push_subscriptions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID,
-  endpoint TEXT NOT NULL UNIQUE,
+  endpoint TEXT NOT NULL,
   p256dh TEXT NOT NULL,
   auth TEXT NOT NULL,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -742,16 +824,14 @@ CREATE TABLE public.push_subscriptions (
 
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE INDEX idx_push_subscriptions_user_id ON public.push_subscriptions(user_id);
-
-CREATE TRIGGER update_push_subscriptions_updated_at
-BEFORE UPDATE ON public.push_subscriptions
-FOR EACH ROW
-EXECUTE FUNCTION public.update_updated_at_column();
+CREATE POLICY "Users can manage their own push subscriptions" ON public.push_subscriptions FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Allow anonymous push subscriptions" ON public.push_subscriptions FOR INSERT WITH CHECK (user_id IS NULL);
+CREATE POLICY "Admins can read all push subscriptions" ON public.push_subscriptions FOR SELECT USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Admins can delete push subscriptions" ON public.push_subscriptions FOR DELETE USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
 
 -- Tabela: admin_notification_queue
 CREATE TABLE public.admin_notification_queue (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   notification_type TEXT NOT NULL,
   user_id UUID,
   user_name TEXT,
@@ -762,117 +842,38 @@ CREATE TABLE public.admin_notification_queue (
 
 ALTER TABLE public.admin_notification_queue ENABLE ROW LEVEL SECURITY;
 
+CREATE POLICY "Admins can manage notification queue" ON public.admin_notification_queue FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
+-- Tabela: social_auth_providers
+CREATE TABLE public.social_auth_providers (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  provider TEXT NOT NULL,
+  is_enabled BOOLEAN NOT NULL DEFAULT false,
+  client_id TEXT,
+  client_secret TEXT,
+  config JSONB DEFAULT '{}'::jsonb,
+  instructions TEXT,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_by UUID
+);
+
+ALTER TABLE public.social_auth_providers ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Todos podem ver provedores OAuth ativos" ON public.social_auth_providers FOR SELECT USING (is_enabled = true);
+CREATE POLICY "Admins podem gerenciar provedores OAuth" ON public.social_auth_providers FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
 
 -- ============================================
 -- PARTE 4: FUNÇÕES DE NEGÓCIO
 -- ============================================
 
--- Função para verificar roles
-CREATE OR REPLACE FUNCTION public.has_role(_user_id UUID, _role app_role)
-RETURNS BOOLEAN
-LANGUAGE SQL
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.user_roles
-    WHERE user_id = _user_id AND role = _role
-  )
-$$;
-
--- Função para calcular tier do usuário
-CREATE OR REPLACE FUNCTION public.calculate_user_tier(deposited numeric)
-RETURNS text
-LANGUAGE plpgsql
-IMMUTABLE
-AS $$
-BEGIN
-  IF deposited >= 1000000 THEN
-    RETURN 'vip';
-  ELSIF deposited >= 100000 THEN
-    RETURN 'pro';
-  ELSE
-    RETURN 'standard';
-  END IF;
-END;
-$$;
-
--- Função para atualizar total depositado
-CREATE OR REPLACE FUNCTION public.update_total_deposited()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF NEW.type = 'deposit' AND NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
-    UPDATE public.profiles
-    SET 
-      total_deposited = COALESCE(total_deposited, 0) + NEW.amount,
-      user_tier = calculate_user_tier(COALESCE(total_deposited, 0) + NEW.amount)
-    WHERE user_id = NEW.user_id;
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-DROP TRIGGER IF EXISTS on_transaction_completed ON public.transactions;
-CREATE TRIGGER on_transaction_completed
-  AFTER INSERT OR UPDATE ON public.transactions
-  FOR EACH ROW
-  EXECUTE FUNCTION public.update_total_deposited();
-
--- Função para sincronizar admin role
-CREATE OR REPLACE FUNCTION public.sync_admin_role()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  IF NEW.is_admin = true AND OLD.is_admin = false THEN
-    INSERT INTO public.user_roles (user_id, role)
-    VALUES (NEW.user_id, 'admin')
-    ON CONFLICT (user_id, role) DO NOTHING;
-  ELSIF NEW.is_admin = false AND OLD.is_admin = true THEN
-    DELETE FROM public.user_roles
-    WHERE user_id = NEW.user_id AND role = 'admin';
-  END IF;
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER sync_admin_role_trigger
-AFTER UPDATE OF is_admin ON public.profiles
-FOR EACH ROW
-EXECUTE FUNCTION public.sync_admin_role();
-
--- Função para atualizar platform_settings updated_at
-CREATE OR REPLACE FUNCTION public.update_platform_settings_updated_at()
-RETURNS trigger
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-BEGIN
-  NEW.updated_at = now();
-  NEW.updated_by = auth.uid();
-  RETURN NEW;
-END;
-$$;
-
-CREATE TRIGGER update_platform_settings_updated_at
-BEFORE UPDATE ON public.platform_settings
-FOR EACH ROW
-EXECUTE FUNCTION public.update_platform_settings_updated_at();
-
--- Função para criar novo usuário
+-- Função para criar perfil ao registrar usuário
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger
 LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = public
+SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
   v_document TEXT;
@@ -913,23 +914,18 @@ BEGIN
 END;
 $$;
 
--- Trigger para criar perfil automaticamente (execute apenas uma vez manualmente)
--- Você precisa rodar isso manualmente no SQL Editor depois:
--- CREATE TRIGGER on_auth_user_created
---   AFTER INSERT ON auth.users
---   FOR EACH ROW
---   EXECUTE FUNCTION public.handle_new_user();
+-- Trigger para criar perfil automaticamente
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Função para balance update on trade close
-CREATE OR REPLACE FUNCTION public.handle_trade_balance_on_insert()
-RETURNS TRIGGER AS $$
-BEGIN
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public';
-
+-- Função para atualizar saldo ao fechar trade
 CREATE OR REPLACE FUNCTION public.handle_trade_balance_on_update()
-RETURNS TRIGGER AS $$
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   IF NEW.status IN ('won', 'lost') AND OLD.status = 'open' THEN
     IF NEW.is_demo THEN
@@ -947,21 +943,107 @@ BEGIN
   
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path TO 'public';
-
-CREATE TRIGGER trigger_trade_balance_insert
-  AFTER INSERT ON public.trades
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_trade_balance_on_insert();
+$$;
 
 CREATE TRIGGER trigger_trade_balance_update
   AFTER UPDATE ON public.trades
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_trade_balance_on_update();
 
--- Função para processar comissão de afiliados
+-- Função para processar trade expirado
+CREATE OR REPLACE FUNCTION public.process_single_expired_trade(p_trade_id uuid)
+RETURNS jsonb
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_trade record;
+  v_exit_price numeric;
+  v_result numeric;
+  v_status text;
+BEGIN
+  SELECT * INTO v_trade
+  FROM trades
+  WHERE id = p_trade_id
+    AND status = 'open'
+  FOR UPDATE;
+  
+  IF NOT FOUND THEN
+    RETURN jsonb_build_object(
+      'success', false,
+      'error', 'Trade not found or already processed'
+    );
+  END IF;
+  
+  SELECT close INTO v_exit_price
+  FROM candles
+  WHERE asset_id = v_trade.asset_id
+    AND timestamp <= v_trade.expires_at
+    AND timeframe = '1m'
+  ORDER BY timestamp DESC
+  LIMIT 1;
+  
+  IF v_exit_price IS NULL THEN
+    v_exit_price := v_trade.entry_price;
+  END IF;
+  
+  IF v_trade.trade_type = 'call' THEN
+    v_status := CASE WHEN v_exit_price > v_trade.entry_price THEN 'won' ELSE 'lost' END;
+  ELSE
+    v_status := CASE WHEN v_exit_price < v_trade.entry_price THEN 'won' ELSE 'lost' END;
+  END IF;
+  
+  IF v_status = 'won' THEN
+    v_result := v_trade.payout;
+  ELSE
+    v_result := -v_trade.amount;
+  END IF;
+  
+  UPDATE trades
+  SET 
+    status = v_status,
+    exit_price = v_exit_price,
+    result = v_result,
+    closed_at = NOW()
+  WHERE id = v_trade.id;
+  
+  RETURN jsonb_build_object(
+    'success', true,
+    'trade_id', v_trade.id,
+    'status', v_status,
+    'result', v_result
+  );
+END;
+$$;
+
+-- Função para atualizar total depositado
+CREATE OR REPLACE FUNCTION public.update_total_deposited()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF NEW.type = 'deposit' AND NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
+    UPDATE public.profiles
+    SET 
+      total_deposited = COALESCE(total_deposited, 0) + NEW.amount,
+      user_tier = calculate_user_tier(COALESCE(total_deposited, 0) + NEW.amount)
+    WHERE user_id = NEW.user_id;
+  END IF;
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trigger_update_total_deposited
+  AFTER UPDATE ON public.transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_total_deposited();
+
+-- Função para processar comissões de afiliado
 CREATE OR REPLACE FUNCTION public.process_affiliate_commission()
-RETURNS TRIGGER
+RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -1037,121 +1119,12 @@ CREATE TRIGGER trigger_process_affiliate_commission
   FOR EACH ROW
   EXECUTE FUNCTION public.process_affiliate_commission();
 
--- Função para processar single trade expirado
-CREATE OR REPLACE FUNCTION public.process_single_expired_trade(p_trade_id uuid)
-RETURNS jsonb
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_trade record;
-  v_exit_price numeric;
-  v_result numeric;
-  v_status text;
-BEGIN
-  SELECT * INTO v_trade
-  FROM trades
-  WHERE id = p_trade_id
-    AND status = 'open'
-  FOR UPDATE;
-  
-  IF NOT FOUND THEN
-    RETURN jsonb_build_object(
-      'success', false,
-      'error', 'Trade not found or already processed'
-    );
-  END IF;
-  
-  SELECT close INTO v_exit_price
-  FROM candles
-  WHERE asset_id = v_trade.asset_id
-    AND timestamp <= v_trade.expires_at
-    AND timeframe = '1m'
-  ORDER BY timestamp DESC
-  LIMIT 1;
-  
-  IF v_exit_price IS NULL THEN
-    v_exit_price := v_trade.entry_price;
-  END IF;
-  
-  IF v_trade.trade_type = 'call' THEN
-    v_status := CASE WHEN v_exit_price > v_trade.entry_price THEN 'won' ELSE 'lost' END;
-  ELSE
-    v_status := CASE WHEN v_exit_price < v_trade.entry_price THEN 'won' ELSE 'lost' END;
-  END IF;
-  
-  IF v_status = 'won' THEN
-    v_result := v_trade.amount + v_trade.payout;
-  ELSE
-    v_result := 0;
-  END IF;
-  
-  UPDATE trades
-  SET 
-    status = v_status,
-    exit_price = v_exit_price,
-    result = v_result,
-    closed_at = NOW()
-  WHERE id = v_trade.id;
-  
-  RETURN jsonb_build_object(
-    'success', true,
-    'trade_id', v_trade.id,
-    'status', v_status,
-    'result', v_result
-  );
-END;
-$$;
-
--- Função para obter booster ativo
-CREATE OR REPLACE FUNCTION public.get_user_active_booster(p_user_id UUID)
-RETURNS TABLE (
-  payout_increase_percentage INTEGER,
-  expires_at TIMESTAMP WITH TIME ZONE
-)
-LANGUAGE sql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-  SELECT 
-    payout_increase_percentage,
-    expires_at
-  FROM user_boosters
-  WHERE user_id = p_user_id
-    AND is_active = true
-    AND expires_at > now()
-  ORDER BY expires_at DESC
-  LIMIT 1;
-$$;
-
--- Função para desativar boosters expirados
-CREATE OR REPLACE FUNCTION public.deactivate_expired_boosters()
-RETURNS INTEGER
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  v_count INTEGER;
-BEGIN
-  UPDATE user_boosters
-  SET is_active = false
-  WHERE is_active = true
-    AND expires_at <= now();
-  
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  RETURN v_count;
-END;
-$$;
-
--- Função para Copy Trade
+-- Função para copy trade
 CREATE OR REPLACE FUNCTION public.process_copy_trade()
-RETURNS TRIGGER
+RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path TO 'public'
+SET search_path = public
 AS $$
 DECLARE
   v_copy_trader RECORD;
@@ -1240,677 +1213,334 @@ BEGIN
 END;
 $$;
 
-CREATE TRIGGER on_trade_created_copy
+CREATE TRIGGER trigger_process_copy_trade
   AFTER INSERT ON public.trades
-  FOR EACH ROW EXECUTE FUNCTION public.process_copy_trade();
+  FOR EACH ROW
+  EXECUTE FUNCTION public.process_copy_trade();
 
--- Função para notificar admins
-CREATE OR REPLACE FUNCTION public.notify_admins_on_event()
+-- Função para sincronizar role de admin
+CREATE OR REPLACE FUNCTION public.sync_admin_role()
 RETURNS trigger
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-DECLARE
-  notification_type text;
-  user_name text;
-  amount_value numeric;
-  user_id_value uuid;
 BEGIN
-  CASE TG_TABLE_NAME
-    WHEN 'transactions' THEN
-      IF NEW.type = 'deposit' AND NEW.status = 'completed' AND (OLD IS NULL OR OLD.status != 'completed') THEN
-        notification_type := 'new_deposit';
-        amount_value := NEW.amount;
-        user_id_value := NEW.user_id;
-      ELSIF NEW.type = 'withdrawal' AND NEW.status = 'pending' AND (OLD IS NULL OR OLD.status != 'pending') THEN
-        notification_type := 'withdrawal_request';
-        amount_value := NEW.amount;
-        user_id_value := NEW.user_id;
-      ELSE
-        RETURN NEW;
-      END IF;
-      
-    WHEN 'verification_requests' THEN
-      IF NEW.status = 'under_review' AND (OLD IS NULL OR OLD.status != 'under_review') THEN
-        notification_type := 'identity_verification';
-        user_id_value := NEW.user_id;
-      ELSE
-        RETURN NEW;
-      END IF;
-      
-    WHEN 'withdrawal_requests' THEN
-      IF NEW.status = 'pending' AND (OLD IS NULL OR OLD.status != 'pending') THEN
-        notification_type := 'affiliate_withdrawal';
-        amount_value := NEW.amount;
-        SELECT a.user_id INTO user_id_value
-        FROM affiliates a
-        WHERE a.id = NEW.affiliate_id;
-      ELSE
-        RETURN NEW;
-      END IF;
-      
-    WHEN 'profiles' THEN
-      IF TG_OP = 'INSERT' THEN
-        notification_type := 'new_user';
-        user_id_value := NEW.user_id;
-        user_name := NEW.full_name;
-      ELSE
-        RETURN NEW;
-      END IF;
-      
-    ELSE
-      RETURN NEW;
-  END CASE;
-  
-  IF user_name IS NULL AND user_id_value IS NOT NULL THEN
-    SELECT full_name INTO user_name
-    FROM profiles
-    WHERE user_id = user_id_value;
+  IF NEW.is_admin = true AND OLD.is_admin = false THEN
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.user_id, 'admin')
+    ON CONFLICT (user_id, role) DO NOTHING;
+  ELSIF NEW.is_admin = false AND OLD.is_admin = true THEN
+    DELETE FROM public.user_roles
+    WHERE user_id = NEW.user_id AND role = 'admin';
   END IF;
-  
-  INSERT INTO public.admin_notification_queue (
-    notification_type,
-    user_id,
-    user_name,
-    amount,
-    created_at
-  ) VALUES (
-    notification_type,
-    user_id_value,
-    user_name,
-    amount_value,
-    now()
-  );
-  
   RETURN NEW;
 END;
 $$;
 
--- Triggers para notificações
-CREATE TRIGGER notify_admins_on_transaction
-  AFTER INSERT OR UPDATE ON public.transactions
+CREATE TRIGGER trigger_sync_admin_role
+  AFTER UPDATE ON public.profiles
   FOR EACH ROW
-  EXECUTE FUNCTION public.notify_admins_on_event();
+  EXECUTE FUNCTION public.sync_admin_role();
 
-CREATE TRIGGER notify_admins_on_verification
-  AFTER INSERT OR UPDATE ON public.verification_requests
-  FOR EACH ROW
-  EXECUTE FUNCTION public.notify_admins_on_event();
+-- Função para booster ativo
+CREATE OR REPLACE FUNCTION public.get_user_active_booster(p_user_id uuid)
+RETURNS TABLE(payout_increase_percentage integer, expires_at timestamp with time zone)
+LANGUAGE sql
+STABLE SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT 
+    payout_increase_percentage,
+    expires_at
+  FROM user_boosters
+  WHERE user_id = p_user_id
+    AND is_active = true
+    AND expires_at > now()
+  ORDER BY expires_at DESC
+  LIMIT 1;
+$$;
 
-CREATE TRIGGER notify_admins_on_affiliate_withdrawal
-  AFTER INSERT OR UPDATE ON public.withdrawal_requests
-  FOR EACH ROW
-  EXECUTE FUNCTION public.notify_admins_on_event();
-
-CREATE TRIGGER notify_admins_on_new_user
-  AFTER INSERT ON public.profiles
-  FOR EACH ROW
-  EXECUTE FUNCTION public.notify_admins_on_event();
-
-
--- ============================================
--- PARTE 5: POLÍTICAS RLS COMPLETAS
--- ============================================
-
--- profiles
-CREATE POLICY "Users can view their own profile" ON public.profiles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-
--- trades
-CREATE POLICY "Users can view their own trades" ON public.trades FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own trades" ON public.trades FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own trades" ON public.trades FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Admins can view all trades" ON public.trades FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update all trades" ON public.trades FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete trades" ON public.trades FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-
--- transactions
-CREATE POLICY "Users can view their own transactions" ON public.transactions FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own transactions" ON public.transactions FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admins can view all transactions" ON public.transactions FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update all transactions" ON public.transactions FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete transactions" ON public.transactions FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-
--- user_roles
-CREATE POLICY "Users can view their own roles" ON public.user_roles FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Admins can view all roles" ON public.user_roles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can manage roles" ON public.user_roles FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- verification_requests
-CREATE POLICY "Users can view their own verification requests" ON public.verification_requests FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own verification requests" ON public.verification_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admins can view all verification requests" ON public.verification_requests FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update verification requests" ON public.verification_requests FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
-
--- platform_settings
-CREATE POLICY "Admins can manage platform settings" ON public.platform_settings FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Allow public read access to platform settings" ON public.platform_settings FOR SELECT USING (true);
-CREATE POLICY "Allow admin to update platform settings" ON public.platform_settings FOR UPDATE USING (EXISTS (SELECT 1 FROM profiles WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true));
-CREATE POLICY "Allow admin to insert platform settings" ON public.platform_settings FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE profiles.user_id = auth.uid() AND profiles.is_admin = true));
-
--- payment_gateways
-CREATE POLICY "Admins can manage payment gateways" ON public.payment_gateways FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- platform_popups
-CREATE POLICY "Admins can manage popups" ON public.platform_popups FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Users can view active popups" ON public.platform_popups FOR SELECT USING (is_active = true AND (start_date IS NULL OR start_date <= now()) AND (end_date IS NULL OR end_date >= now()));
-
--- affiliates
-CREATE POLICY "Admins can manage all affiliates" ON public.affiliates FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Users can view their own affiliate data" ON public.affiliates FOR SELECT USING (auth.uid() = user_id);
-
--- referrals
-CREATE POLICY "Admins can manage all referrals" ON public.referrals FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- commissions
-CREATE POLICY "Admins can manage all commissions" ON public.commissions FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- withdrawal_requests
-CREATE POLICY "Affiliates can view their own withdrawal requests" ON public.withdrawal_requests FOR SELECT USING (affiliate_id IN (SELECT id FROM public.affiliates WHERE user_id = auth.uid()));
-CREATE POLICY "Affiliates can create their own withdrawal requests" ON public.withdrawal_requests FOR INSERT WITH CHECK (affiliate_id IN (SELECT id FROM public.affiliates WHERE user_id = auth.uid()));
-CREATE POLICY "Admins can manage all withdrawal requests" ON public.withdrawal_requests FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- affiliate_custom_links
-CREATE POLICY "Affiliates can view their own custom links" ON public.affiliate_custom_links FOR SELECT USING (affiliate_id IN (SELECT id FROM public.affiliates WHERE user_id = auth.uid()));
-CREATE POLICY "Affiliates can create their own custom links" ON public.affiliate_custom_links FOR INSERT WITH CHECK (affiliate_id IN (SELECT id FROM public.affiliates WHERE user_id = auth.uid()));
-CREATE POLICY "Affiliates can update their own custom links" ON public.affiliate_custom_links FOR UPDATE USING (affiliate_id IN (SELECT id FROM public.affiliates WHERE user_id = auth.uid()));
-CREATE POLICY "Affiliates can delete their own custom links" ON public.affiliate_custom_links FOR DELETE USING (affiliate_id IN (SELECT id FROM public.affiliates WHERE user_id = auth.uid()));
-CREATE POLICY "Admins can manage all custom links" ON public.affiliate_custom_links FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- legal_documents
-CREATE POLICY "Todos podem visualizar documentos legais ativos" ON public.legal_documents FOR SELECT USING (is_active = true);
-CREATE POLICY "Admins podem gerenciar documentos legais" ON public.legal_documents FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- company_info
-CREATE POLICY "Todos podem visualizar informações da empresa" ON public.company_info FOR SELECT USING (true);
-CREATE POLICY "Admins podem gerenciar informações da empresa" ON public.company_info FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- boosters
-CREATE POLICY "Boosters are viewable by everyone" ON public.boosters FOR SELECT USING (is_active = true);
-CREATE POLICY "Admins can manage boosters" ON public.boosters FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- user_boosters
-CREATE POLICY "Users can view their own active boosters" ON public.user_boosters FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own boosters" ON public.user_boosters FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Admins can view all user boosters" ON public.user_boosters FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update all user boosters" ON public.user_boosters FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete user boosters" ON public.user_boosters FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-
--- candles
-CREATE POLICY "Candles are viewable by everyone" ON public.candles FOR SELECT USING (true);
-CREATE POLICY "Admins can manage candles" ON public.candles FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- chart_manipulations
-CREATE POLICY "Admins can view all manipulations" ON public.chart_manipulations FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can create manipulations" ON public.chart_manipulations FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update manipulations" ON public.chart_manipulations FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete manipulations" ON public.chart_manipulations FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-
--- chart_biases
-CREATE POLICY "Admins can view all biases" ON public.chart_biases FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can create biases" ON public.chart_biases FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update biases" ON public.chart_biases FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete biases" ON public.chart_biases FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-
--- chart_appearance_settings
-CREATE POLICY "Admins can manage chart appearance" ON public.chart_appearance_settings FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Everyone can view chart appearance" ON public.chart_appearance_settings FOR SELECT USING (true);
-
--- chart_drawings
-CREATE POLICY "Users can view their own drawings" ON public.chart_drawings FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can create their own drawings" ON public.chart_drawings FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can update their own drawings" ON public.chart_drawings FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Users can delete their own drawings" ON public.chart_drawings FOR DELETE USING (auth.uid() = user_id);
-
--- social_auth_providers
-CREATE POLICY "Admins podem gerenciar provedores OAuth" ON public.social_auth_providers FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Todos podem ver provedores OAuth ativos" ON public.social_auth_providers FOR SELECT USING (is_enabled = true);
-
--- copy_trade_requests
-CREATE POLICY "Users can create their own requests" ON public.copy_trade_requests FOR INSERT WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can view their own requests" ON public.copy_trade_requests FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Admins can manage all requests" ON public.copy_trade_requests FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- copy_traders
-CREATE POLICY "Everyone can view active copy traders" ON public.copy_traders FOR SELECT USING (is_active = true);
-CREATE POLICY "Users can view their own copy trader profile" ON public.copy_traders FOR SELECT USING (auth.uid() = user_id);
-CREATE POLICY "Users can update their own copy trader profile" ON public.copy_traders FOR UPDATE USING (auth.uid() = user_id);
-CREATE POLICY "Admins can manage all copy traders" ON public.copy_traders FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- copy_trade_followers
-CREATE POLICY "Copy traders can manage their followers" ON public.copy_trade_followers FOR ALL USING (copy_trader_id IN (SELECT id FROM public.copy_traders WHERE user_id = auth.uid()));
-CREATE POLICY "Followers can view their own subscriptions" ON public.copy_trade_followers FOR SELECT USING (auth.uid() = follower_user_id);
-CREATE POLICY "Followers can subscribe to copy traders" ON public.copy_trade_followers FOR INSERT WITH CHECK (auth.uid() = follower_user_id);
-CREATE POLICY "Followers can update their own subscriptions" ON public.copy_trade_followers FOR UPDATE USING (auth.uid() = follower_user_id);
-CREATE POLICY "Followers can unsubscribe" ON public.copy_trade_followers FOR DELETE USING (auth.uid() = follower_user_id);
-CREATE POLICY "Admins can manage all followers" ON public.copy_trade_followers FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- copied_trades
-CREATE POLICY "Users can view their own copied trades" ON public.copied_trades FOR SELECT USING (auth.uid() = follower_user_id);
-CREATE POLICY "Copy traders can view copies of their trades" ON public.copied_trades FOR SELECT USING (copy_trader_id IN (SELECT id FROM public.copy_traders WHERE user_id = auth.uid()));
-CREATE POLICY "Admins can manage all copied trades" ON public.copied_trades FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- push_subscriptions
-CREATE POLICY "Users can manage their own push subscriptions" ON public.push_subscriptions FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Allow anonymous push subscriptions" ON public.push_subscriptions FOR INSERT WITH CHECK (user_id IS NULL);
-CREATE POLICY "Admins can read all push subscriptions" ON public.push_subscriptions FOR SELECT USING (EXISTS (SELECT 1 FROM user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'));
-CREATE POLICY "Admins can delete push subscriptions" ON public.push_subscriptions FOR DELETE USING (EXISTS (SELECT 1 FROM public.user_roles WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'::app_role));
-
--- admin_notification_queue
-CREATE POLICY "Admins can manage notification queue" ON public.admin_notification_queue FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
-
--- assets (admin policies)
-CREATE POLICY "Admins can insert assets" ON public.assets FOR INSERT WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update assets" ON public.assets FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete assets" ON public.assets FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-
-
--- ============================================
--- PARTE 6: STORAGE BUCKETS
--- ============================================
-
-INSERT INTO storage.buckets (id, name, public) VALUES ('avatars', 'avatars', true);
-INSERT INTO storage.buckets (id, name, public) VALUES ('verification-documents', 'verification-documents', false);
-INSERT INTO storage.buckets (id, name, public) VALUES ('popup-images', 'popup-images', true);
-INSERT INTO storage.buckets (id, name, public) VALUES ('chart-backgrounds', 'chart-backgrounds', true);
-
--- Storage policies for avatars
-CREATE POLICY "Avatar images are publicly accessible" ON storage.objects FOR SELECT USING (bucket_id = 'avatars');
-CREATE POLICY "Users can upload their own avatar" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-CREATE POLICY "Users can update their own avatar" ON storage.objects FOR UPDATE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-CREATE POLICY "Users can delete their own avatar" ON storage.objects FOR DELETE USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
-
--- Storage policies for verification-documents
-CREATE POLICY "Users can upload their own verification documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
-CREATE POLICY "Users can view their own verification documents" ON storage.objects FOR SELECT USING (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
-CREATE POLICY "Admins can view all verification documents" ON storage.objects FOR SELECT USING (bucket_id = 'verification-documents' AND has_role(auth.uid(), 'admin'::app_role));
-
--- Storage policies for popup-images
-CREATE POLICY "Anyone can view popup images" ON storage.objects FOR SELECT USING (bucket_id = 'popup-images');
-CREATE POLICY "Admins can upload popup images" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'popup-images' AND has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update popup images" ON storage.objects FOR UPDATE USING (bucket_id = 'popup-images' AND has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete popup images" ON storage.objects FOR DELETE USING (bucket_id = 'popup-images' AND has_role(auth.uid(), 'admin'::app_role));
-
--- Storage policies for chart-backgrounds
-CREATE POLICY "Admins can upload chart backgrounds" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'chart-backgrounds' AND has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can update chart backgrounds" ON storage.objects FOR UPDATE USING (bucket_id = 'chart-backgrounds' AND has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Admins can delete chart backgrounds" ON storage.objects FOR DELETE USING (bucket_id = 'chart-backgrounds' AND has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Everyone can view chart backgrounds" ON storage.objects FOR SELECT USING (bucket_id = 'chart-backgrounds');
-
-
--- ============================================
--- PARTE 7: REALTIME
--- ============================================
-
-ALTER TABLE public.profiles REPLICA IDENTITY FULL;
-ALTER TABLE public.trades REPLICA IDENTITY FULL;
-
--- Adicionar tabelas à publicação do realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.candles;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.trades;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.copy_trade_requests;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.copy_traders;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.copy_trade_followers;
+-- Função para desativar boosters expirados
+CREATE OR REPLACE FUNCTION public.deactivate_expired_boosters()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_count INTEGER;
+BEGIN
+  UPDATE user_boosters
+  SET is_active = false
+  WHERE is_active = true
+    AND expires_at <= now();
+  
+  GET DIAGNOSTICS v_count = ROW_COUNT;
+  RETURN v_count;
+END;
+$$;
 ```
 
 ---
 
-## 🔧 PASSO 2: CRIAR TRIGGER DE AUTH (Execute manualmente)
+## 🔧 PASSO 2: DADOS SEED (CONFIGURAÇÕES REAIS)
 
-Após rodar o PASSO 1, execute este SQL separadamente no SQL Editor:
-
-```sql
--- Trigger para criar perfil automaticamente quando usuário se registra
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.handle_new_user();
-```
-
----
-
-## 📊 PASSO 3: EXPORTAR DADOS DO PROJETO ORIGINAL
-
-Rode este script no **SQL Editor do projeto ORIGINAL** para exportar os dados:
+Cole o SQL abaixo para inserir TODOS os dados do projeto atual:
 
 ```sql
--- EXPORTAR TODOS OS DADOS DE CONFIGURAÇÃO
+-- ============================================
+-- ASSETS (Ativos para trading)
+-- ============================================
 
--- 1. ASSETS
-SELECT 'INSERT INTO assets (id, symbol, name, payout_percentage, is_active, icon_url, auto_generate_candles, created_at) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(symbol) || ',' ||
-  quote_literal(name) || ',' ||
-  payout_percentage || ',' ||
-  is_active || ',' ||
-  COALESCE(quote_literal(icon_url), 'NULL') || ',' ||
-  COALESCE(auto_generate_candles::text, 'true') || ',' ||
-  quote_literal(created_at) || ');'
-FROM assets;
+INSERT INTO public.assets (id, name, symbol, icon_url, payout_percentage, is_active, auto_generate_candles) VALUES
+('367aa3b1-e579-4952-884f-e00b2151bd15', 'Bitcoin', 'BTC-OTC', 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', 89, true, true),
+('3766e901-9d98-4f63-bbb8-ed45aa9db1ca', 'Ethereum', 'ETH-OTC', 'https://cryptologos.cc/logos/ethereum-eth-logo.png', 89, true, true),
+('8dd9b8e6-8095-4e23-96cf-25807a9316a2', 'Solana', 'SOL-OTC', 'https://cryptologos.cc/logos/solana-sol-logo.png', 89, true, true),
+('c0473610-4a53-4dd3-acdd-247782b6b0d6', 'BNB', 'BNB-OTC', 'https://cryptologos.cc/logos/bnb-bnb-logo.png', 89, true, true),
+('e7b5de2d-aa21-4d82-8f85-f11269438e3a', 'Cardano', 'ADA-OTC', 'https://cryptologos.cc/logos/cardano-ada-logo.png', 89, true, true),
+('a8541b37-cf21-430f-ab9e-8456f0315c62', 'Dogecoin', 'DOGE-OTC', 'https://cryptologos.cc/logos/dogecoin-doge-logo.png', 89, true, true),
+('b10a6897-604d-42a5-b16b-c0d504d92506', 'Apple Inc.', 'AAPL-OTC', 'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/popup-images/assets/1765326595808-jcgz2.webp', 89, true, true),
+('cfe7f8a2-fe12-45ec-843e-1f87593c1fcf', 'Alphabet Inc.', 'GOOGL-OTC', 'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/popup-images/assets/1765326928310-4sgvsc.webp', 89, true, true),
+('da869e78-8dba-40d9-8f36-3ffced23f731', 'Microsoft Corp.', 'MSFT-OTC', 'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/popup-images/assets/1765327147533-oe3h1.webp', 89, true, true),
+('c2c202ef-c8d2-445f-ac94-d079379ae15d', 'Ripple (OTC)', 'XRP-OTC', 'https://cryptologos.cc/logos/xrp-xrp-logo.png', 87, false, true),
+('9b9412a9-064a-4177-b520-eac42dc5e4a8', 'Polkadot (OTC)', 'DOT-OTC', 'https://cryptologos.cc/logos/polkadot-new-dot-logo.png', 87, false, true),
+('3c86059c-c5a5-493c-b748-6daa8d7b9066', 'Avalanche (OTC)', 'AVAX-OTC', 'https://cryptologos.cc/logos/avalanche-avax-logo.png', 88, false, true),
+('dcf8d1c9-cad8-4633-a9ec-1a2ca8f13eb1', 'Polygon (OTC)', 'MATIC-OTC', 'https://cryptologos.cc/logos/polygon-matic-logo.png', 86, false, true),
+('d8b735b1-3904-4830-a558-3ed1f24b23a2', 'EUR/CHF (OTC)', 'EUR-CHF-OTC', 'https://flowsysob.nyc3.cdn.digitaloceanspaces.com/allbuckets-1750773114361/01K862PM08XKKRHDN3Y5X4SK9C.png', 88, false, true),
+('175bc59f-5b33-45ca-bf6d-be5a62f865e4', 'USD/CHF (OTC)', 'USD-CHF-OTC', 'https://flowsysob.nyc3.cdn.digitaloceanspaces.com/allbuckets-1750773114361/01K862PM08XKKRHDN3Y5X4SK9C.png', 91, false, true);
 
--- 2. BOOSTERS
-SELECT 'INSERT INTO boosters (id, name, description, payout_increase_percentage, duration_minutes, price, is_active, display_order, icon, name_en, name_es, description_en, description_es) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(name) || ',' ||
-  quote_literal(description) || ',' ||
-  payout_increase_percentage || ',' ||
-  duration_minutes || ',' ||
-  price || ',' ||
-  is_active || ',' ||
-  display_order || ',' ||
-  COALESCE(quote_literal(icon), 'NULL') || ',' ||
-  COALESCE(quote_literal(name_en), 'NULL') || ',' ||
-  COALESCE(quote_literal(name_es), 'NULL') || ',' ||
-  COALESCE(quote_literal(description_en), 'NULL') || ',' ||
-  COALESCE(quote_literal(description_es), 'NULL') || ');'
-FROM boosters;
 
--- 3. PLATFORM_SETTINGS
-SELECT 'INSERT INTO platform_settings (id, key, value, description) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(key) || ',' ||
-  quote_literal(value) || ',' ||
-  COALESCE(quote_literal(description), 'NULL') || ') ON CONFLICT (key) DO NOTHING;'
-FROM platform_settings;
+-- ============================================
+-- PLATFORM_SETTINGS (Configurações da Plataforma)
+-- ============================================
 
--- 4. LEGAL_DOCUMENTS
-SELECT 'INSERT INTO legal_documents (id, title, slug, description, content, icon, is_active, display_order) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(title) || ',' ||
-  quote_literal(slug) || ',' ||
-  quote_literal(description) || ',' ||
-  COALESCE(quote_literal(content), 'NULL') || ',' ||
-  quote_literal(icon) || ',' ||
-  is_active || ',' ||
-  display_order || ') ON CONFLICT (slug) DO NOTHING;'
-FROM legal_documents;
+INSERT INTO public.platform_settings (key, value, description) VALUES
+('accent_color', '#ffdd00', 'Setting for accent_color'),
+('admin_panel_password_hash', '', 'Hash da senha do painel admin'),
+('allow_registration', 'true', 'Setting for allow_registration'),
+('dark_accent', '240 3.7% 15.9%', 'Setting for dark_accent'),
+('dark_background', '0 0% 0%', 'Setting for dark_background'),
+('dark_border', '220 13% 23%', 'Setting for dark_border'),
+('dark_card', '240 10% 3.9%', 'Setting for dark_card'),
+('dark_foreground', '0 0% 98%', 'Setting for dark_foreground'),
+('dark_muted', '240 3.7% 15.9%', 'Setting for dark_muted'),
+('dark_primary', '48 97% 60%', 'Setting for dark_primary'),
+('dark_secondary', '240 3.7% 15.9%', 'Setting for dark_secondary'),
+('default_payout', '89', 'Setting for default_payout'),
+('deposit_fee', '0', 'Setting for deposit_fee'),
+('light_accent', '240 4.8% 95.9%', 'Setting for light_accent'),
+('light_background', '0 0% 100%', 'Setting for light_background'),
+('light_border', '240 5.9% 90%', 'Setting for light_border'),
+('light_card', '0 0% 100%', 'Setting for light_card'),
+('light_foreground', '240 10% 3.9%', 'Setting for light_foreground'),
+('light_muted', '240 4.8% 95.9%', 'Setting for light_muted'),
+('light_primary', '48 97% 60%', 'Setting for light_primary'),
+('light_secondary', '240 4.8% 95.9%', 'Setting for light_secondary'),
+('logo_dark', '', 'Logo para tema escuro'),
+('logo_height', '40', 'Setting for logo_height'),
+('logo_light', '', 'Logo para tema claro'),
+('logo_mobile', '', 'Logo para mobile'),
+('logo_mobile_height', '32', 'Altura do logo mobile'),
+('maintenance_mode', 'false', 'Setting for maintenance_mode'),
+('max_trade', '10000', 'Setting for max_trade'),
+('min_deposit', '10', 'Setting for min_deposit'),
+('min_trade', '1', 'Setting for min_trade'),
+('platform_name', 'Trading Platform', 'Setting for platform_name'),
+('support_email', 'suporte@suaplataforma.com', 'Setting for support_email'),
+('withdrawal_fee', '0', 'Setting for withdrawal_fee');
 
--- 5. COMPANY_INFO
-SELECT 'INSERT INTO company_info (id, key, value, description) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(key) || ',' ||
-  quote_literal(value) || ',' ||
-  COALESCE(quote_literal(description), 'NULL') || ') ON CONFLICT (key) DO NOTHING;'
-FROM company_info;
 
--- 6. SOCIAL_AUTH_PROVIDERS
-SELECT 'INSERT INTO social_auth_providers (id, provider, is_enabled, client_id, client_secret, instructions, config) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(provider) || ',' ||
-  is_enabled || ',' ||
-  COALESCE(quote_literal(client_id), 'NULL') || ',' ||
-  COALESCE(quote_literal(client_secret), 'NULL') || ',' ||
-  COALESCE(quote_literal(instructions), 'NULL') || ',' ||
-  COALESCE(quote_literal(config::text), '''{}''') || ') ON CONFLICT (provider) DO NOTHING;'
-FROM social_auth_providers;
+-- ============================================
+-- CHART_APPEARANCE_SETTINGS (Aparência do Gráfico)
+-- ============================================
 
--- 7. PAYMENT_GATEWAYS
-SELECT 'INSERT INTO payment_gateways (id, name, type, is_active, api_key, api_secret, webhook_url, config) VALUES (' ||
-  quote_literal(id) || ',' ||
-  quote_literal(name) || ',' ||
-  quote_literal(type) || ',' ||
-  COALESCE(is_active::text, 'true') || ',' ||
-  COALESCE(quote_literal(api_key), 'NULL') || ',' ||
-  COALESCE(quote_literal(api_secret), 'NULL') || ',' ||
-  COALESCE(quote_literal(webhook_url), 'NULL') || ',' ||
-  COALESCE(quote_literal(config::text), '''{}''') || ');'
-FROM payment_gateways;
-```
-
-Copie todos os resultados (INSERTs) e cole no SQL Editor do projeto NOVO.
-
----
-
-## ⚙️ PASSO 4: CONFIGURAR SECRETS
-
-No projeto NOVO, vá em **Settings > Edge Functions > Secrets** e adicione:
-
-### ⚠️ IMPORTANTE: Secrets Automáticos vs Manuais
-
-Os seguintes secrets são **AUTOMÁTICOS** e já existem internamente no Supabase (NÃO adicione manualmente):
-- ❌ `SUPABASE_URL` - Já existe automaticamente
-- ❌ `SUPABASE_ANON_KEY` - Já existe automaticamente  
-- ❌ `SUPABASE_SERVICE_ROLE_KEY` - Já existe automaticamente
-- ❌ `SUPABASE_DB_URL` - Já existe automaticamente
-
-### ✅ Secrets que você DEVE adicionar manualmente:
-
-| Secret | Descrição | Quando usar |
-|--------|-----------|-------------|
-| `STRIPE_SECRET_KEY` | Chave secreta do Stripe | Se usar pagamentos Stripe |
-| `STRIPE_PUBLISHABLE_KEY` | Chave pública do Stripe | Se usar pagamentos Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe | Se usar pagamentos Stripe |
-| `VAPID_PUBLIC_KEY` | Chave pública VAPID | Se usar notificações push |
-| `VAPID_PRIVATE_KEY` | Chave privada VAPID | Se usar notificações push |
-| `ADMIN_PANEL_PASSWORD` | Senha do painel admin | Sempre necessário |
-| `COINBASE_API_KEY` | API key Coinbase Commerce | Se usar pagamentos Coinbase |
-| `COINBASE_WEBHOOK_SECRET` | Secret webhook Coinbase | Se usar pagamentos Coinbase |
-
-> **Nota:** A tela de Secrets pode parecer "em branco" mesmo após a criação do projeto. Isso é normal! Os secrets do Supabase existem internamente mas não aparecem na lista.
-
----
-
-## 🔗 PASSO 5: ATUALIZAR .env DO FRONTEND
-
-No repositório clonado, atualize o arquivo `.env`:
-
-```env
-VITE_SUPABASE_URL=https://SEU_NOVO_PROJETO.supabase.co
-VITE_SUPABASE_ANON_KEY=sua_nova_anon_key
-VITE_STRIPE_PUBLISHABLE_KEY=sua_stripe_publishable_key
-```
-
----
-
-## 🔧 PASSO 4.1: DADOS ESSENCIAIS (OBRIGATÓRIO)
-
-⚠️ **MUITO IMPORTANTE**: Sem estes dados, a plataforma NÃO funcionará!
-
-### 4.1.1 - Configurações da Plataforma
-
-```sql
--- Configurações essenciais da plataforma
-INSERT INTO platform_settings (key, value, description) VALUES
-('allow_registration', 'true', 'Permite registro de novos usuários'),
-('platform_name', 'Minha Plataforma', 'Nome da plataforma'),
-('min_deposit', '10', 'Depósito mínimo'),
-('min_trade', '5', 'Trade mínimo'),
-('max_trade', '10000', 'Trade máximo'),
-('maintenance_mode', 'false', 'Modo manutenção'),
-('min_withdrawal', '60', 'Saque mínimo'),
-('max_withdrawal', '10000', 'Saque máximo'),
-('default_payout', '89', 'Payout padrão'),
-('require_verification', 'true', 'Exige verificação de identidade'),
-('support_email', 'suporte@suaplataforma.com', 'Email de suporte'),
-('support_phone', '+55 11 99999-9999', 'Telefone de suporte'),
-('primary_color', '#ffdd00', 'Cor primária'),
-('secondary_color', '#303030', 'Cor secundária'),
-('success_color', '#22C55E', 'Cor de sucesso'),
-('deposit_fee', '0', 'Taxa de depósito'),
-('withdrawal_fee', '2.99', 'Taxa de saque'),
-('usdt_enabled', 'false', 'USDT habilitado'),
-('admin_panel_password_hash', '', 'Hash da senha do painel admin - será gerado automaticamente no primeiro login')
-ON CONFLICT (key) DO NOTHING;
-```
-
-### 4.1.2 - Ativos de Trading (OBRIGATÓRIO)
-
-```sql
--- Ativos principais - SEM ISSO O GRÁFICO NÃO CARREGA!
-INSERT INTO assets (symbol, name, payout_percentage, is_active, icon_url, auto_generate_candles) VALUES
--- Criptomoedas
-('BTC-OTC', 'Bitcoin', 89, true, 'https://cryptologos.cc/logos/bitcoin-btc-logo.png', true),
-('ETH-OTC', 'Ethereum', 89, true, 'https://cryptologos.cc/logos/ethereum-eth-logo.png', true),
-('BNB-OTC', 'BNB', 89, true, 'https://cryptologos.cc/logos/bnb-bnb-logo.png', true),
-('ADA-OTC', 'Cardano', 89, true, 'https://cryptologos.cc/logos/cardano-ada-logo.png', true),
-('SOL-OTC', 'Solana', 89, true, 'https://cryptologos.cc/logos/solana-sol-logo.png', true),
-('DOGE-OTC', 'Dogecoin', 89, true, 'https://cryptologos.cc/logos/dogecoin-doge-logo.png', true),
-('LTC-OTC', 'Litecoin', 89, true, 'https://cryptologos.cc/logos/litecoin-ltc-logo.png', true),
--- Forex
-('EUR-USD-OTC', 'EUR/USD', 89, true, 'https://flagcdn.com/48x36/eu.png', true),
-('GBP-USD-OTC', 'GBP/USD', 89, true, 'https://flagcdn.com/48x36/gb.png', true),
-('USD-JPY-OTC', 'USD/JPY', 89, true, 'https://flagcdn.com/48x36/jp.png', true),
-('AUD-USD-OTC', 'AUD/USD', 89, true, 'https://flagcdn.com/48x36/au.png', true),
--- Commodities
-('XAU-OTC', 'Gold', 89, true, 'https://cdn-icons-png.flaticon.com/512/3188/3188558.png', true),
-('WTI-OTC', 'Oil WTI', 89, true, 'https://cdn-icons-png.flaticon.com/512/3069/3069764.png', true),
--- Ações
-('AAPL-OTC', 'Apple Inc.', 89, true, 'https://logo.clearbit.com/apple.com', true),
-('GOOGL-OTC', 'Alphabet Inc.', 89, true, 'https://logo.clearbit.com/google.com', true),
-('MSFT-OTC', 'Microsoft Corp.', 89, true, 'https://logo.clearbit.com/microsoft.com', true),
-('AMZN-OTC', 'Amazon.com Inc.', 89, true, 'https://logo.clearbit.com/amazon.com', true),
-('TSLA-OTC', 'Tesla Inc.', 89, true, 'https://logo.clearbit.com/tesla.com', true),
-('META-OTC', 'Meta Platforms', 89, true, 'https://logo.clearbit.com/meta.com', true),
-('NVDA-OTC', 'NVIDIA Corp.', 89, true, 'https://logo.clearbit.com/nvidia.com', true)
-ON CONFLICT (symbol) DO NOTHING;
-```
-
-### 4.1.3 - Configurações de Aparência do Gráfico
-
-```sql
--- Configurações de aparência do gráfico
-INSERT INTO chart_appearance_settings (
+INSERT INTO public.chart_appearance_settings (
   id,
   candle_up_color, candle_down_color,
   candle_up_color_dark, candle_down_color_dark,
   candle_up_color_light, candle_down_color_light,
+  wick_up_color, wick_down_color,
+  wick_up_color_dark, wick_down_color_dark,
+  wick_up_color_light, wick_down_color_light,
+  candle_border_up_color, candle_border_down_color,
+  candle_border_up_color_dark, candle_border_down_color_dark,
+  candle_border_up_color_light, candle_border_down_color_light,
+  candle_border_visible, candle_border_width,
   chart_bg_color, chart_bg_color_dark, chart_bg_color_light,
   chart_text_color, chart_text_color_dark, chart_text_color_light,
-  grid_horz_color, grid_horz_color_dark, grid_horz_color_light,
-  grid_vert_color, grid_vert_color_dark, grid_vert_color_light,
+  grid_horz_color, grid_vert_color,
+  grid_horz_color_dark, grid_vert_color_dark,
+  grid_horz_color_light, grid_vert_color_light,
   crosshair_color, crosshair_color_dark, crosshair_color_light,
-  map_enabled, map_opacity, map_show_grid, map_grid_opacity,
-  watermark_visible, show_tradingview_logo,
+  price_scale_border_color, price_scale_border_color_dark, price_scale_border_color_light,
+  time_scale_border_color, time_scale_border_color_dark, time_scale_border_color_light,
+  map_enabled, map_opacity, map_primary_color, map_secondary_color,
+  map_show_grid, map_grid_opacity,
+  map_image_url, map_image_url_dark, map_image_url_mobile, map_image_url_mobile_dark,
+  watermark_visible, watermark_text,
   trade_line_width, trade_line_style, trade_line_show_label,
   trade_line_call_color, trade_line_put_color,
-  candle_border_visible, candle_border_width,
+  show_tradingview_logo,
+  chart_height_desktop, chart_height_mobile, chart_height_fullscreen,
+  chart_width_percentage_desktop, chart_width_percentage_mobile, chart_width_percentage_fullscreen,
+  chart_responsive_desktop, chart_responsive_mobile, chart_responsive_fullscreen,
   chart_height_offset_desktop, chart_height_offset_mobile, chart_height_offset_fullscreen,
-  chart_responsive_desktop, chart_responsive_mobile, chart_responsive_fullscreen
+  chart_aspect_ratio_desktop, chart_aspect_ratio_mobile, chart_aspect_ratio_fullscreen
 ) VALUES (
   '00000000-0000-0000-0000-000000000001',
   '#ffffff', '#000000',
   '#ffffff', '#000000',
   '#ffffff', '#000000',
+  '#22c55e', '#ef4444',
+  '#ffffff', '#ffffff',
+  '#000000', '#000000',
+  '#22c55e', '#ef4444',
+  '#000000', '#ffffff',
+  '#000000', '#ffffff',
+  true, 2,
   '#0a0a0a', '#000000', '#ffffff',
   '#d1d4dc', '#d1d4dc', '#1a1a1a',
-  '#1e1e1e', '#1e1e1e', '#e5e5e5',
-  '#1e1e1e', '#1e1e1e', '#e5e5e5',
+  '#1e1e1e', '#1e1e1e',
+  '#1e1e1e', '#1e1e1e',
+  '#e5e5e5', '#e5e5e5',
   '#758696', '#758696', '#6b7280',
-  true, 0.07, true, 0.1,
-  false, false,
+  '#2B2B43', '#2B2B43', '#d1d5db',
+  '#2B2B43', '#2B2B43', '#d1d5db',
+  true, 0.07, '#f5f5ff', '#8f8f8f',
+  true, 0.1,
+  'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/chart-backgrounds/map-light-1765469767431.webp',
+  'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/chart-backgrounds/map-dark-1765469774766.webp',
+  'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/chart-backgrounds/map-mobile-light-1765469063292.webp',
+  'https://xhmisqcngalyjapkdwvh.supabase.co/storage/v1/object/public/chart-backgrounds/map-mobile-dark-1765469071756.webp',
+  false, NULL,
   5, 0, true,
   '#22c55e', '#ef4444',
-  true, 2,
+  false,
+  650, 500, 750,
+  100, 100, 100,
+  true, false, true,
   150, 160, 150,
-  true, false, true
-)
-ON CONFLICT (id) DO NOTHING;
-```
+  '16:9', '16:9', '16:9'
+);
 
-### 4.1.4 - Boosters (Opcional - mas recomendado)
 
-```sql
--- Boosters de payout
-INSERT INTO boosters (name, description, price, duration_minutes, payout_increase_percentage, is_active, display_order, name_en, description_en, name_es, description_es) VALUES
-('Booster Básico', 'Aumente seu payout em 1% por 30 minutos', 20, 30, 1, true, 1, 'Basic Booster', 'Increase your payout by 1% for 30 minutes', 'Booster Básico', 'Aumenta tu payout en 1% por 30 minutos'),
-('Booster Pro', 'Aumente seu payout em 5% por 1 hora', 50, 60, 5, true, 2, 'Pro Booster', 'Increase your payout by 5% for 1 hour', 'Booster Pro', 'Aumenta tu payout en 5% por 1 hora'),
-('Booster Premium', 'Aumente seu payout em 10% por 2 horas', 80, 120, 10, true, 3, 'Premium Booster', 'Increase your payout by 10% for 2 hours', 'Booster Premium', 'Aumenta tu payout en 10% por 2 horas')
-ON CONFLICT DO NOTHING;
-```
+-- ============================================
+-- BOOSTERS
+-- ============================================
 
-### 4.1.5 - Documentos Legais (Opcional)
+INSERT INTO public.boosters (id, name, description, name_en, name_es, description_en, description_es, payout_increase_percentage, duration_minutes, price, icon, is_active, display_order) VALUES
+('f233977f-4481-4401-945a-be23d4733030', 'Booster Básico', 'Aumente seu payout em 5% por 30 minutos', 'Booster Básico', 'Booster Básico', 'Aumente seu payout em 5% por 30 minutos', 'Aumente seu payout em 5% por 30 minutos', 1, 30, 20, 'Zap', true, 1),
+('92f596e9-a065-4814-98bc-92fce2f13238', 'Booster Pro', 'Aumente seu payout em 10% por 1 hora', 'Booster Pro', 'Booster Pro', 'Aumente seu payout em 10% por 1 hora', 'Aumente seu payout em 10% por 1 hora', 5, 60, 50, 'TrendingUp', true, 2),
+('dc45316a-4469-477e-bbc6-2c82e44c5aa7', 'Booster Premium', 'Aumente seu payout em 15% por 2 horas', 'Booster Premium', 'Booster Premium', 'Aumente seu payout em 15% por 2 horas', 'Aumente seu payout em 15% por 2 horas', 10, 120, 80, 'Rocket', true, 3);
 
-```sql
--- Documentos legais
-INSERT INTO legal_documents (title, slug, description, icon, is_active, display_order, content) VALUES
-('Termos de Uso', 'termos-de-uso', 'Condições gerais de uso da plataforma', 'Scale', true, 1, '<h2>Termos de Uso</h2><p>Atualize este conteúdo no painel admin.</p>'),
-('Política de Privacidade', 'politica-privacidade', 'Como tratamos seus dados pessoais', 'Shield', true, 2, '<h2>Política de Privacidade</h2><p>Atualize este conteúdo no painel admin.</p>'),
-('Política de Cookies', 'politica-cookies', 'Como utilizamos cookies no site', 'Cookie', true, 3, '<h2>Política de Cookies</h2><p>Atualize este conteúdo no painel admin.</p>'),
-('Política de Segurança', 'politica-seguranca', 'Medidas de proteção e segurança', 'Lock', true, 4, '<h2>Política de Segurança</h2><p>Atualize este conteúdo no painel admin.</p>'),
-('Termos de Serviço', 'termos-servico', 'Acordo de prestação de serviços', 'FileText', true, 5, '<h2>Termos de Serviço</h2><p>Atualize este conteúdo no painel admin.</p>'),
-('Sobre Nós', 'sobre-nos', 'Conheça nossa empresa e missão', 'Info', true, 6, '<h2>Sobre Nós</h2><p>Atualize este conteúdo no painel admin.</p>')
-ON CONFLICT (slug) DO NOTHING;
-```
 
-### 4.1.6 - Informações da Empresa (Opcional)
+-- ============================================
+-- LEGAL_DOCUMENTS (Documentos Legais)
+-- ============================================
 
-```sql
--- Informações da empresa para documentos legais
-INSERT INTO company_info (key, value, description) VALUES
-('razao_social', 'Sua Empresa Ltda', 'Razão social da empresa'),
+INSERT INTO public.legal_documents (id, title, slug, description, content, icon, display_order, is_active) VALUES
+('49389f57-7e39-4898-a693-c5c05d468f06', 'Termos de Uso', 'termos-de-uso', 'Condições gerais de uso da plataforma', '<h1>Termos de Uso</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'Scale', 1, true),
+('760a3b19-b068-4edc-94e3-2c4508a592b5', 'Política de Privacidade', 'politica-privacidade', 'Como tratamos seus dados pessoais', '<h1>Política de Privacidade</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'Shield', 2, true),
+('620cfd32-6dad-4c3e-b025-b15f062989df', 'Política de Cookies', 'politica-cookies', 'Como utilizamos cookies no site', '<h1>Política de Cookies</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'Cookie', 3, true),
+('cd380c4f-8880-45d3-afab-5335fca027f0', 'Política de Segurança', 'politica-seguranca', 'Medidas de proteção e segurança', '<h1>Política de Segurança</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'Lock', 4, true),
+('68caff2b-8fe2-4109-9d01-6eb8363de531', 'Termos de Serviço', 'termos-servico', 'Acordo de prestação de serviços', '<h1>Termos de Serviço</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'FileText', 5, true),
+('e6e7268b-f2c9-48e6-a639-42961cec1818', 'Regulamentação', 'regulamentacao', 'Informações legais e regulatórias', '<h1>Regulamentação</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'BookOpen', 6, true),
+('fa4a0c2e-bd97-40de-986d-10480f2724c9', 'Sobre Nós', 'sobre-nos', 'Conheça nossa empresa e missão', '<h1>Sobre Nós</h1><p>Conteúdo a ser definido pelo administrador.</p>', 'Info', 7, true),
+('cf78679d-575c-4ea2-a3ef-0ecfaad769f1', 'Contato Jurídico', 'contato-juridico', 'Fale com nosso departamento legal', '<h1>Contato Jurídico</h1><p>Email: juridico@suaempresa.com</p>', 'Mail', 8, true);
+
+
+-- ============================================
+-- COMPANY_INFO (Informações da Empresa)
+-- ============================================
+
+INSERT INTO public.company_info (key, value, description) VALUES
 ('cnpj', '00.000.000/0001-00', 'CNPJ da empresa'),
-('endereco', 'Rua Exemplo, 123 - São Paulo/SP', 'Endereço completo'),
+('data_atualizacao_termos', 'Janeiro/2025', 'Data da última atualização'),
 ('email_juridico', 'juridico@suaempresa.com', 'Email do departamento jurídico'),
-('versao_termos', '1.0', 'Versão atual dos termos'),
-('data_atualizacao_termos', 'Janeiro/2025', 'Data da última atualização')
-ON CONFLICT (key) DO NOTHING;
+('endereco', 'Rua Exemplo, 123 - São Paulo/SP', 'Endereço completo'),
+('orgao_regulador_1', 'CVM - Comissão de Valores Mobiliários', 'Órgão regulador 1'),
+('orgao_regulador_2', 'Banco Central do Brasil', 'Órgão regulador 2'),
+('orgao_regulador_3', 'ANPD - Autoridade Nacional de Proteção de Dados', 'Órgão regulador 3'),
+('razao_social', 'Sua Empresa Ltda', 'Razão social da empresa'),
+('versao_termos', '1.0', 'Versão atual dos termos');
+
+
+-- ============================================
+-- PAYMENT_GATEWAYS (Gateways de Pagamento)
+-- ============================================
+
+INSERT INTO public.payment_gateways (name, type, is_active, config) VALUES
+('Stripe', 'worldwide', true, '{"provider": "stripe"}'),
+('CoinBase', 'crypto', true, '{"provider": "coinbase", "credentials": {"API_KEY": "", "WEBHOOK_SECRET": ""}, "secretName": "COINBASE_API_KEY"}'),
+('PIX Gateway', 'pix', false, '{"provider": "pixup", "credentials": {"CLIENT_ID": "", "CLIENT_SECRET": ""}, "secretName": "PIXUP_CLIENT_ID"}');
+
+
+-- ============================================
+-- SOCIAL_AUTH_PROVIDERS (Provedores OAuth)
+-- ============================================
+
+INSERT INTO public.social_auth_providers (provider, is_enabled, instructions, config) VALUES
+('google', false, 'Para configurar o Google OAuth:
+
+1. Acesse o Google Cloud Console (console.cloud.google.com)
+2. Crie um novo projeto ou selecione um existente
+3. Vá em "APIs e Serviços" > "Credenciais"
+4. Clique em "Criar credenciais" > "ID do cliente OAuth 2.0"
+5. Configure a tela de consentimento se necessário
+6. Escolha "Aplicativo da Web" como tipo de aplicativo
+7. Adicione as URLs autorizadas:
+   - JavaScript origins: sua URL do app
+   - Redirect URIs: https://<SEU_PROJETO>.supabase.co/auth/v1/callback
+8. Copie o Client ID e Client Secret
+9. Cole aqui e ative o provedor
+
+Importante: No Supabase, vá em Authentication > Providers > Google e adicione o Client ID e Secret lá também.', '{}'),
+('facebook', false, 'Para configurar o Facebook Login:
+
+1. Acesse Facebook Developers (developers.facebook.com)
+2. Crie um novo app ou selecione um existente
+3. Adicione o produto "Facebook Login"
+4. Configure as URLs de redirecionamento:
+   - Valid OAuth Redirect URIs: https://<SEU_PROJETO>.supabase.co/auth/v1/callback
+5. Em Configurações > Básico, copie:
+   - ID do aplicativo (App ID)
+   - Chave secreta do app (App Secret)
+6. Cole aqui e ative o provedor
+
+Importante: No Supabase, vá em Authentication > Providers > Facebook e adicione o App ID e Secret lá também.', '{}'),
+('apple', false, 'Para configurar o Sign in with Apple:
+
+1. Acesse Apple Developer (developer.apple.com)
+2. Vá em Certificates, Identifiers & Profiles
+3. Crie um novo Service ID
+4. Configure:
+   - Return URLs: https://<SEU_PROJETO>.supabase.co/auth/v1/callback
+5. Gere uma chave privada (.p8) para Sign in with Apple
+6. Anote o Team ID, Service ID (Client ID) e Key ID
+7. Cole as informações aqui e ative o provedor
+
+Importante: No Supabase, vá em Authentication > Providers > Apple e configure todos os campos necessários.
+
+Observação: Apple OAuth requer configuração adicional complexa. Consulte a documentação do Supabase para detalhes completos.', '{}');
 ```
 
-### 4.1.7 - Gateways de Pagamento (Configurar depois no admin)
+---
 
-```sql
--- Gateways de pagamento vazios (configure as credenciais no painel admin)
-INSERT INTO payment_gateways (name, type, is_active, api_key, api_secret, config) VALUES
-('Stripe', 'worldwide', false, '', '', '{}'),
-('PIX Gateway', 'pix', false, '', '', '{}'),
-('Coinbase Commerce', 'crypto', false, '', '', '{}')
-ON CONFLICT DO NOTHING;
-```
+## 🔧 PASSO 3: STORAGE BUCKETS
 
-### 4.1.8 - Provedores de Login Social (Opcional)
+Cole o SQL abaixo para criar os buckets de storage:
 
-```sql
--- Provedores de login social (desativados por padrão)
-INSERT INTO social_auth_providers (provider, is_enabled, client_id, client_secret, config) VALUES
-('google', false, '', '', '{}'),
-('facebook', false, '', '', '{}'),
-('apple', false, '', '', '{}')
-ON CONFLICT (provider) DO NOTHING;
-```
-
-### 4.1.9 - Configurar Realtime (OBRIGATÓRIO)
-
-```sql
--- Habilitar Realtime para tabelas críticas
-ALTER TABLE public.trades REPLICA IDENTITY FULL;
-ALTER TABLE public.profiles REPLICA IDENTITY FULL;
-ALTER TABLE public.candles REPLICA IDENTITY FULL;
-ALTER TABLE public.transactions REPLICA IDENTITY FULL;
-
--- Adicionar tabelas ao Realtime
-ALTER PUBLICATION supabase_realtime ADD TABLE public.trades;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.candles;
-ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
-```
-
-### 4.1.10 - Criar Storage Buckets (OBRIGATÓRIO)
-
-No painel do Supabase, vá em **Storage** e crie estes buckets:
-
-| Bucket Name | Public |
-|-------------|--------|
-| `avatars` | ✅ Sim |
-| `verification-documents` | ❌ Não |
-| `popup-images` | ✅ Sim |
-| `chart-backgrounds` | ✅ Sim |
-
-Ou execute via SQL:
 ```sql
 -- Criar buckets de storage
-INSERT INTO storage.buckets (id, name, public) VALUES 
-('avatars', 'avatars', true),
-('verification-documents', 'verification-documents', false),
-('popup-images', 'popup-images', true),
-('chart-backgrounds', 'chart-backgrounds', true)
-ON CONFLICT (id) DO NOTHING;
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES 
+  ('avatars', 'avatars', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+  ('verification-documents', 'verification-documents', false, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
+  ('popup-images', 'popup-images', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
+  ('chart-backgrounds', 'chart-backgrounds', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp']);
 
--- Política para avatars (público para leitura)
+-- Políticas para avatars (público)
 CREATE POLICY "Avatar images are publicly accessible"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'avatars');
@@ -1923,178 +1553,247 @@ CREATE POLICY "Users can update their own avatar"
 ON storage.objects FOR UPDATE
 USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
 
--- Política para popup-images (admin apenas)
+CREATE POLICY "Users can delete their own avatar"
+ON storage.objects FOR DELETE
+USING (bucket_id = 'avatars' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+-- Políticas para verification-documents (privado)
+CREATE POLICY "Users can view their own documents"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Users can upload their own documents"
+ON storage.objects FOR INSERT
+WITH CHECK (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
+
+CREATE POLICY "Admins can view all documents"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'verification-documents' AND EXISTS (
+  SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'
+));
+
+-- Políticas para popup-images (público)
 CREATE POLICY "Popup images are publicly accessible"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'popup-images');
 
 CREATE POLICY "Admins can manage popup images"
 ON storage.objects FOR ALL
-USING (bucket_id = 'popup-images');
+USING (bucket_id = 'popup-images' AND EXISTS (
+  SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'
+));
 
--- Política para chart-backgrounds (admin apenas)
+-- Políticas para chart-backgrounds (público)
 CREATE POLICY "Chart backgrounds are publicly accessible"
 ON storage.objects FOR SELECT
 USING (bucket_id = 'chart-backgrounds');
 
 CREATE POLICY "Admins can manage chart backgrounds"
 ON storage.objects FOR ALL
-USING (bucket_id = 'chart-backgrounds');
-
--- Política para verification-documents (privado)
-CREATE POLICY "Users can upload their verification documents"
-ON storage.objects FOR INSERT
-WITH CHECK (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
-
-CREATE POLICY "Users can view their own verification documents"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'verification-documents' AND auth.uid()::text = (storage.foldername(name))[1]);
-```
-
-### 4.1.11 - Gerar Candles Iniciais
-
-Após inserir os ativos, você **PRECISA** gerar candles para o gráfico funcionar:
-
-1. Faça login como admin no novo projeto
-2. Acesse o painel admin → **Ativos**
-3. Clique em **"Gerar Todos os Candles"**
-
-Ou chame a edge function diretamente:
-```bash
-curl -X POST "https://SEU_PROJETO.supabase.co/functions/v1/generate-candles" \
-  -H "Authorization: Bearer SEU_ANON_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"asset_id": "ID_DO_ATIVO", "timeframe": "1m", "count": 300}'
+USING (bucket_id = 'chart-backgrounds' AND EXISTS (
+  SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'
+));
 ```
 
 ---
 
-## 🔧 PASSO 5: CONFIGURAR CRON JOBS (Recomendado)
-
-No SQL Editor do novo projeto, configure os cron jobs para automação:
+## 🔧 PASSO 4: CONFIGURAR REALTIME
 
 ```sql
--- Habilitar extensão pg_cron (se não estiver habilitada)
-CREATE EXTENSION IF NOT EXISTS pg_cron;
+-- Habilitar Realtime nas tabelas necessárias
+ALTER TABLE public.profiles REPLICA IDENTITY FULL;
+ALTER TABLE public.trades REPLICA IDENTITY FULL;
+ALTER TABLE public.candles REPLICA IDENTITY FULL;
+ALTER TABLE public.transactions REPLICA IDENTITY FULL;
 
--- Cron para processar trades expirados (a cada 3 segundos)
+-- Adicionar tabelas à publicação do Realtime
+ALTER PUBLICATION supabase_realtime ADD TABLE public.profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.trades;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.candles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
+```
+
+---
+
+## 🔧 PASSO 5: CRON JOBS
+
+Acesse **Database > Extensions** e ative a extensão `pg_cron`.
+
+Depois execute:
+
+```sql
+-- Processar trades expirados (a cada 3 segundos)
 SELECT cron.schedule(
   'process-expired-trades',
   '*/3 * * * * *',
-  $$SELECT net.http_post(
-    url := 'https://SEU_PROJETO.supabase.co/functions/v1/process-expired-trades',
-    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
-  )$$
+  $$
+  SELECT net.http_post(
+    url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/process-expired-trades',
+    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
 );
 
--- Cron para atualizar candles (a cada 5 segundos)
+-- Atualizar candles (a cada 10 segundos)
 SELECT cron.schedule(
   'update-current-candles',
-  '*/5 * * * * *',
-  $$SELECT net.http_post(
-    url := 'https://SEU_PROJETO.supabase.co/functions/v1/update-current-candles',
-    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
-  )$$
+  '*/10 * * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/update-current-candles',
+    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
 );
 
--- Cron para limpar trades demo (diariamente às 3h UTC)
+-- Limpar demo trades (diário às 03:00 UTC)
 SELECT cron.schedule(
   'cleanup-demo-trades',
   '0 3 * * *',
-  $$SELECT net.http_post(
-    url := 'https://SEU_PROJETO.supabase.co/functions/v1/cleanup-demo-trades',
-    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
-  )$$
+  $$
+  SELECT net.http_post(
+    url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/cleanup-demo-trades',
+    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
 );
 
--- Cron para limpar candles antigos (diariamente às 4h UTC)
+-- Limpar candles antigos (diário às 04:00 UTC)
 SELECT cron.schedule(
   'cleanup-old-candles',
   '0 4 * * *',
-  $$SELECT net.http_post(
-    url := 'https://SEU_PROJETO.supabase.co/functions/v1/cleanup-old-candles',
-    headers := '{"Authorization": "Bearer SEU_SERVICE_ROLE_KEY"}'::jsonb
-  )$$
+  $$
+  SELECT net.http_post(
+    url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/cleanup-old-candles',
+    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
+);
+
+-- Verificar pagamentos pendentes (a cada 5 minutos)
+SELECT cron.schedule(
+  'check-pending-payments',
+  '*/5 * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/check-pending-payments',
+    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
+);
+
+-- Processar notificações de admin (a cada minuto)
+SELECT cron.schedule(
+  'process-admin-notifications',
+  '* * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/process-admin-notifications',
+    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    body := '{}'::jsonb
+  );
+  $$
 );
 ```
 
-⚠️ **IMPORTANTE**: Substitua `SEU_PROJETO` e `SEU_SERVICE_ROLE_KEY` pelos valores do seu novo projeto!
+**IMPORTANTE:** Substitua `<SEU_PROJETO>` pelo ID do seu projeto e `<SEU_SERVICE_ROLE_KEY>` pela sua service role key.
 
 ---
 
-## 🔧 PASSO 6: CONFIGURAR WEBHOOKS (Se usar pagamentos)
+## 🔐 PASSO 6: SECRETS DO SUPABASE
 
-### Stripe Webhook
-1. Acesse [Stripe Dashboard](https://dashboard.stripe.com/webhooks)
-2. Crie um novo endpoint: `https://SEU_PROJETO.supabase.co/functions/v1/stripe-webhook`
-3. Selecione eventos: `payment_intent.succeeded`, `payment_intent.payment_failed`, `payment_intent.canceled`
-4. Copie o Signing Secret e adicione como `STRIPE_WEBHOOK_SECRET` nos Secrets do Supabase
+Vá em **Settings > Edge Functions > Secrets** e adicione:
 
-### Coinbase Webhook
-1. Acesse [Coinbase Commerce](https://commerce.coinbase.com/settings)
-2. Configure webhook URL: `https://SEU_PROJETO.supabase.co/functions/v1/coinbase-webhook`
-3. Copie o Webhook Shared Secret e adicione como `COINBASE_WEBHOOK_SECRET` nos Secrets
-
----
-
-## ✅ CHECKLIST FINAL COMPLETO
-
-### Estrutura do Banco
-- [ ] SQL do PASSO 1 executado (tabelas, enums, funções, triggers, RLS)
-- [ ] Trigger de auth (PASSO 2) criado
-- [ ] Dados de configuração importados
-
-### Dados Essenciais (PASSO 4.1)
-- [ ] `platform_settings` - configurações da plataforma
-- [ ] `assets` - ativos de trading
-- [ ] `chart_appearance_settings` - aparência do gráfico
-- [ ] `boosters` - boosters de payout (opcional)
-- [ ] `legal_documents` - documentos legais (opcional)
-- [ ] `company_info` - informações da empresa (opcional)
-- [ ] `payment_gateways` - gateways de pagamento
-- [ ] `social_auth_providers` - provedores OAuth (opcional)
-
-### Realtime & Storage
-- [ ] Realtime habilitado para trades, profiles, candles, transactions
-- [ ] Storage buckets criados (avatars, verification-documents, popup-images, chart-backgrounds)
-- [ ] Políticas de storage configuradas
-
-### Edge Functions & Secrets
-- [ ] Edge functions deployadas
-- [ ] Secrets configurados (VAPID, Stripe, Admin Password, etc.)
-
-### Cron Jobs (PASSO 5)
-- [ ] `process-expired-trades` configurado
-- [ ] `update-current-candles` configurado
-- [ ] `cleanup-demo-trades` configurado
-- [ ] `cleanup-old-candles` configurado
-
-### Webhooks (PASSO 6)
-- [ ] Stripe webhook configurado (se usar Stripe)
-- [ ] Coinbase webhook configurado (se usar Coinbase)
-
-### Candles Iniciais
-- [ ] Candles gerados via admin ou edge function
-
-### Deploy
-- [ ] `.env` atualizado no repositório
-- [ ] Deploy no Vercel/hosting configurado
+| Nome do Secret | Descrição |
+|----------------|-----------|
+| `SUPABASE_URL` | URL do projeto (ex: https://xxx.supabase.co) |
+| `SUPABASE_ANON_KEY` | Chave anon do projeto |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave service role |
+| `STRIPE_SECRET_KEY` | Chave secreta do Stripe |
+| `STRIPE_PUBLISHABLE_KEY` | Chave pública do Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe |
+| `VAPID_PUBLIC_KEY` | Chave pública VAPID (push notifications) |
+| `VAPID_PRIVATE_KEY` | Chave privada VAPID |
+| `ADMIN_PANEL_PASSWORD` | Senha do painel admin |
 
 ---
 
-## 🚨 PROBLEMAS COMUNS
+## 🌐 PASSO 7: VARIÁVEIS DE AMBIENTE (Vercel/Hosting)
 
-| Problema | Solução |
-|----------|---------|
-| "Erro ao carregar ativos" | Execute o INSERT de `assets` |
-| Preloader infinito | Faltam assets ou chart_appearance_settings |
-| "Cadastro desativado" | Adicione `allow_registration = true` em platform_settings |
-| Gráfico não carrega | Gere candles via admin panel |
-| Trades não finalizam | Configure cron job `process-expired-trades` |
-| Balance não atualiza | Configure Realtime para `profiles` e `trades` |
-| Avatar não salva | Crie bucket `avatars` no Storage |
-| Webhooks não funcionam | Configure URL correta e Signing Secret |
+No painel do Vercel, adicione:
+
+```
+VITE_SUPABASE_URL=https://<SEU_PROJETO>.supabase.co
+VITE_SUPABASE_ANON_KEY=<SUA_ANON_KEY>
+VITE_STRIPE_PUBLISHABLE_KEY=<SUA_STRIPE_PUBLISHABLE_KEY>
+```
 
 ---
 
-**Pronto!** Seu banco de dados está completamente clonado e pronto para produção.
+## 📦 PASSO 8: DEPLOY DAS EDGE FUNCTIONS
+
+As Edge Functions serão automaticamente deployadas quando você fizer push do código para o repositório conectado ao Lovable/Vercel.
+
+**Edge Functions incluídas:**
+- `process-expired-trades` - Processa trades expirados
+- `update-current-candles` - Atualiza candles em tempo real
+- `generate-candles` - Gera novos candles
+- `cleanup-demo-trades` - Limpa trades demo antigos
+- `cleanup-old-candles` - Limpa candles antigos
+- `check-pending-payments` - Verifica pagamentos pendentes
+- `create-stripe-payment-intent` - Cria intenção de pagamento Stripe
+- `stripe-webhook` - Webhook do Stripe
+- `create-coinbase-charge` - Cria cobrança Coinbase
+- `coinbase-webhook` - Webhook do Coinbase
+- `send-push-notification` - Envia notificações push
+- `push-subscribe` - Inscrição em push notifications
+- `push-unsubscribe` - Cancelamento de push notifications
+- `get-vapid-key` - Obtém chave VAPID pública
+- `verify-admin-password` - Verifica senha do admin
+- `notify-admins` - Notifica administradores
+- `process-admin-notifications` - Processa fila de notificações
+
+---
+
+## ✅ CHECKLIST FINAL
+
+- [ ] Projeto Supabase criado
+- [ ] PASSO 1 executado (estrutura)
+- [ ] PASSO 2 executado (dados seed)
+- [ ] PASSO 3 executado (storage)
+- [ ] PASSO 4 executado (realtime)
+- [ ] PASSO 5 executado (cron jobs)
+- [ ] Secrets configurados
+- [ ] Variáveis de ambiente no hosting
+- [ ] Edge Functions deployadas
+- [ ] Webhook Stripe configurado no dashboard Stripe
+- [ ] Webhook Coinbase configurado (se usar)
+
+---
+
+## 🆘 TROUBLESHOOTING
+
+### Erro "relation does not exist"
+Execute os passos na ordem correta: PASSO 1 antes do PASSO 2.
+
+### Trades não expirando
+Verifique se o cron job `process-expired-trades` está ativo e se a edge function está deployada.
+
+### Candles não atualizando
+Verifique se o cron job `update-current-candles` está ativo.
+
+### Balance não atualizando em tempo real
+Verifique se o PASSO 4 (Realtime) foi executado corretamente.
+
+### Pagamentos não processando
+Verifique se os webhooks estão configurados corretamente no Stripe/Coinbase dashboards.
+
+---
+
+**Documento atualizado em: 14/12/2024**
+**Versão: 2.0 - Com dados reais do projeto atual**
