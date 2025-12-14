@@ -127,7 +127,7 @@ export const TradingHistory = ({ open, onOpenChange }: TradingHistoryProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card">
+      <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card mobile-header-safe-offset">
         <SheetHeader className="border-b border-border p-4 pb-3">
           <SheetTitle className="text-base font-semibold">{t("trade_history", "Histórico de trading")}</SheetTitle>
         </SheetHeader>

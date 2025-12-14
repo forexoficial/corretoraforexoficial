@@ -16,7 +16,7 @@ export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md mobile-header-safe-offset">
         <DialogHeader>
           <DialogTitle>{t('customer_support')} - {settings.platform_name}</DialogTitle>
         </DialogHeader>

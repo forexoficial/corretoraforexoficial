@@ -100,7 +100,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[540px] p-0">
+      <SheetContent side="right" className="w-full sm:w-[540px] p-0 mobile-header-safe-offset">
         <SheetHeader className="p-6 pb-4">
           <SheetTitle className="flex items-center gap-2">
             <FileText className="w-5 h-5 text-primary" />

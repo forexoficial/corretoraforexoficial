@@ -25,7 +25,7 @@ export const SettingsMenu = ({ open, onOpenChange }: SettingsMenuProps) => {
   
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[400px]">
+      <SheetContent side="right" className="w-full sm:w-[400px] mobile-header-safe-offset">
         <SheetHeader>
           <SheetTitle className="text-left">{t("settings_menu_title")}</SheetTitle>
         </SheetHeader>

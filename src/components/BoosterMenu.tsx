@@ -193,7 +193,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent 
         side="right" 
-        className="w-full sm:max-w-md overflow-y-auto"
+        className="w-full sm:max-w-md overflow-y-auto mobile-header-safe-offset"
       >
         <SheetHeader>
           <div className="flex items-center gap-2">

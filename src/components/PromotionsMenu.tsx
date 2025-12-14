@@ -19,7 +19,7 @@ export const PromotionsMenu = ({ open, onOpenChange }: PromotionsMenuProps) => {
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card">
+      <SheetContent side="right" className="w-full sm:w-[350px] p-0 bg-card mobile-header-safe-offset">
         <SheetHeader className="border-b border-border p-4 pb-3">
           <SheetTitle className="text-base font-semibold">{t("promotions")}</SheetTitle>
         </SheetHeader>
