@@ -3,7 +3,6 @@ import { NavLink } from "@/components/NavLink";
 import { 
   LayoutDashboard, 
   Users, 
-  DollarSign, 
   Share2, 
   Settings,
   Wallet
@@ -23,7 +22,6 @@ import {
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/affiliate" },
   { icon: Users, label: "Meus Referidos", path: "/affiliate/referrals" },
-  { icon: DollarSign, label: "Comissões", path: "/affiliate/commissions" },
   { icon: Share2, label: "Ferramentas", path: "/affiliate/tools" },
   { icon: Wallet, label: "Saques", path: "/affiliate/withdrawals" },
   { icon: Settings, label: "Configurações", path: "/affiliate/settings" },
