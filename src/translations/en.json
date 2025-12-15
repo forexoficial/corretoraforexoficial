@@ -1,5 +1,10 @@
 {
   "orContinueWith": "Or continue with",
+  "admin_contact_visibility": "Contact Visibility",
+  "admin_contact_visibility_desc": "Choose which contact methods will be displayed in the support popup",
+  "admin_whatsapp_visible_desc": "Show WhatsApp button in support",
+  "admin_phone_visible_desc": "Show phone button in support",
+  "admin_email_visible_desc": "Show email button in support",
   "enter_amount": "Enter amount",
   "invalid_amount": "Invalid amount",
   "min": "Min",

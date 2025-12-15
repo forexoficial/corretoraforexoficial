@@ -5,6 +5,9 @@ export interface PlatformSettings {
   platform_name: string;
   support_email: string;
   support_phone: string;
+  support_whatsapp_enabled: boolean;
+  support_phone_enabled: boolean;
+  support_email_enabled: boolean;
   min_deposit: number;
   min_withdrawal: number;
   max_withdrawal: number;
@@ -22,6 +25,9 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   platform_name: "Trading Platform",
   support_email: "suporte@plataforma.com",
   support_phone: "+55 11 99999-9999",
+  support_whatsapp_enabled: true,
+  support_phone_enabled: true,
+  support_email_enabled: true,
   min_deposit: 10,
   min_withdrawal: 60,
   max_withdrawal: 10000,
@@ -56,6 +62,9 @@ export function usePlatformSettings() {
         platform_name: settingsMap.platform_name || DEFAULT_SETTINGS.platform_name,
         support_email: settingsMap.support_email || DEFAULT_SETTINGS.support_email,
         support_phone: settingsMap.support_phone || DEFAULT_SETTINGS.support_phone,
+        support_whatsapp_enabled: settingsMap.support_whatsapp_enabled !== "false",
+        support_phone_enabled: settingsMap.support_phone_enabled !== "false",
+        support_email_enabled: settingsMap.support_email_enabled !== "false",
         min_deposit: parseFloat(settingsMap.min_deposit || String(DEFAULT_SETTINGS.min_deposit)),
         min_withdrawal: parseFloat(settingsMap.min_withdrawal || String(DEFAULT_SETTINGS.min_withdrawal)),
         max_withdrawal: parseFloat(settingsMap.max_withdrawal || String(DEFAULT_SETTINGS.max_withdrawal)),
