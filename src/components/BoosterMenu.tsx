@@ -14,8 +14,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { formatCurrency } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface BoosterMenuProps {
   open: boolean;
@@ -55,6 +55,7 @@ const iconMap: { [key: string]: any } = {
 export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
   const { user } = useAuth();
   const { t, language } = useTranslation();
+  const { formatBalance } = useCurrency();
   const [boosters, setBoosters] = useState<Booster[]>([]);
   const [activeBooster, setActiveBooster] = useState<ActiveBooster | null>(null);
   const [loading, setLoading] = useState(true);
@@ -231,7 +232,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
             {/* Balance Display */}
             <div className="mt-4 p-4 bg-muted/30 rounded-lg">
               <p className="text-sm text-muted-foreground mb-1">{t('available_balance')}</p>
-              <p className="text-2xl font-bold">R$ {formatCurrency(balance)}</p>
+              <p className="text-2xl font-bold">{formatBalance(balance)}</p>
             </div>
 
             {/* Boosters List */}
@@ -265,7 +266,7 @@ export function BoosterMenu({ open, onOpenChange }: BoosterMenuProps) {
                       </p>
                       <div className="flex items-center justify-between">
                         <span className="text-2xl font-bold text-primary">
-                          R$ {formatCurrency(booster.price)}
+                          {formatBalance(booster.price)}
                         </span>
                         <Button
                           onClick={() => handlePurchase(booster)}
