@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "@/hooks/useTranslation";
 
 interface SocialLoginButtonsProps {
   onSocialLogin: (provider: "google" | "facebook" | "apple") => void;
@@ -13,6 +14,7 @@ interface ActiveProvider {
 
 export function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
   const [activeProviders, setActiveProviders] = useState<ActiveProvider[]>([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadActiveProviders = async () => {
@@ -44,7 +46,7 @@ export function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
           <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">Ou continue com</span>
+          <span className="bg-background px-2 text-muted-foreground">{t('orContinueWith')}</span>
         </div>
       </div>
 
