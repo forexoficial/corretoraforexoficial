@@ -19,6 +19,7 @@ export interface PlatformSettings {
   allow_registration: boolean;
   maintenance_mode: boolean;
   usdt_enabled: boolean;
+  signup_banner_url: string;
 }
 
 const DEFAULT_SETTINGS: PlatformSettings = {
@@ -39,6 +40,7 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   allow_registration: true,
   maintenance_mode: false,
   usdt_enabled: false,
+  signup_banner_url: "",
 };
 
 export function usePlatformSettings() {
@@ -76,6 +78,7 @@ export function usePlatformSettings() {
         allow_registration: settingsMap.allow_registration === "true",
         maintenance_mode: settingsMap.maintenance_mode === "true",
         usdt_enabled: settingsMap.usdt_enabled === "true",
+        signup_banner_url: settingsMap.signup_banner_url || "",
       });
     } catch (error) {
       console.error("Error fetching platform settings:", error);

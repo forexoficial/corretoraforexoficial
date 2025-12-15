@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { StarfieldBackground } from "@/components/StarfieldBackground";
-import bannerSignup from "@/assets/banner-signup.webp";
+import defaultBannerSignup from "@/assets/banner-signup.webp";
 
 export default function Signup() {
   const { settings } = usePlatformSettings();
@@ -17,6 +17,9 @@ export default function Signup() {
   const { isLoading, handleSignup, handleSocialLogin } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+
+  // Use dynamic banner from settings, fallback to default
+  const bannerSignup = settings.signup_banner_url || defaultBannerSignup;
 
   const onSignupSubmit = async (formData: any) => {
     const success = await handleSignup(formData, settings.allow_registration);
