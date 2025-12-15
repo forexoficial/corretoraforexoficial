@@ -39,7 +39,7 @@ export default function Signup() {
       </Button>
 
       {/* Banner Section - Left on desktop, Top on mobile */}
-      <div className="w-full lg:w-1/2 h-48 sm:h-64 lg:h-screen relative overflow-hidden z-10">
+      <div className="w-full lg:w-1/2 h-32 sm:h-40 lg:h-screen relative overflow-hidden z-10">
         <img
           src={bannerSignup}
           alt="Signup Banner"
