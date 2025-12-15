@@ -160,7 +160,7 @@ export default function AffiliateReferrals() {
                       })}
                     </TableCell>
                     <TableCell className="text-xs sm:text-sm">R$ {formatCurrency(referral.total_deposits)}</TableCell>
-                    <TableCell className="text-success font-medium text-xs sm:text-sm">
+                    <TableCell className={`font-medium text-xs sm:text-sm ${referral.total_commissions >= 0 ? 'text-success' : 'text-destructive'}`}>
                       R$ {formatCurrency(referral.total_commissions)}
                     </TableCell>
                     <TableCell>
