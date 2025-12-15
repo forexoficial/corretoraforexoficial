@@ -11,7 +11,7 @@ interface ActiveTradeResultProps {
 export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
   const { activeTrade, hasOpenTrade } = useTradeContext();
   const { t } = useTranslation();
-  const { formatCurrency } = useCurrency();
+  const { formatBalance } = useCurrency();
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
 
   useEffect(() => {
@@ -75,7 +75,7 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
         <div className="flex-1 rounded px-2 py-1.5 bg-success/10 border border-success/30">
           <div className="text-[8px] text-muted-foreground uppercase">P&L</div>
           <div className="text-sm font-bold text-success leading-tight">
-            +{formatCurrency(potentialProfit)}
+            +{formatBalance(potentialProfit)}
           </div>
         </div>
         <div className="flex-1 rounded px-2 py-1.5 bg-muted/30 border border-border/50">
@@ -102,11 +102,11 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">{t("invested", "Investido")}</span>
-          <span className="font-medium">{formatCurrency(tradeAmount)}</span>
+          <span className="font-medium">{formatBalance(tradeAmount)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">{t("return", "Retorno")}</span>
-          <span className="font-bold text-success">{formatCurrency(potentialReturn)}</span>
+          <span className="font-bold text-success">{formatBalance(potentialReturn)}</span>
         </div>
       </div>
     </div>

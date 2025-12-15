@@ -37,7 +37,7 @@ export function MobileTradingControls({
   const { settings } = usePlatformSettings();
   const { hasOpenTrade } = useTradeContext();
   const { t } = useTranslation();
-  const { formatCurrency, symbol } = useCurrency();
+  const { formatBalance, symbol } = useCurrency();
   
   const { createTrade, isCreating } = useCreateTrade({
     selectedAsset,
@@ -154,7 +154,7 @@ export function MobileTradingControls({
               onClick={openAmountModal}
               className="text-lg font-bold hover:text-primary transition-colors cursor-pointer"
             >
-              {formatCurrency(amount)}
+              {formatBalance(amount)}
             </button>
             <Button
               variant="ghost"
@@ -191,7 +191,7 @@ export function MobileTradingControls({
               />
             </div>
             <div className="text-xs text-muted-foreground text-center">
-              {t("min", "Mín")}: {formatCurrency(settings.min_trade)} | {t("max", "Máx")}: {formatCurrency(10000)}
+              {t("min", "Mín")}: {formatBalance(settings.min_trade)} | {t("max", "Máx")}: {formatBalance(10000)}
             </div>
             <Button onClick={handleAmountSubmit} className="w-full h-12">
               {t("confirm", "Confirmar")}
@@ -206,7 +206,7 @@ export function MobileTradingControls({
           <span className="text-muted-foreground">{t("profit", "Lucro")} </span>
           <span className="text-success font-bold">+{selectedAsset.payout_percentage}%</span>
           <span className="ml-2 text-lg font-bold">
-            {formatCurrency(parseFloat(payout))}
+            {formatBalance(parseFloat(payout))}
           </span>
         </div>
       </div>
