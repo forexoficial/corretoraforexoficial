@@ -354,7 +354,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
 
         {/* Chart Controls - Bottom Left - Hidden when drawing tool is active */}
         {selectedDrawingTool === 'select' && (
-          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-50">
+          <div className="absolute bottom-3 left-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-border/50 z-20">
             <button 
               onClick={withClickSound(() => setIsTimeframeModalOpen(true))}
               className="h-11 w-11 flex items-center justify-center rounded-lg bg-muted/60 hover:bg-muted text-xs font-semibold text-foreground transition-colors active:scale-95"
@@ -388,7 +388,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
 
         {/* Drawing Mode Controls - Show when drawing tool is active */}
         {selectedDrawingTool !== 'select' && (
-          <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-primary/50 z-50">
+          <div className="absolute bottom-3 right-3 flex items-center gap-2 bg-card/90 backdrop-blur-sm rounded-xl p-2 border border-primary/50 z-20">
             <span className="text-xs text-primary font-medium px-2">{t("drawing_mode", "Modo Desenho")}</span>
             <button 
               onClick={withClickSound(() => setSelectedDrawingTool('select'))}
