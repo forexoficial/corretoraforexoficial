@@ -9,6 +9,7 @@ interface CurrencyContextType {
   formatCurrency: (value: number) => string;
   formatBalance: (balanceInBRL: number) => string;
   convertBalance: (balanceInBRL: number) => number;
+  convertToBase: (amountInUserCurrency: number) => number;
   setCurrency: (currency: Currency) => void;
   exchangeRate: number;
   isLoadingRate: boolean;
@@ -29,7 +30,7 @@ interface CurrencyProviderProps {
 }
 
 export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
-  const { rate, isLoading: isLoadingRate, convertBRLtoUSD } = useExchangeRate();
+  const { rate, isLoading: isLoadingRate, convertBRLtoUSD, convertUSDtoBRL } = useExchangeRate();
   
   const [currency, setCurrencyState] = useState<Currency>(() => {
     // Verificar se há preferência manual salva
@@ -52,7 +53,7 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
 
   const symbol = currency === 'BRL' ? 'R$' : '$';
 
-  // Converte um valor em BRL para a moeda selecionada
+  // Converte um valor em BRL para a moeda selecionada (para exibição)
   const convertBalance = useCallback((balanceInBRL: number): number => {
     if (currency === 'BRL') {
       return balanceInBRL;
@@ -60,6 +61,15 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
     // Converter BRL para USD usando a cotação atual
     return convertBRLtoUSD(balanceInBRL);
   }, [currency, convertBRLtoUSD]);
+
+  // Converte um valor da moeda do usuário para BRL (base do sistema)
+  const convertToBase = useCallback((amountInUserCurrency: number): number => {
+    if (currency === 'BRL') {
+      return amountInUserCurrency;
+    }
+    // Converter USD para BRL
+    return convertUSDtoBRL(amountInUserCurrency);
+  }, [currency, convertUSDtoBRL]);
 
   // Formata um valor genérico na moeda selecionada
   const formatCurrency = useCallback((value: number): string => {
@@ -83,6 +93,7 @@ export const CurrencyProvider = ({ children }: CurrencyProviderProps) => {
       formatCurrency, 
       formatBalance,
       convertBalance,
+      convertToBase,
       setCurrency,
       exchangeRate: rate,
       isLoadingRate
