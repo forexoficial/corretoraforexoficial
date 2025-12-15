@@ -45,8 +45,8 @@ export default function Signup() {
           alt="Signup Banner"
           className="w-full h-auto lg:w-full lg:max-h-full object-contain"
         />
-        {/* Gradient overlay - only on desktop */}
-        <div className="hidden lg:block absolute inset-0 bg-gradient-to-b from-transparent to-background/20" />
+        {/* Gradient overlay with primary color */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
       </div>
 
       {/* Form Section - Right on desktop, Bottom on mobile */}
