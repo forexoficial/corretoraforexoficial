@@ -116,7 +116,7 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
                   <ChevronDown className="h-3 w-3 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="bg-popover backdrop-blur-xl border-border">
+              <DropdownMenuContent align="start" className="z-[150] bg-popover backdrop-blur-xl border-border">
                 <DropdownMenuItem onClick={withClickSound(toggleDemoMode)}>
                   {isDemoMode ? t("switch_to_real", "Trocar para Conta Real") : t("switch_to_demo", "Trocar para Conta Demo")}
                 </DropdownMenuItem>
