@@ -6,6 +6,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguageContext } from "@/contexts/LanguageContext";
 import { StarfieldBackground } from "@/components/StarfieldBackground";
 import defaultBannerSignup from "@/assets/banner-signup.webp";
 
@@ -15,9 +16,23 @@ export default function Signup() {
   const { isLoading, handleSignup, handleSocialLogin } = useAuth();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { language } = useLanguageContext();
 
-  // Use dynamic banner from settings, fallback to default
-  const bannerSignup = settings.signup_banner_url || defaultBannerSignup;
+  // Use dynamic banner based on language, fallback to default
+  const getBannerByLanguage = () => {
+    switch (language) {
+      case 'pt':
+        return settings.signup_banner_url || defaultBannerSignup;
+      case 'en':
+        return settings.signup_banner_url_en || settings.signup_banner_url || defaultBannerSignup;
+      case 'es':
+        return settings.signup_banner_url_es || settings.signup_banner_url || defaultBannerSignup;
+      default:
+        return settings.signup_banner_url || defaultBannerSignup;
+    }
+  };
+
+  const bannerSignup = getBannerByLanguage();
 
   const onSignupSubmit = async (formData: any) => {
     const success = await handleSignup(formData, settings.allow_registration);

@@ -20,6 +20,8 @@ export interface PlatformSettings {
   maintenance_mode: boolean;
   usdt_enabled: boolean;
   signup_banner_url: string;
+  signup_banner_url_en: string;
+  signup_banner_url_es: string;
 }
 
 const DEFAULT_SETTINGS: PlatformSettings = {
@@ -41,6 +43,8 @@ const DEFAULT_SETTINGS: PlatformSettings = {
   maintenance_mode: false,
   usdt_enabled: false,
   signup_banner_url: "",
+  signup_banner_url_en: "",
+  signup_banner_url_es: "",
 };
 
 export function usePlatformSettings() {
@@ -79,6 +83,8 @@ export function usePlatformSettings() {
         maintenance_mode: settingsMap.maintenance_mode === "true",
         usdt_enabled: settingsMap.usdt_enabled === "true",
         signup_banner_url: settingsMap.signup_banner_url || "",
+        signup_banner_url_en: settingsMap.signup_banner_url_en || "",
+        signup_banner_url_es: settingsMap.signup_banner_url_es || "",
       });
     } catch (error) {
       console.error("Error fetching platform settings:", error);
