@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Plus, Search, X } from "lucide-react";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { Plus, Search, X, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -21,6 +21,43 @@ interface DesktopAssetSelectorProps {
   onAssetRemove: (assetId: string) => void;
 }
 
+// Cache for assets - loaded once
+let assetsCache: Asset[] | null = null;
+let assetsCachePromise: Promise<Asset[]> | null = null;
+
+const loadAssetsWithCache = async (): Promise<Asset[]> => {
+  // Return from cache if available
+  if (assetsCache) {
+    return assetsCache;
+  }
+  
+  // If loading is in progress, wait for it
+  if (assetsCachePromise) {
+    return assetsCachePromise;
+  }
+  
+  // Start loading
+  assetsCachePromise = (async () => {
+    const { data, error } = await supabase
+      .from("assets")
+      .select("id, name, symbol, icon_url, payout_percentage")
+      .eq("is_active", true)
+      .order('name');
+    
+    if (error || !data) {
+      assetsCachePromise = null;
+      return [];
+    }
+    assetsCache = data as Asset[];
+    return assetsCache;
+  })();
+  
+  return assetsCachePromise;
+};
+
+// Pre-load assets on module load
+loadAssetsWithCache();
+
 export const DesktopAssetSelector = ({
   selectedAssets,
   currentAssetId,
@@ -30,7 +67,8 @@ export const DesktopAssetSelector = ({
   const { activeTrade } = useTradeContext();
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [assets, setAssets] = useState<Asset[]>([]);
+  const [assets, setAssets] = useState<Asset[]>(assetsCache || []);
+  const [isLoading, setIsLoading] = useState(!assetsCache);
   const [searchQuery, setSearchQuery] = useState("");
   const [tradeProgress, setTradeProgress] = useState(0);
 
@@ -54,31 +92,24 @@ export const DesktopAssetSelector = ({
     };
 
     updateProgress();
-    const interval = setInterval(updateProgress, 100); // Update every 100ms for smooth animation
+    const interval = setInterval(updateProgress, 100);
 
     return () => clearInterval(interval);
   }, [activeTrade]);
 
+  // Load assets when modal opens (but cached)
   useEffect(() => {
-    if (isModalOpen) {
-      loadAssets();
+    if (isModalOpen && assets.length === 0) {
+      setIsLoading(true);
+      loadAssetsWithCache().then((data) => {
+        setAssets(data);
+        setIsLoading(false);
+      });
     }
-  }, [isModalOpen]);
+  }, [isModalOpen, assets.length]);
 
-  const loadAssets = async () => {
-    const { data, error } = await supabase
-      .from("assets")
-      .select("*")
-      .eq("is_active", true)
-      .order('name');
-
-    if (!error && data) {
-      setAssets(data);
-    }
-  };
-
-  // Categorize assets
-  const categorizeAsset = (asset: Asset): 'forex' | 'crypto' | 'stocks' => {
+  // Categorize assets - memoized function
+  const categorizeAsset = useCallback((asset: Asset): 'forex' | 'crypto' | 'stocks' => {
     const symbol = asset.symbol.toLowerCase();
     const name = asset.name.toLowerCase();
     
@@ -86,7 +117,7 @@ export const DesktopAssetSelector = ({
     if (symbol.includes('btc') || symbol.includes('eth') || symbol.includes('bnb') || 
         symbol.includes('ada') || symbol.includes('doge') || symbol.includes('xrp') ||
         name.includes('bitcoin') || name.includes('ethereum') || name.includes('cardano') ||
-        name.includes('dogecoin') || symbol.includes('otc') && name.includes('crypto')) {
+        name.includes('dogecoin') || (symbol.includes('otc') && name.includes('crypto'))) {
       return 'crypto';
     }
     
@@ -99,19 +130,32 @@ export const DesktopAssetSelector = ({
     
     // Default to stocks
     return 'stocks';
-  };
+  }, []);
 
-  const filteredAssets = assets.filter((asset) =>
-    asset.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    asset.symbol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Memoized filtered and grouped assets
+  const { filteredAssets, groupedAssets } = useMemo(() => {
+    const searchLower = searchQuery.toLowerCase();
+    const filtered = searchQuery 
+      ? assets.filter((asset) =>
+          asset.name.toLowerCase().includes(searchLower) ||
+          asset.symbol.toLowerCase().includes(searchLower)
+        )
+      : assets;
 
-  // Group assets by category
-  const groupedAssets = {
-    forex: filteredAssets.filter(a => categorizeAsset(a) === 'forex'),
-    crypto: filteredAssets.filter(a => categorizeAsset(a) === 'crypto'),
-    stocks: filteredAssets.filter(a => categorizeAsset(a) === 'stocks'),
-  };
+    // Group assets by category in single pass
+    const grouped: { forex: Asset[]; crypto: Asset[]; stocks: Asset[] } = {
+      forex: [],
+      crypto: [],
+      stocks: [],
+    };
+    
+    for (const asset of filtered) {
+      const category = categorizeAsset(asset);
+      grouped[category].push(asset);
+    }
+
+    return { filteredAssets: filtered, groupedAssets: grouped };
+  }, [assets, searchQuery, categorizeAsset]);
 
   const handleAssetClick = (asset: Asset) => {
     const isSelected = selectedAssets.some((a) => a.id === asset.id);
@@ -267,7 +311,12 @@ export const DesktopAssetSelector = ({
 
           {/* Asset List */}
           <div className="max-h-[400px] overflow-y-auto">
-            {filteredAssets.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
+                <Loader2 className="h-8 w-8 text-primary animate-spin mb-3" />
+                <p className="text-sm text-muted-foreground">{t("loading", "Carregando...")}</p>
+              </div>
+            ) : filteredAssets.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
                 <Search className="h-12 w-12 text-muted-foreground/50 mb-3" />
                 <p className="text-sm text-muted-foreground">{t("no_assets_found", "No assets found")}</p>
