@@ -39,7 +39,7 @@ export default function Signup() {
       </Button>
 
       {/* Banner Section - Left on desktop, Top on mobile */}
-      <div className="w-full lg:w-1/3 h-auto lg:h-screen relative z-10 shrink-0 lg:flex lg:items-center lg:justify-center bg-background/20">
+      <div className="w-full lg:w-[45%] h-auto lg:h-screen relative z-10 shrink-0 lg:flex lg:items-center lg:justify-center bg-background/20">
         <img
           src={bannerSignup}
           alt="Signup Banner"
@@ -50,7 +50,7 @@ export default function Signup() {
       </div>
 
       {/* Form Section - Right on desktop, Bottom on mobile */}
-      <div className="w-full lg:w-2/3 flex items-center justify-center p-6 pt-8 sm:p-8 lg:p-8 z-10">
+      <div className="w-full lg:w-[55%] flex items-center justify-center p-6 pt-8 sm:p-8 lg:p-8 z-10">
         <Card className="w-full max-w-md p-6 sm:p-8 bg-card/50 backdrop-blur-xl border-primary/20 shadow-2xl">
           <div className="text-center mb-6 sm:mb-8">
             {customization.currentLogo && (
