@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { User, Mail, FileText, Lock, Check, Gift } from "lucide-react";
+import { User, Mail, Phone, FileText, Lock, Check, Gift } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { SignupFormData } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -24,6 +24,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
   const [formData, setFormData] = useState<SignupFormData>({
     fullName: "",
     email: "",
+    phone: "",
     document: "",
     documentType: "cpf",
     password: "",
@@ -33,7 +34,7 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
 
   // Only show document step for Brazilian users (Portuguese language)
   const isBrazilian = language === 'pt';
-  const totalSteps = isBrazilian ? 4 : 3;
+  const totalSteps = isBrazilian ? 5 : 4;
 
   // Detect user's country on mount
   useEffect(() => {
@@ -51,14 +52,6 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
     }
   }, [searchParams]);
 
-  // Map current step to actual form step based on whether document step is shown
-  const getActualStep = (currentStep: number) => {
-    if (isBrazilian) return currentStep;
-    // For non-Brazilian: step 3 becomes password step (skip document)
-    if (currentStep >= 3) return currentStep + 1;
-    return currentStep;
-  };
-
   const nextStep = () => {
     if (step === 1 && !formData.fullName) {
       toast({ title: t('fill_name'), variant: "destructive" });
@@ -68,7 +61,11 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       toast({ title: t('fill_email'), variant: "destructive" });
       return;
     }
-    if (isBrazilian && step === 3 && !formData.document) {
+    if (step === 3 && !formData.phone) {
+      toast({ title: t('fill_phone'), variant: "destructive" });
+      return;
+    }
+    if (isBrazilian && step === 4 && !formData.document) {
       toast({ title: t('fill_document'), variant: "destructive" });
       return;
     }
@@ -105,21 +102,25 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       return [
         { icon: User, label: t('name_step'), completed: step > 1 },
         { icon: Mail, label: t('email_step'), completed: step > 2 },
-        { icon: FileText, label: t('document_step'), completed: step > 3 },
-        { icon: Lock, label: t('password_step'), completed: step > 4 },
+        { icon: Phone, label: t('phone_step'), completed: step > 3 },
+        { icon: FileText, label: t('document_step'), completed: step > 4 },
+        { icon: Lock, label: t('password_step'), completed: step > 5 },
       ];
     }
     return [
       { icon: User, label: t('name_step'), completed: step > 1 },
       { icon: Mail, label: t('email_step'), completed: step > 2 },
-      { icon: Lock, label: t('password_step'), completed: step > 3 },
+      { icon: Phone, label: t('phone_step'), completed: step > 3 },
+      { icon: Lock, label: t('password_step'), completed: step > 4 },
     ];
   }, [isBrazilian, step, t]);
 
   // Check if current step is the password step
-  const isPasswordStep = isBrazilian ? step === 4 : step === 3;
+  const isPasswordStep = isBrazilian ? step === 5 : step === 4;
   // Check if current step is the document step (only for Brazilian)
-  const isDocumentStep = isBrazilian && step === 3;
+  const isDocumentStep = isBrazilian && step === 4;
+  // Check if current step is the phone step
+  const isPhoneStep = step === 3;
 
   return (
     <>
@@ -196,7 +197,35 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
           </div>
         )}
 
-        {/* Step 3: Document (Only for Brazilian users) */}
+        {/* Step 3: Phone */}
+        {isPhoneStep && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
+            <Label htmlFor="phone-signup">{t('phone_number')}</Label>
+            <Input
+              id="phone-signup"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder={t('phone_placeholder')}
+              className="mt-1"
+            />
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={prevStep}
+                className="w-full"
+              >
+                {t('back')}
+              </Button>
+              <Button type="button" onClick={nextStep} className="w-full">
+                {t('next')}
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {/* Step 4: Document (Only for Brazilian users) */}
         {isDocumentStep && (
           <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
             <Label>{t('document_type')}</Label>

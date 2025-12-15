@@ -1092,6 +1092,7 @@ export type Database = {
           is_admin: boolean | null
           is_blocked: boolean | null
           is_demo_mode: boolean | null
+          phone: string | null
           preferred_currency: string | null
           selected_assets: Json | null
           total_deposited: number | null
@@ -1118,6 +1119,7 @@ export type Database = {
           is_admin?: boolean | null
           is_blocked?: boolean | null
           is_demo_mode?: boolean | null
+          phone?: string | null
           preferred_currency?: string | null
           selected_assets?: Json | null
           total_deposited?: number | null
@@ -1144,6 +1146,7 @@ export type Database = {
           is_admin?: boolean | null
           is_blocked?: boolean | null
           is_demo_mode?: boolean | null
+          phone?: string | null
           preferred_currency?: string | null
           selected_assets?: Json | null
           total_deposited?: number | null
