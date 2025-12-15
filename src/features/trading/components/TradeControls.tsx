@@ -28,7 +28,7 @@ export const TradeControls = ({
   onShowHistory,
 }: TradeControlsProps) => {
   const { t } = useTranslation();
-  const { formatCurrency, symbol } = useCurrency();
+  const { formatBalance, symbol } = useCurrency();
   const { settings } = usePlatformSettings();
   const navigate = useNavigate();
   const { hasOpenTrade } = useTradeContext();
@@ -215,7 +215,7 @@ export const TradeControls = ({
           
           <div className="flex items-baseline gap-1.5">
             <div className="text-base font-bold text-success">
-              {formatCurrency(parseFloat(totalPayout))}
+              {formatBalance(parseFloat(totalPayout))}
             </div>
             <div className="text-[8px] font-semibold text-success/80 bg-success/10 px-1 py-0.5 rounded-full">
               +{selectedAsset.payout_percentage}%
@@ -225,14 +225,14 @@ export const TradeControls = ({
           <div className="flex items-center justify-between text-[9px]">
             <span className="text-muted-foreground">{t("profit", "Lucro")}:</span>
             <span className="font-bold text-success">
-              +{formatCurrency(parseFloat(payout))}
+              +{formatBalance(parseFloat(payout))}
             </span>
           </div>
           
           <div className="flex items-center justify-between text-[9px] pt-0.5 border-t border-success/20">
             <span className="text-muted-foreground">{t("investment", "Investimento")}:</span>
             <span className="font-medium text-foreground/70">
-              {formatCurrency(amount)}
+              {formatBalance(amount)}
             </span>
           </div>
         </div>
