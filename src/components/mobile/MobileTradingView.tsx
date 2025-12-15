@@ -141,8 +141,7 @@ export function MobileTradingView({
       <PlatformPopup />
       <div className="flex flex-col h-screen bg-background">
         <MobileTradingHeader selectedAsset={selectedAsset} />
-        {/* Spacer for fixed header - uses same calculation as header height */}
-        <div style={{ height: 'calc(env(safe-area-inset-top, 0px) + 3.5rem)' }} />
+        <div className="mobile-header-spacer" />
         <MobileChartView
           selectedAsset={selectedAsset} 
           onAssetChange={handleAssetChange}

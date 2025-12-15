@@ -285,7 +285,7 @@ export default function Profile() {
               icon_url: ""
             }}
           />
-          <div className="h-14" /> {/* Spacer for fixed header */}
+          <div className="mobile-header-spacer" />
         </>
       )}
 
