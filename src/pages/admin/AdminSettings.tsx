@@ -26,10 +26,13 @@ export default function AdminSettings() {
   // Logo states
   const [uploadingLogoLight, setUploadingLogoLight] = useState(false);
   const [uploadingLogoDark, setUploadingLogoDark] = useState(false);
+  const [uploadingSignupBanner, setUploadingSignupBanner] = useState(false);
   const [logoLightFile, setLogoLightFile] = useState<File | null>(null);
   const [logoDarkFile, setLogoDarkFile] = useState<File | null>(null);
+  const [signupBannerFile, setSignupBannerFile] = useState<File | null>(null);
   const [logoLightPreview, setLogoLightPreview] = useState<string | null>(null);
   const [logoDarkPreview, setLogoDarkPreview] = useState<string | null>(null);
+  const [signupBannerPreview, setSignupBannerPreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -100,10 +103,13 @@ export default function AdminSettings() {
     if (settingsObj.logo_dark) {
       setLogoDarkPreview(settingsObj.logo_dark);
     }
+    if (settingsObj.signup_banner_url) {
+      setSignupBannerPreview(settingsObj.signup_banner_url);
+    }
     setLoading(false);
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'light' | 'dark') => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'light' | 'dark' | 'signup_banner') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -112,7 +118,8 @@ export default function AdminSettings() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
+    const maxSize = type === 'signup_banner' ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
+    if (file.size > maxSize) {
       toast.error(t("admin_image_max_size"));
       return;
     }
@@ -124,11 +131,18 @@ export default function AdminSettings() {
         setLogoLightPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    } else {
+    } else if (type === 'dark') {
       setLogoDarkFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setLogoDarkPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (type === 'signup_banner') {
+      setSignupBannerFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignupBannerPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -180,6 +194,49 @@ export default function AdminSettings() {
       toast.error(t("admin_error_upload_logo"));
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSaveSignupBanner = async () => {
+    if (!signupBannerFile) {
+      toast.error("Selecione uma imagem primeiro");
+      return;
+    }
+
+    setUploadingSignupBanner(true);
+
+    try {
+      const fileExt = signupBannerFile.name.split('.').pop();
+      const fileName = `signup-banners/banner-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("popup-images")
+        .upload(fileName, signupBannerFile, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from("popup-images")
+        .getPublicUrl(fileName);
+
+      const { error: upsertError } = await supabase
+        .from("platform_settings")
+        .upsert({
+          key: 'signup_banner_url',
+          value: publicUrl,
+          description: 'URL da imagem do banner de cadastro'
+        }, { onConflict: "key" });
+
+      if (upsertError) throw upsertError;
+
+      setSettings(prev => ({ ...prev, signup_banner_url: publicUrl }));
+      setSignupBannerFile(null);
+      toast.success("Banner de cadastro atualizado com sucesso!");
+    } catch (error: any) {
+      console.error("Upload error:", error);
+      toast.error("Erro ao fazer upload do banner");
+    } finally {
+      setUploadingSignupBanner(false);
     }
   };
 
@@ -488,6 +545,57 @@ export default function AdminSettings() {
                           <>
                             <Upload className="h-4 w-4 mr-2" />
                             {t("admin_save_logo_dark")}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+
+                  <Separator />
+
+                  {/* Signup Banner */}
+                  <div>
+                    <Label>Banner de Cadastro</Label>
+                    <p className="text-xs text-muted-foreground mb-3">
+                      Imagem exibida na página de cadastro (/signup). Recomendado: 1920x1080px
+                    </p>
+                    <div className="flex flex-col gap-4">
+                      {signupBannerPreview && (
+                        <div className="flex items-center justify-center p-3 border rounded-lg bg-card">
+                          <img
+                            src={signupBannerPreview} 
+                            alt="Banner preview" 
+                            className="max-h-48 object-contain rounded"
+                          />
+                        </div>
+                      )}
+                      <div className="flex-1">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleLogoUpload(e, 'signup_banner')}
+                          className="cursor-pointer"
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">
+                          PNG, JPG ou WebP. Máximo 5MB.
+                        </p>
+                      </div>
+                    </div>
+                    {signupBannerFile && (
+                      <Button 
+                        onClick={handleSaveSignupBanner} 
+                        disabled={uploadingSignupBanner}
+                        className="w-full mt-3"
+                      >
+                        {uploadingSignupBanner ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Enviando...
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4 mr-2" />
+                            Salvar Banner de Cadastro
                           </>
                         )}
                       </Button>
