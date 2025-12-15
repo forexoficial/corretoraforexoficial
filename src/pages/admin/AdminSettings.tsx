@@ -26,13 +26,19 @@ export default function AdminSettings() {
   // Logo states
   const [uploadingLogoLight, setUploadingLogoLight] = useState(false);
   const [uploadingLogoDark, setUploadingLogoDark] = useState(false);
-  const [uploadingSignupBanner, setUploadingSignupBanner] = useState(false);
+  const [uploadingSignupBannerPt, setUploadingSignupBannerPt] = useState(false);
+  const [uploadingSignupBannerEn, setUploadingSignupBannerEn] = useState(false);
+  const [uploadingSignupBannerEs, setUploadingSignupBannerEs] = useState(false);
   const [logoLightFile, setLogoLightFile] = useState<File | null>(null);
   const [logoDarkFile, setLogoDarkFile] = useState<File | null>(null);
-  const [signupBannerFile, setSignupBannerFile] = useState<File | null>(null);
+  const [signupBannerPtFile, setSignupBannerPtFile] = useState<File | null>(null);
+  const [signupBannerEnFile, setSignupBannerEnFile] = useState<File | null>(null);
+  const [signupBannerEsFile, setSignupBannerEsFile] = useState<File | null>(null);
   const [logoLightPreview, setLogoLightPreview] = useState<string | null>(null);
   const [logoDarkPreview, setLogoDarkPreview] = useState<string | null>(null);
-  const [signupBannerPreview, setSignupBannerPreview] = useState<string | null>(null);
+  const [signupBannerPtPreview, setSignupBannerPtPreview] = useState<string | null>(null);
+  const [signupBannerEnPreview, setSignupBannerEnPreview] = useState<string | null>(null);
+  const [signupBannerEsPreview, setSignupBannerEsPreview] = useState<string | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -104,12 +110,18 @@ export default function AdminSettings() {
       setLogoDarkPreview(settingsObj.logo_dark);
     }
     if (settingsObj.signup_banner_url) {
-      setSignupBannerPreview(settingsObj.signup_banner_url);
+      setSignupBannerPtPreview(settingsObj.signup_banner_url);
+    }
+    if (settingsObj.signup_banner_url_en) {
+      setSignupBannerEnPreview(settingsObj.signup_banner_url_en);
+    }
+    if (settingsObj.signup_banner_url_es) {
+      setSignupBannerEsPreview(settingsObj.signup_banner_url_es);
     }
     setLoading(false);
   };
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'light' | 'dark' | 'signup_banner') => {
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'light' | 'dark' | 'signup_banner_pt' | 'signup_banner_en' | 'signup_banner_es') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -118,7 +130,7 @@ export default function AdminSettings() {
       return;
     }
 
-    const maxSize = type === 'signup_banner' ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
+    const maxSize = type.startsWith('signup_banner') ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
     if (file.size > maxSize) {
       toast.error(t("admin_image_max_size"));
       return;
@@ -138,11 +150,25 @@ export default function AdminSettings() {
         setLogoDarkPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
-    } else if (type === 'signup_banner') {
-      setSignupBannerFile(file);
+    } else if (type === 'signup_banner_pt') {
+      setSignupBannerPtFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
-        setSignupBannerPreview(reader.result as string);
+        setSignupBannerPtPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (type === 'signup_banner_en') {
+      setSignupBannerEnFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignupBannerEnPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else if (type === 'signup_banner_es') {
+      setSignupBannerEsFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSignupBannerEsPreview(reader.result as string);
       };
       reader.readAsDataURL(file);
     }
@@ -197,21 +223,48 @@ export default function AdminSettings() {
     }
   };
 
-  const handleSaveSignupBanner = async () => {
-    if (!signupBannerFile) {
+  const handleSaveSignupBanner = async (lang: 'pt' | 'en' | 'es') => {
+    const fileMap = {
+      pt: signupBannerPtFile,
+      en: signupBannerEnFile,
+      es: signupBannerEsFile
+    };
+    const setUploadingMap = {
+      pt: setUploadingSignupBannerPt,
+      en: setUploadingSignupBannerEn,
+      es: setUploadingSignupBannerEs
+    };
+    const setFileMap = {
+      pt: setSignupBannerPtFile,
+      en: setSignupBannerEnFile,
+      es: setSignupBannerEsFile
+    };
+    const keyMap = {
+      pt: 'signup_banner_url',
+      en: 'signup_banner_url_en',
+      es: 'signup_banner_url_es'
+    };
+    const langNames = {
+      pt: 'Português',
+      en: 'Inglês',
+      es: 'Espanhol'
+    };
+
+    const file = fileMap[lang];
+    if (!file) {
       toast.error("Selecione uma imagem primeiro");
       return;
     }
 
-    setUploadingSignupBanner(true);
+    setUploadingMap[lang](true);
 
     try {
-      const fileExt = signupBannerFile.name.split('.').pop();
-      const fileName = `signup-banners/banner-${Date.now()}.${fileExt}`;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `signup-banners/banner-${lang}-${Date.now()}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from("popup-images")
-        .upload(fileName, signupBannerFile, { upsert: true });
+        .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
@@ -222,21 +275,21 @@ export default function AdminSettings() {
       const { error: upsertError } = await supabase
         .from("platform_settings")
         .upsert({
-          key: 'signup_banner_url',
+          key: keyMap[lang],
           value: publicUrl,
-          description: 'URL da imagem do banner de cadastro'
+          description: `URL da imagem do banner de cadastro (${langNames[lang]})`
         }, { onConflict: "key" });
 
       if (upsertError) throw upsertError;
 
-      setSettings(prev => ({ ...prev, signup_banner_url: publicUrl }));
-      setSignupBannerFile(null);
-      toast.success("Banner de cadastro atualizado com sucesso!");
+      setSettings(prev => ({ ...prev, [keyMap[lang]]: publicUrl }));
+      setFileMap[lang](null);
+      toast.success(`Banner (${langNames[lang]}) atualizado com sucesso!`);
     } catch (error: any) {
       console.error("Upload error:", error);
       toast.error("Erro ao fazer upload do banner");
     } finally {
-      setUploadingSignupBanner(false);
+      setUploadingMap[lang](false);
     }
   };
 
@@ -553,53 +606,141 @@ export default function AdminSettings() {
 
                   <Separator />
 
-                  {/* Signup Banner */}
-                  <div>
-                    <Label>Banner de Cadastro</Label>
-                    <p className="text-xs text-muted-foreground mb-3">
-                      Imagem exibida na página de cadastro (/signup). Recomendado: 1920x1080px
-                    </p>
-                    <div className="flex flex-col gap-4">
-                      {signupBannerPreview && (
-                        <div className="flex items-center justify-center p-3 border rounded-lg bg-card">
-                          <img
-                            src={signupBannerPreview} 
-                            alt="Banner preview" 
-                            className="max-h-48 object-contain rounded"
-                          />
-                        </div>
-                      )}
-                      <div className="flex-1">
+                  {/* Signup Banners by Language */}
+                  <div className="space-y-6">
+                    <div>
+                      <Label className="text-lg font-semibold">Banners de Cadastro por Idioma</Label>
+                      <p className="text-xs text-muted-foreground mb-4">
+                        Configure banners diferentes para cada idioma. Recomendado: 1920x1080px
+                      </p>
+                    </div>
+
+                    {/* Portuguese Banner */}
+                    <div className="p-4 border rounded-lg bg-muted/20">
+                      <Label className="flex items-center gap-2">
+                        🇧🇷 Banner Português (PT)
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Exibido para usuários com idioma Português
+                      </p>
+                      <div className="flex flex-col gap-4">
+                        {signupBannerPtPreview && (
+                          <div className="flex items-center justify-center p-3 border rounded-lg bg-card">
+                            <img
+                              src={signupBannerPtPreview} 
+                              alt="Banner PT preview" 
+                              className="max-h-32 object-contain rounded"
+                            />
+                          </div>
+                        )}
                         <Input
                           type="file"
                           accept="image/*"
-                          onChange={(e) => handleLogoUpload(e, 'signup_banner')}
+                          onChange={(e) => handleLogoUpload(e, 'signup_banner_pt')}
                           className="cursor-pointer"
                         />
-                        <p className="text-xs text-muted-foreground mt-1">
-                          PNG, JPG ou WebP. Máximo 5MB.
-                        </p>
                       </div>
+                      {signupBannerPtFile && (
+                        <Button 
+                          onClick={() => handleSaveSignupBanner('pt')} 
+                          disabled={uploadingSignupBannerPt}
+                          className="w-full mt-3"
+                          size="sm"
+                        >
+                          {uploadingSignupBannerPt ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
+                          ) : (
+                            <><Upload className="h-4 w-4 mr-2" />Salvar Banner PT</>
+                          )}
+                        </Button>
+                      )}
                     </div>
-                    {signupBannerFile && (
-                      <Button 
-                        onClick={handleSaveSignupBanner} 
-                        disabled={uploadingSignupBanner}
-                        className="w-full mt-3"
-                      >
-                        {uploadingSignupBanner ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Enviando...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Salvar Banner de Cadastro
-                          </>
+
+                    {/* English Banner */}
+                    <div className="p-4 border rounded-lg bg-muted/20">
+                      <Label className="flex items-center gap-2">
+                        🇺🇸 Banner Inglês (EN)
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Exibido para usuários com idioma Inglês
+                      </p>
+                      <div className="flex flex-col gap-4">
+                        {signupBannerEnPreview && (
+                          <div className="flex items-center justify-center p-3 border rounded-lg bg-card">
+                            <img
+                              src={signupBannerEnPreview} 
+                              alt="Banner EN preview" 
+                              className="max-h-32 object-contain rounded"
+                            />
+                          </div>
                         )}
-                      </Button>
-                    )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleLogoUpload(e, 'signup_banner_en')}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                      {signupBannerEnFile && (
+                        <Button 
+                          onClick={() => handleSaveSignupBanner('en')} 
+                          disabled={uploadingSignupBannerEn}
+                          className="w-full mt-3"
+                          size="sm"
+                        >
+                          {uploadingSignupBannerEn ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
+                          ) : (
+                            <><Upload className="h-4 w-4 mr-2" />Salvar Banner EN</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Spanish Banner */}
+                    <div className="p-4 border rounded-lg bg-muted/20">
+                      <Label className="flex items-center gap-2">
+                        🇪🇸 Banner Espanhol (ES)
+                      </Label>
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Exibido para usuários com idioma Espanhol
+                      </p>
+                      <div className="flex flex-col gap-4">
+                        {signupBannerEsPreview && (
+                          <div className="flex items-center justify-center p-3 border rounded-lg bg-card">
+                            <img
+                              src={signupBannerEsPreview} 
+                              alt="Banner ES preview" 
+                              className="max-h-32 object-contain rounded"
+                            />
+                          </div>
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleLogoUpload(e, 'signup_banner_es')}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                      {signupBannerEsFile && (
+                        <Button 
+                          onClick={() => handleSaveSignupBanner('es')} 
+                          disabled={uploadingSignupBannerEs}
+                          className="w-full mt-3"
+                          size="sm"
+                        >
+                          {uploadingSignupBannerEs ? (
+                            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
+                          ) : (
+                            <><Upload className="h-4 w-4 mr-2" />Salvar Banner ES</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                    
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG ou WebP. Máximo 5MB por imagem.
+                    </p>
                   </div>
                 </div>
               </TabsContent>
