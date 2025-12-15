@@ -5,8 +5,6 @@ import { Card } from "@/components/ui/card";
 import { SignupForm } from "@/components/auth/SignupForm";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
 import { StarfieldBackground } from "@/components/StarfieldBackground";
 import defaultBannerSignup from "@/assets/banner-signup.webp";
@@ -35,15 +33,6 @@ export default function Signup() {
       {/* Gradient overlay - full screen, above banner, below dialog */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 z-[5] pointer-events-none" />
       
-      {/* Back button - fixed position */}
-      <Button
-        variant="ghost"
-        size="icon"
-        className="absolute top-4 left-4 z-20 hover:bg-background/50"
-        onClick={() => navigate("/auth")}
-      >
-        <ArrowLeft className="h-5 w-5" />
-      </Button>
 
       {/* Banner Section - Left on desktop, Top on mobile */}
       <div className="w-full lg:w-[55%] h-auto lg:h-screen relative z-[1] shrink-0 lg:flex lg:items-center lg:justify-center">
