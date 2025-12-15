@@ -7,6 +7,7 @@ export const useCurrency = () => {
     formatCurrency, 
     formatBalance,
     convertBalance,
+    convertToBase,
     setCurrency,
     exchangeRate,
     isLoadingRate
@@ -18,6 +19,7 @@ export const useCurrency = () => {
     formatCurrency, 
     formatBalance,
     convertBalance,
+    convertToBase,
     setCurrency,
     exchangeRate,
     isLoadingRate

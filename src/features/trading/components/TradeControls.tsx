@@ -28,7 +28,7 @@ export const TradeControls = ({
   onShowHistory,
 }: TradeControlsProps) => {
   const { t } = useTranslation();
-  const { formatBalance, symbol } = useCurrency();
+  const { formatBalance, formatCurrency, convertToBase, symbol } = useCurrency();
   const { settings } = usePlatformSettings();
   const navigate = useNavigate();
   const { hasOpenTrade } = useTradeContext();
@@ -106,7 +106,9 @@ export const TradeControls = ({
   };
 
   const handleTrade = async (type: 'call' | 'put') => {
-    await createTrade(type, amount, duration);
+    // Converter o valor da moeda do usuário para BRL (base do sistema)
+    const amountInBRL = convertToBase(amount);
+    await createTrade(type, amountInBRL, duration);
   };
 
   return (
@@ -215,7 +217,7 @@ export const TradeControls = ({
           
           <div className="flex items-baseline gap-1.5">
             <div className="text-base font-bold text-success">
-              {formatBalance(parseFloat(totalPayout))}
+              {formatCurrency(parseFloat(totalPayout))}
             </div>
             <div className="text-[8px] font-semibold text-success/80 bg-success/10 px-1 py-0.5 rounded-full">
               +{selectedAsset.payout_percentage}%
@@ -225,14 +227,14 @@ export const TradeControls = ({
           <div className="flex items-center justify-between text-[9px]">
             <span className="text-muted-foreground">{t("profit", "Lucro")}:</span>
             <span className="font-bold text-success">
-              +{formatBalance(parseFloat(payout))}
+              +{formatCurrency(parseFloat(payout))}
             </span>
           </div>
           
           <div className="flex items-center justify-between text-[9px] pt-0.5 border-t border-success/20">
             <span className="text-muted-foreground">{t("investment", "Investimento")}:</span>
             <span className="font-medium text-foreground/70">
-              {formatBalance(amount)}
+              {formatCurrency(amount)}
             </span>
           </div>
         </div>
