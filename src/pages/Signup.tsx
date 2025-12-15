@@ -26,7 +26,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-background via-background/95 to-primary/10 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-background relative overflow-hidden">
       <StarfieldBackground />
       {/* Back button - fixed position */}
       <Button
