@@ -658,6 +658,60 @@ export default function AdminSettings() {
                 placeholder="+55 11 99999-9999"
               />
             </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">{t("admin_contact_visibility")}</Label>
+              <p className="text-sm text-muted-foreground mb-2">
+                {t("admin_contact_visibility_desc")}
+              </p>
+              
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>WhatsApp</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin_whatsapp_visible_desc")}
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.support_whatsapp_enabled !== "false"}
+                  onCheckedChange={(checked) =>
+                    updateSetting("support_whatsapp_enabled", checked.toString())
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t("phone")}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin_phone_visible_desc")}
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.support_phone_enabled !== "false"}
+                  onCheckedChange={(checked) =>
+                    updateSetting("support_phone_enabled", checked.toString())
+                  }
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <div className="space-y-0.5">
+                  <Label>{t("email")}</Label>
+                  <p className="text-sm text-muted-foreground">
+                    {t("admin_email_visible_desc")}
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.support_email_enabled !== "false"}
+                  onCheckedChange={(checked) =>
+                    updateSetting("support_email_enabled", checked.toString())
+                  }
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
