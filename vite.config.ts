@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.webp', 'robots.txt', 'apple-touch-icon.webp'],
+      includeAssets: ['favicon.webp', 'robots.txt', 'apple-touch-icon.webp', 'sounds/*.MP3', 'sounds/*.mp3'],
       manifest: {
         name: 'BlackRock Broker',
         short_name: 'BlackRock',
