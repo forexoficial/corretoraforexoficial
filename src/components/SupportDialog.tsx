@@ -18,7 +18,7 @@ export const SupportDialog = ({ open, onOpenChange }: SupportDialogProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md mobile-header-safe-offset">
         <DialogHeader>
-          <DialogTitle>{t('customer_support')} - {settings.platform_name}</DialogTitle>
+          <DialogTitle>{t('customer_support')}</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
