@@ -150,11 +150,30 @@ export default function AffiliateDashboard() {
 
       if (!affiliate || !startDate || !endDate) return;
 
-      // Calculate number of days in the selected range
+      // Fetch all commissions and referrals in the date range with just 2 queries
+      const [commissionsResponse, referralsResponse] = await Promise.all([
+        supabase
+          .from("commissions")
+          .select("amount, created_at")
+          .eq("affiliate_id", affiliate.id)
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", endDate.toISOString()),
+        supabase
+          .from("referrals")
+          .select("id, created_at")
+          .eq("affiliate_id", affiliate.id)
+          .gte("created_at", startDate.toISOString())
+          .lte("created_at", endDate.toISOString())
+      ]);
+
+      const allCommissions = commissionsResponse.data || [];
+      const allReferrals = referralsResponse.data || [];
+
+      // Group data by date
       const daysDiff = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-      const days = Math.min(daysDiff + 1, 30); // Max 30 days for chart
+      const days = Math.min(daysDiff + 1, 30);
       const chartData: ChartData[] = [];
-      
+
       for (let i = days - 1; i >= 0; i--) {
         const date = new Date(endDate);
         date.setDate(date.getDate() - i);
@@ -162,27 +181,21 @@ export default function AffiliateDashboard() {
         if (date < startDate) continue;
         
         const dateStr = date.toISOString().split('T')[0];
-        
-        // Get commissions for this day
-        const { data: dayCommissions } = await supabase
-          .from("commissions")
-          .select("amount")
-          .eq("affiliate_id", affiliate.id)
-          .gte("created_at", `${dateStr}T00:00:00`)
-          .lt("created_at", `${dateStr}T23:59:59`);
 
-        // Get referrals for this day
-        const { data: dayReferrals } = await supabase
-          .from("referrals")
-          .select("id")
-          .eq("affiliate_id", affiliate.id)
-          .gte("created_at", `${dateStr}T00:00:00`)
-          .lt("created_at", `${dateStr}T23:59:59`);
+        // Filter commissions for this day from already fetched data
+        const dayCommissions = allCommissions.filter(c => 
+          c.created_at?.startsWith(dateStr)
+        );
+
+        // Filter referrals for this day from already fetched data
+        const dayReferrals = allReferrals.filter(r => 
+          r.created_at?.startsWith(dateStr)
+        );
 
         chartData.push({
           date: date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
-          commissions: dayCommissions?.reduce((sum, c) => sum + Number(c.amount), 0) || 0,
-          referrals: dayReferrals?.length || 0
+          commissions: dayCommissions.reduce((sum, c) => sum + Number(c.amount), 0),
+          referrals: dayReferrals.length
         });
       }
 
