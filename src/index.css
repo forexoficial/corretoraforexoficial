@@ -28,6 +28,12 @@ All colors MUST be HSL.
   .mobile-modal-close-offset {
     top: calc(env(safe-area-inset-top, 0px) + 4.5rem);
   }
+
+  /* Spacer for content below fixed mobile header in PWA */
+  .mobile-header-spacer {
+    height: calc(env(safe-area-inset-top, 0px) + 3.5rem);
+    min-height: calc(env(safe-area-inset-top, 0px) + 3.5rem);
+  }
 }
 
 @layer base {
