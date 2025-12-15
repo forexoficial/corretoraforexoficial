@@ -5,49 +5,76 @@ type SoundType = 'trade-open' | 'trade-win' | 'trade-loss' | 'click';
 // Global flag to track if audio has been unlocked by user interaction
 let audioUnlocked = false;
 let audioContext: AudioContext | null = null;
+let unlockAttempts = 0;
 
 // Function to unlock audio on iOS/mobile PWA - must be called from user gesture
-function unlockAudio() {
-  if (audioUnlocked) return;
+async function unlockAudio(): Promise<boolean> {
+  if (audioUnlocked) return true;
+  
+  unlockAttempts++;
+  console.log(`[Sound] Tentativa de desbloqueio #${unlockAttempts}`);
   
   try {
-    // Create and resume AudioContext (required for iOS)
+    // Create AudioContext if not exists
     if (!audioContext) {
-      audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextClass) {
+        console.warn('[Sound] AudioContext não suportado');
+        return false;
+      }
+      audioContext = new AudioContextClass();
     }
     
+    // Resume if suspended (required for iOS PWA)
     if (audioContext.state === 'suspended') {
-      audioContext.resume();
+      await audioContext.resume();
+      console.log('[Sound] AudioContext resumido');
     }
     
-    // Play a silent sound to unlock audio on iOS
+    // Play a silent sound to fully unlock audio on iOS PWA
     const silentBuffer = audioContext.createBuffer(1, 1, 22050);
     const source = audioContext.createBufferSource();
     source.buffer = silentBuffer;
     source.connect(audioContext.destination);
     source.start(0);
     
+    // Also try to play and immediately pause a dummy audio element
+    // This helps with some PWA implementations
+    const dummyAudio = new Audio();
+    dummyAudio.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+    dummyAudio.volume = 0.01;
+    try {
+      await dummyAudio.play();
+      dummyAudio.pause();
+    } catch (e) {
+      // Ignore errors from dummy audio
+    }
+    
     audioUnlocked = true;
     console.log('[Sound] Áudio desbloqueado para PWA mobile');
+    return true;
   } catch (error) {
     console.warn('[Sound] Erro ao desbloquear áudio:', error);
+    return false;
   }
 }
 
-// Attach unlock to first user interaction
+// Attach unlock to user interactions - keep trying until successful
 if (typeof window !== 'undefined') {
-  const unlockEvents = ['touchstart', 'touchend', 'click', 'keydown'];
+  const unlockEvents = ['touchstart', 'touchend', 'click', 'keydown', 'pointerdown'];
   
-  const handleFirstInteraction = () => {
-    unlockAudio();
-    // Remove listeners after first interaction
-    unlockEvents.forEach(event => {
-      document.removeEventListener(event, handleFirstInteraction, true);
-    });
+  const handleInteraction = async () => {
+    const success = await unlockAudio();
+    if (success) {
+      // Only remove listeners after successful unlock
+      unlockEvents.forEach(event => {
+        document.removeEventListener(event, handleInteraction, true);
+      });
+    }
   };
   
   unlockEvents.forEach(event => {
-    document.addEventListener(event, handleFirstInteraction, true);
+    document.addEventListener(event, handleInteraction, true);
   });
 }
 
@@ -104,7 +131,7 @@ export function useSoundEffects() {
     };
   }, []);
 
-  const playSound = useCallback((type: SoundType) => {
+  const playSound = useCallback(async (type: SoundType) => {
     const audio = soundsRef.current[type];
     if (!audio) {
       console.warn(`[Sound] Audio não encontrado para tipo: ${type}`);
@@ -115,27 +142,45 @@ export function useSoundEffects() {
     const now = Date.now();
     const minInterval = type === 'click' ? 50 : 500;
     if (now - lastPlayTimeRef.current[type] < minInterval) {
-      console.log(`[Sound] Som ${type} ignorado - tocado há menos de ${minInterval}ms`);
       return;
     }
     
     lastPlayTimeRef.current[type] = now;
     
-    // Ensure audio is unlocked before playing
+    // Ensure audio is unlocked before playing (especially for PWA)
     if (!audioUnlocked) {
-      unlockAudio();
+      await unlockAudio();
     }
     
-    // Clone the audio for overlapping sounds support and better mobile compatibility
+    // Play the sound with multiple fallback strategies for PWA
     try {
+      // Reset audio position
       audio.currentTime = 0;
+      
+      // Try to resume AudioContext if it got suspended
+      if (audioContext && audioContext.state === 'suspended') {
+        await audioContext.resume();
+      }
+      
       const playPromise = audio.play();
       
       if (playPromise !== undefined) {
-        playPromise.catch((error) => {
+        playPromise.catch(async (error) => {
           console.warn(`[Sound] Erro ao reproduzir ${type}:`, error.message);
-          // Try to unlock and play again on next interaction
-          audioUnlocked = false;
+          
+          // If play failed, try to unlock again and retry once
+          if (!audioUnlocked || error.name === 'NotAllowedError') {
+            audioUnlocked = false;
+            const unlocked = await unlockAudio();
+            if (unlocked) {
+              try {
+                audio.currentTime = 0;
+                await audio.play();
+              } catch (retryError) {
+                console.warn(`[Sound] Retry falhou para ${type}`);
+              }
+            }
+          }
         });
       }
     } catch (error) {
