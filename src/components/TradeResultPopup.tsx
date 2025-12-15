@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useSoundEffects } from "@/hooks/useSoundEffects";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface TradeResultPopupProps {
   trade: {
@@ -22,6 +23,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
   const [isVisible, setIsVisible] = useState(false);
   const { playSound } = useSoundEffects();
   const { t } = useTranslation();
+  const { formatBalance } = useCurrency();
   const lastPlayedTradeRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -176,7 +178,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
                   "text-5xl font-black mb-2",
                   isWin ? "text-green-500" : "text-red-500"
                 )}>
-                  {isWin ? '+' : '-'} R$ {displayAmount.toFixed(2)}
+                  {isWin ? '+' : '-'} {formatBalance(displayAmount)}
                 </div>
                 <div className={cn(
                   "text-2xl font-semibold",
@@ -201,7 +203,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
                 )}
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('investment_label')}</span>
-                  <span className="font-semibold text-foreground">R$ {trade.amount.toFixed(2)}</span>
+                  <span className="font-semibold text-foreground">{formatBalance(trade.amount)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
                   <span className="text-muted-foreground">{t('result_label')}</span>

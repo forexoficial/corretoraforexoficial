@@ -91,21 +91,21 @@ export const ActiveTradeResult = ({ currentPrice }: ActiveTradeResultProps) => {
       {/* Grid compacto de infos */}
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Entrada</span>
-          <span className="font-medium">${entryPrice.toFixed(2)}</span>
+          <span className="text-muted-foreground">{t("entry", "Entrada")}</span>
+          <span className="font-medium">${entryPrice.toFixed(5)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Atual</span>
+          <span className="text-muted-foreground">{t("current", "Atual")}</span>
           <span className={`font-medium ${isWinning ? 'text-success' : 'text-destructive'}`}>
-            ${currentPrice.toFixed(2)}
+            ${currentPrice.toFixed(5)}
           </span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Investido</span>
+          <span className="text-muted-foreground">{t("invested", "Investido")}</span>
           <span className="font-medium">{formatCurrency(tradeAmount)}</span>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Retorno</span>
+          <span className="text-muted-foreground">{t("return", "Retorno")}</span>
           <span className="font-bold text-success">{formatCurrency(potentialReturn)}</span>
         </div>
       </div>
