@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { StarfieldBackground } from "@/components/StarfieldBackground";
 import bannerSignup from "@/assets/banner-signup.webp";
 
 export default function Signup() {
@@ -25,7 +26,8 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row bg-background">
+    <div className="min-h-screen flex flex-col lg:flex-row bg-gradient-to-br from-background via-background/95 to-primary/10 relative overflow-hidden">
+      <StarfieldBackground />
       {/* Back button - fixed position */}
       <Button
         variant="ghost"
@@ -37,7 +39,7 @@ export default function Signup() {
       </Button>
 
       {/* Banner Section - Left on desktop, Top on mobile */}
-      <div className="w-full lg:w-1/2 h-48 sm:h-64 lg:h-screen relative overflow-hidden">
+      <div className="w-full lg:w-1/2 h-48 sm:h-64 lg:h-screen relative overflow-hidden z-10">
         <img
           src={bannerSignup}
           alt="Signup Banner"
@@ -48,7 +50,7 @@ export default function Signup() {
       </div>
 
       {/* Form Section - Right on desktop, Bottom on mobile */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-6 lg:p-8 z-10">
         <Card className="w-full max-w-md p-6 sm:p-8 bg-card/50 backdrop-blur-xl border-primary/20 shadow-2xl">
           <div className="text-center mb-6 sm:mb-8">
             {customization.currentLogo && (
