@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     VitePWA({
       registerType: 'prompt',
       injectRegister: false,
-      includeAssets: ['favicon.ico', 'robots.txt', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.webp', 'robots.txt', 'apple-touch-icon.webp'],
       manifest: {
         name: 'BlackRock Broker',
         short_name: 'BlackRock',
@@ -29,27 +29,27 @@ export default defineConfig(({ mode }) => ({
         start_url: '/',
         icons: [
           {
-            src: '/pwa-192x192.png',
+            src: '/favicon.webp',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/webp',
             purpose: 'any'
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/favicon.webp',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/webp',
             purpose: 'any'
           },
           {
-            src: '/pwa-192x192.png',
+            src: '/favicon.webp',
             sizes: '192x192',
-            type: 'image/png',
+            type: 'image/webp',
             purpose: 'maskable'
           },
           {
-            src: '/pwa-512x512.png',
+            src: '/favicon.webp',
             sizes: '512x512',
-            type: 'image/png',
+            type: 'image/webp',
             purpose: 'maskable'
           }
         ]
