@@ -64,14 +64,18 @@ export function WorldMapBackground({
   if (selectedImage) {
     return (
       <div 
-        className="absolute inset-0 pointer-events-none"
+        className="absolute inset-0 pointer-events-none w-full h-full"
         style={{
           backgroundImage: `url(${selectedImage})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat',
           opacity: opacity,
-          zIndex: 0
+          zIndex: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
         }}
       />
     );
@@ -79,7 +83,7 @@ export function WorldMapBackground({
 
   // Caso contrário, use o SVG padrão
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden z-0" style={{ opacity }}>
+    <div className="absolute inset-0 pointer-events-none w-full h-full" style={{ opacity, top: 0, left: 0, right: 0, bottom: 0 }}>
       <svg
         viewBox="0 0 2000 857"
         xmlns="http://www.w3.org/2000/svg"
