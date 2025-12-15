@@ -28,6 +28,10 @@ export default function Signup() {
   return (
     <div className="min-h-screen flex flex-col lg:flex-row bg-background relative overflow-hidden">
       <StarfieldBackground />
+      
+      {/* Gradient overlay - full screen, above banner, below dialog */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 z-[5] pointer-events-none" />
+      
       {/* Back button - fixed position */}
       <Button
         variant="ghost"
@@ -39,14 +43,12 @@ export default function Signup() {
       </Button>
 
       {/* Banner Section - Left on desktop, Top on mobile */}
-      <div className="w-full lg:w-[55%] h-auto lg:h-screen relative z-10 shrink-0 lg:flex lg:items-center lg:justify-center bg-background/20">
+      <div className="w-full lg:w-[55%] h-auto lg:h-screen relative z-[1] shrink-0 lg:flex lg:items-center lg:justify-center">
         <img
           src={bannerSignup}
           alt="Signup Banner"
           className="w-full h-auto lg:w-full lg:max-h-full object-contain"
         />
-        {/* Gradient overlay with primary color */}
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-primary/10 pointer-events-none" />
       </div>
 
       {/* Form Section - Right on desktop, Bottom on mobile */}
