@@ -15,6 +15,7 @@ export const signupSchema = z.object({
 export type SignupFormData = {
   fullName: string;
   email: string;
+  phone: string;
   document: string;
   documentType: string;
   password: string;
@@ -92,6 +93,7 @@ export function useAuth() {
         options: {
           data: {
             full_name: formData.fullName,
+            phone: formData.phone,
             document: formData.document,
             document_type: formData.documentType,
             affiliate_code: formData.affiliateCode,
