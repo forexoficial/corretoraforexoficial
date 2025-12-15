@@ -48,7 +48,11 @@ export function SocialLoginButtons({ onSocialLogin }: SocialLoginButtonsProps) {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className={`mt-6 grid gap-3 ${
+        activeProviders.length === 1 ? 'grid-cols-1' : 
+        activeProviders.length === 2 ? 'grid-cols-2' : 
+        'grid-cols-3'
+      }`}>
         {isProviderActive('google') && (
           <Button
             type="button"
