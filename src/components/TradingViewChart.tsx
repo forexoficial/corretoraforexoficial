@@ -407,10 +407,25 @@ export function TradingViewChart({
 
     // Helper function to get point from coordinates
     const getPointFromCoordinates = (x: number, y: number) => {
-      const price = candleSeries.coordinateToPrice(y);
-      const time = chart.timeScale().coordinateToTime(x);
-      if (!price || !time) return null;
-      return { price, time: time as number };
+      try {
+        const price = candleSeries.coordinateToPrice(y);
+        const time = chart.timeScale().coordinateToTime(x);
+        
+        // Log for debugging
+        console.log('[getPointFromCoordinates] x:', x, 'y:', y, 'price:', price, 'time:', time);
+        
+        // Return null only if both are null, allow partial results
+        if (price === null && time === null) return null;
+        
+        // Use default values if one is null
+        const finalPrice = price ?? 0;
+        const finalTime = time ?? Math.floor(Date.now() / 1000);
+        
+        return { price: finalPrice, time: finalTime as number };
+      } catch (e) {
+        console.error('[getPointFromCoordinates] Error:', e);
+        return null;
+      }
     };
 
     // Handle drawing tool clicks (for horizontal/vertical lines only)
@@ -504,31 +519,66 @@ export function TradingViewChart({
     const handleTouchStart = (e: TouchEvent) => {
       const currentDrawingTool = (window as any).__currentDrawingTool || 'select';
       
-      if (!['trendline', 'rectangle', 'fibonacci'].includes(currentDrawingTool)) {
-        return;
+      // Handle drag-based tools (trendline, rectangle, fibonacci)
+      if (['trendline', 'rectangle', 'fibonacci'].includes(currentDrawingTool)) {
+        const touch = e.touches[0];
+        const rect = chartContainerRef.current?.getBoundingClientRect();
+        if (!rect || !touch) {
+          console.log('[Touch Start] No rect or touch available');
+          return;
+        }
+        
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        console.log('[Touch Start] Rect:', { top: rect.top, left: rect.left, width: rect.width, height: rect.height });
+        console.log('[Touch Start] Touch coords:', { clientX: touch.clientX, clientY: touch.clientY, x, y });
+        
+        const point = getPointFromCoordinates(x, y);
+        
+        if (!point) {
+          console.log('[Touch Start] Could not get point from coordinates');
+          return;
+        }
+        
+        console.log('[Touch Start] Starting drag drawing:', currentDrawingTool, point);
+        
+        // Disable chart scrolling/panning while drawing
+        chart.applyOptions({
+          handleScroll: false,
+          handleScale: false,
+        });
+        
+        drawing.startDragDrawing(currentDrawingTool, point);
+        
+        e.preventDefault();
+        e.stopPropagation();
       }
-      
-      const touch = e.touches[0];
-      const rect = chartContainerRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
-      
-      const x = touch.clientX - rect.left;
-      const y = touch.clientY - rect.top;
-      const point = getPointFromCoordinates(x, y);
-      
-      if (!point) return;
-      
-      console.log('[Touch Start] Starting drag drawing:', currentDrawingTool, point);
-      
-      // Disable chart scrolling/panning while drawing
-      chart.applyOptions({
-        handleScroll: false,
-        handleScale: false,
-      });
-      
-      drawing.startDragDrawing(currentDrawingTool, point);
-      
-      e.preventDefault();
+      // Handle click-based tools (horizontal, vertical) - single tap creates line
+      else if (['horizontal', 'vertical'].includes(currentDrawingTool)) {
+        const touch = e.touches[0];
+        const rect = chartContainerRef.current?.getBoundingClientRect();
+        if (!rect || !touch) return;
+        
+        const x = touch.clientX - rect.left;
+        const y = touch.clientY - rect.top;
+        
+        console.log('[Touch Start] Creating line at:', { x, y, tool: currentDrawingTool });
+        
+        const point = getPointFromCoordinates(x, y);
+        
+        if (!point) {
+          console.log('[Touch Start] Could not get point for line');
+          return;
+        }
+        
+        console.log('[Touch Start] Creating line:', currentDrawingTool, point);
+        drawing.startDrawing(currentDrawingTool, point);
+        setTimeout(() => drawing.completeDrawing(currentDrawingTool), 50);
+        
+        e.preventDefault();
+        e.stopPropagation();
+      }
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -536,17 +586,27 @@ export function TradingViewChart({
       
       const touch = e.touches[0];
       const rect = chartContainerRef.current?.getBoundingClientRect();
-      if (!rect || !touch) return;
+      if (!rect || !touch) {
+        console.log('[Touch Move] No rect or touch available');
+        return;
+      }
       
       const x = touch.clientX - rect.left;
       const y = touch.clientY - rect.top;
+      
+      // Log touch coordinates for debugging
+      console.log('[Touch Move] Touch at:', { x, y, rectHeight: rect.height, rectTop: rect.top });
+      
       const point = getPointFromCoordinates(x, y);
       
       if (point) {
         drawing.updateDragPoint(point);
+      } else {
+        console.log('[Touch Move] Could not get point from coordinates at y:', y);
       }
       
       e.preventDefault();
+      e.stopPropagation();
     };
 
     const handleTouchEnd = () => {
@@ -1662,6 +1722,7 @@ export function TradingViewChart({
       backgroundColor: chartBgColor,
       width: `${widthPercentage}%`,
       margin: widthPercentage < 100 ? '0 auto' : undefined,
+      position: 'relative',
     };
     
     // Get configurable offsets from admin settings
@@ -1674,7 +1735,6 @@ export function TradingViewChart({
       const calculatedHeight = Math.max(400, windowDimensions.height - offsetDesktop);
       style.height = `${calculatedHeight}px`;
       style.minHeight = '400px';
-      style.overflow = 'hidden';
     } else if (useResponsive) {
       // Calculate dynamic height for mobile/fullscreen
       let dynamicHeight: number;
@@ -1687,7 +1747,6 @@ export function TradingViewChart({
       }
       style.height = `${dynamicHeight}px`;
       style.minHeight = isMobile ? '300px' : '400px';
-      style.overflow = 'hidden';
     } else if (aspectRatio) {
       style.aspectRatio = `${aspectRatio}`;
     } else if (effectiveHeight) {
@@ -1700,21 +1759,23 @@ export function TradingViewChart({
   }, [chartBgColor, widthPercentage, aspectRatio, effectiveHeight, useResponsive, isMobile, isFullscreen, height, windowDimensions.height, appearanceSettings]);
 
   return (
-    <div className="relative" style={containerStyle}>
-      {/* World Map Background */}
+    <div className="relative w-full h-full" style={containerStyle}>
+      {/* World Map Background - must cover entire container */}
       {appearanceSettings?.map_enabled && (
-        <WorldMapBackground 
-          opacity={appearanceSettings.map_opacity}
-          primaryColor={appearanceSettings.map_primary_color}
-          secondaryColor={appearanceSettings.map_secondary_color}
-          showGrid={appearanceSettings.map_show_grid}
-          gridOpacity={appearanceSettings.map_grid_opacity}
-          imageUrl={appearanceSettings.map_image_url}
-          imageUrlDark={appearanceSettings.map_image_url_dark}
-          imageUrlMobile={(appearanceSettings as any).map_image_url_mobile}
-          imageUrlMobileDark={(appearanceSettings as any).map_image_url_mobile_dark}
-          bgColor={chartBgColor}
-        />
+        <div className="absolute inset-0 z-0 pointer-events-none" style={{ width: '100%', height: '100%' }}>
+          <WorldMapBackground 
+            opacity={appearanceSettings.map_opacity}
+            primaryColor={appearanceSettings.map_primary_color}
+            secondaryColor={appearanceSettings.map_secondary_color}
+            showGrid={appearanceSettings.map_show_grid}
+            gridOpacity={appearanceSettings.map_grid_opacity}
+            imageUrl={appearanceSettings.map_image_url}
+            imageUrlDark={appearanceSettings.map_image_url_dark}
+            imageUrlMobile={(appearanceSettings as any).map_image_url_mobile}
+            imageUrlMobileDark={(appearanceSettings as any).map_image_url_mobile_dark}
+            bgColor={chartBgColor}
+          />
+        </div>
       )}
       
       {isLoading && (
@@ -1722,7 +1783,7 @@ export function TradingViewChart({
           <div className="text-muted-foreground">{t("loading_chart", "Loading chart...")}</div>
         </div>
       )}
-      <div ref={chartContainerRef} className="w-full h-full relative z-[1]" style={{ backgroundColor: 'transparent' }} />
+      <div ref={chartContainerRef} className="w-full h-full relative z-[1]" style={{ backgroundColor: 'transparent', touchAction: 'none' }} />
       
       {/* Candle Time Indicator */}
       <CandleTimeIndicator 

@@ -338,19 +338,24 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
       </div>
 
       {/* Chart Area */}
-      <div className="flex-1 relative w-full h-full" style={{ minHeight: `${mobileChartHeight}px` }}>
-        <div className="w-full h-full">
-          <TradingViewChart
-            assetId={selectedAsset.id}
-            assetName={selectedAsset.name}
-            timeframe={selectedTimeframe}
-            height={mobileChartHeight}
-            onCurrentPriceUpdate={onCurrentPriceUpdate}
-            indicatorSettings={indicatorSettings}
-            drawingTool={selectedDrawingTool}
-            onDrawingToolChange={setSelectedDrawingTool}
-          />
-        </div>
+      <div 
+        className="flex-1 relative w-full overflow-hidden" 
+        style={{ 
+          height: `${mobileChartHeight}px`,
+          minHeight: `${mobileChartHeight}px`,
+          maxHeight: `${mobileChartHeight}px`
+        }}
+      >
+        <TradingViewChart
+          assetId={selectedAsset.id}
+          assetName={selectedAsset.name}
+          timeframe={selectedTimeframe}
+          height={mobileChartHeight}
+          onCurrentPriceUpdate={onCurrentPriceUpdate}
+          indicatorSettings={indicatorSettings}
+          drawingTool={selectedDrawingTool}
+          onDrawingToolChange={setSelectedDrawingTool}
+        />
 
         {/* Chart Controls - Bottom Left - Hidden when drawing tool is active */}
         {selectedDrawingTool === 'select' && (
