@@ -39,14 +39,14 @@ export default function Signup() {
       </Button>
 
       {/* Banner Section - Left on desktop, Top on mobile */}
-      <div className="w-full lg:w-1/3 h-auto lg:h-screen relative z-10 shrink-0 bg-black/50">
+      <div className="w-full lg:w-1/3 h-auto lg:h-screen relative z-10 shrink-0 lg:overflow-hidden">
         <img
           src={bannerSignup}
           alt="Signup Banner"
-          className="w-full h-auto lg:h-full object-contain lg:object-cover"
+          className="w-full h-auto lg:h-full object-contain lg:object-cover lg:object-center"
         />
-        {/* Gradient overlay for better text contrast if needed */}
-        <div className="absolute inset-0 bg-gradient-to-r lg:bg-gradient-to-b from-transparent to-background/20" />
+        {/* Gradient overlay - only on desktop */}
+        <div className="hidden lg:block absolute inset-0 bg-gradient-to-b from-transparent to-background/20" />
       </div>
 
       {/* Form Section - Right on desktop, Bottom on mobile */}
