@@ -1,4 +1,12 @@
 {
+  "payment_confirmed": "Pagamento Confirmado!",
+  "deposit_processed_success": "Seu depósito foi processado com sucesso",
+  "deposited_amount": "Valor Depositado",
+  "new_balance": "Novo Saldo",
+  "transaction_id": "ID da Transação",
+  "balance_updated_ready": "Seu saldo foi atualizado automaticamente e já está disponível para negociar!",
+  "view_transactions": "Ver Transações",
+  "start_trading": "Começar a Negociar",
   "orContinueWith": "Ou continue com",
   "admin_contact_visibility": "Visibilidade dos Contatos",
   "admin_contact_visibility_desc": "Escolha quais formas de contato serão exibidas no popup de suporte",

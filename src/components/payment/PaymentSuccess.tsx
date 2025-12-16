@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import { useEffect } from "react";
+import { useTranslation } from "@/hooks/useTranslation";
+import { useCurrency } from "@/hooks/useCurrency";
 
 interface PaymentSuccessProps {
   amount: number;
@@ -18,6 +20,8 @@ export default function PaymentSuccess({
   transactionId 
 }: PaymentSuccessProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const { formatBalance } = useCurrency();
 
   useEffect(() => {
     // Trigger confetti animation
@@ -86,7 +90,7 @@ export default function PaymentSuccess({
                 transition={{ delay: 0.3 }}
                 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-3"
               >
-                Pagamento Confirmado!
+                {t('payment_confirmed')}
               </motion.h2>
 
               <motion.p
@@ -95,7 +99,7 @@ export default function PaymentSuccess({
                 transition={{ delay: 0.4 }}
                 className="text-sm sm:text-base text-muted-foreground mb-6 sm:mb-8"
               >
-                Seu depósito foi processado com sucesso ✨
+                {t('deposit_processed_success')} ✨
               </motion.p>
 
               {/* Amount Cards */}
@@ -108,10 +112,10 @@ export default function PaymentSuccess({
                 >
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
-                    <div className="text-xs sm:text-sm text-muted-foreground">Valor Depositado</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">{t('deposited_amount')}</div>
                   </div>
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-success">
-                    R$ {amount.toFixed(2)}
+                    {formatBalance(amount)}
                   </div>
                 </motion.div>
 
@@ -123,10 +127,10 @@ export default function PaymentSuccess({
                 >
                   <div className="flex items-center justify-center gap-2 mb-2">
                     <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
-                    <div className="text-xs sm:text-sm text-muted-foreground">Novo Saldo</div>
+                    <div className="text-xs sm:text-sm text-muted-foreground">{t('new_balance')}</div>
                   </div>
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-primary">
-                    R$ {newBalance.toFixed(2)}
+                    {formatBalance(newBalance)}
                   </div>
                 </motion.div>
               </div>
@@ -142,7 +146,7 @@ export default function PaymentSuccess({
           >
             {/* Transaction ID */}
             <div className="bg-muted/30 rounded-lg p-4 text-center">
-              <div className="text-xs sm:text-sm text-muted-foreground mb-1">ID da Transação</div>
+              <div className="text-xs sm:text-sm text-muted-foreground mb-1">{t('transaction_id')}</div>
               <div className="text-xs sm:text-sm font-mono text-foreground break-all">
                 {transactionId}
               </div>
@@ -151,7 +155,7 @@ export default function PaymentSuccess({
             {/* Info Box */}
             <div className="bg-primary/10 dark:bg-primary/20 rounded-lg p-4 border border-primary/20 dark:border-primary/30">
               <p className="text-xs sm:text-sm text-center">
-                Seu saldo foi atualizado automaticamente e já está disponível para negociar! 🚀
+                {t('balance_updated_ready')} 🚀
               </p>
             </div>
 
@@ -162,7 +166,7 @@ export default function PaymentSuccess({
                 variant="outline"
                 className="w-full h-11 sm:h-12"
               >
-                Ver Transações
+                {t('view_transactions')}
               </Button>
               
               <Button
@@ -170,7 +174,7 @@ export default function PaymentSuccess({
                 className="w-full h-11 sm:h-12 bg-success hover:bg-success/90"
               >
                 <TrendingUp className="w-4 h-4 mr-2" />
-                Começar a Negociar
+                {t('start_trading')}
               </Button>
             </div>
           </motion.div>
