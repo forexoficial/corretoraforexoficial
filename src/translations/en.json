@@ -1,4 +1,12 @@
 {
+  "payment_confirmed": "Payment Confirmed!",
+  "deposit_processed_success": "Your deposit was processed successfully",
+  "deposited_amount": "Deposited Amount",
+  "new_balance": "New Balance",
+  "transaction_id": "Transaction ID",
+  "balance_updated_ready": "Your balance was updated automatically and is ready for trading!",
+  "view_transactions": "View Transactions",
+  "start_trading": "Start Trading",
   "orContinueWith": "Or continue with",
   "admin_contact_visibility": "Contact Visibility",
   "admin_contact_visibility_desc": "Choose which contact methods will be displayed in the support popup",
