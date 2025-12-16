@@ -61,12 +61,27 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
+    // Helper function to get USD-BRL exchange rate
+    const getExchangeRate = async (): Promise<number> => {
+      try {
+        const response = await fetch("https://economia.awesomeapi.com.br/json/last/USD-BRL");
+        const data = await response.json();
+        const rate = parseFloat(data.USDBRL?.bid || "5.5");
+        logStep("Exchange rate fetched", { rate });
+        return rate;
+      } catch (error) {
+        logStep("Error fetching exchange rate, using fallback", { error: String(error) });
+        return 5.5; // Fallback rate
+      }
+    };
+
     switch (event.type) {
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
         logStep("Payment succeeded", { 
           paymentIntentId: paymentIntent.id,
           amount: paymentIntent.amount,
+          currency: paymentIntent.currency,
           userId: paymentIntent.metadata.supabase_user_id,
         });
 
@@ -88,12 +103,22 @@ serve(async (req) => {
 
           // Update user balance
           const userId = paymentIntent.metadata.supabase_user_id;
-          const amount = paymentIntent.amount / 100; // Convert from cents
+          const amountInUSD = paymentIntent.amount / 100; // Convert from cents to dollars
 
           if (!userId) {
             logStep("No user ID in metadata, skipping balance update");
             break;
           }
+
+          // Convert USD to BRL since database stores balances in BRL
+          const exchangeRate = await getExchangeRate();
+          const amountInBRL = amountInUSD * exchangeRate;
+          
+          logStep("Amount conversion", { 
+            amountInUSD, 
+            exchangeRate, 
+            amountInBRL 
+          });
 
           // Get current profile
           const { data: profile, error: profileError } = await supabase
@@ -110,10 +135,10 @@ serve(async (req) => {
           if (profile) {
             const currentBalance = Number(profile.balance) || 0;
             const currentTotalDeposited = Number(profile.total_deposited) || 0;
-            const newBalance = currentBalance + amount;
-            const newTotalDeposited = currentTotalDeposited + amount;
+            const newBalance = currentBalance + amountInBRL;
+            const newTotalDeposited = currentTotalDeposited + amountInBRL;
 
-            // Calculate user tier based on total deposited
+            // Calculate user tier based on total deposited (in BRL)
             let userTier = 'standard';
             if (newTotalDeposited >= 1000000) {
               userTier = 'vip';
@@ -138,7 +163,9 @@ serve(async (req) => {
                 userId, 
                 previousBalance: currentBalance,
                 newBalance, 
-                depositAmount: amount,
+                depositAmountUSD: amountInUSD,
+                depositAmountBRL: amountInBRL,
+                exchangeRate,
                 newTotalDeposited,
                 userTier
               });
