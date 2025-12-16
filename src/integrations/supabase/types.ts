@@ -1087,6 +1087,7 @@ export type Database = {
           demo_balance: number | null
           document: string
           document_type: string
+          email: string | null
           full_name: string
           id: string
           is_admin: boolean | null
@@ -1114,6 +1115,7 @@ export type Database = {
           demo_balance?: number | null
           document: string
           document_type: string
+          email?: string | null
           full_name: string
           id?: string
           is_admin?: boolean | null
@@ -1141,6 +1143,7 @@ export type Database = {
           demo_balance?: number | null
           document?: string
           document_type?: string
+          email?: string | null
           full_name?: string
           id?: string
           is_admin?: boolean | null
