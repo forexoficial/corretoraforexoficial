@@ -241,8 +241,8 @@ export default function Deposit() {
     
     const numAmount = parseFloat(amount);
     
-    if (!numAmount || numAmount < 1) {
-      toast.error("Minimum crypto deposit is $1.00");
+    if (!numAmount || numAmount < 5) {
+      toast.error("Minimum crypto deposit is $5.00");
       return;
     }
 
@@ -645,7 +645,7 @@ export default function Deposit() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">{t("minimum_deposit") || "Minimum Deposit"}:</span>
-                        <span className="font-medium text-primary">$1.00</span>
+                        <span className="font-medium text-primary">$5.00</span>
                       </div>
                     </div>
 
