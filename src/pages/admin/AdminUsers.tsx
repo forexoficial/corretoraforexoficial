@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Search, Shield, Ban, Pencil, Globe, Filter, X, Phone } from "lucide-react";
+import { Loader2, Search, Shield, Ban, Pencil, Globe, Filter, X, Phone, Mail } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
@@ -29,6 +29,7 @@ interface User {
   full_name: string;
   document: string;
   phone: string | null;
+  email: string | null;
   balance: number;
   verification_status: string;
   created_at: string;
@@ -294,6 +295,12 @@ export default function AdminUsers() {
                   )}
                 </div>
                 <p className="text-xs md:text-sm text-muted-foreground truncate">{user.document}</p>
+                {user.email && (
+                  <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
+                    <Mail className="h-3 w-3" />
+                    <span className="truncate">{user.email}</span>
+                  </div>
+                )}
                 {user.phone && (
                   <div className="flex items-center gap-1 text-xs md:text-sm text-muted-foreground">
                     <Phone className="h-3 w-3" />
