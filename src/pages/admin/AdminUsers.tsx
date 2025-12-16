@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Search, Shield, Ban, Pencil, Globe, Filter, X, Phone, Mail } from "lucide-react";
+import { Loader2, Search, Shield, Ban, Pencil, Globe, Filter, X, Phone, Mail, Info } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
 import {
@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { UserDetailsDialog } from "@/components/admin/UserDetailsDialog";
 
 interface User {
   id: string;
@@ -49,6 +50,8 @@ export default function AdminUsers() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [newBalance, setNewBalance] = useState("");
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedUserForDetails, setSelectedUserForDetails] = useState<User | null>(null);
   
   // Filters
   const [countryFilter, setCountryFilter] = useState<string>("all");
@@ -333,6 +336,18 @@ export default function AdminUsers() {
                 </Badge>
                 <div className="flex flex-wrap gap-1 md:gap-2 mt-1 md:mt-2">
                   <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedUserForDetails(user);
+                      setDetailsDialogOpen(true);
+                    }}
+                    className="h-7 md:h-8 text-[10px] md:text-xs px-2 md:px-3"
+                  >
+                    <Info className="h-2.5 w-2.5 md:h-3 md:w-3 mr-0.5 md:mr-1" />
+                    + Info
+                  </Button>
+                  <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleEditBalance(user)}
@@ -393,6 +408,12 @@ export default function AdminUsers() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <UserDetailsDialog
+        user={selectedUserForDetails}
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+      />
     </div>
   );
 }
