@@ -136,7 +136,6 @@ export function MobileTradingHeader({ selectedAsset }: MobileTradingHeaderProps)
             size="icon" 
             className="h-9 w-9 rounded-xl bg-primary hover:bg-primary/90"
             onClick={() => navigate('/deposit')}
-            disabled={isDemoMode}
           >
             <Wallet className="h-4 w-4 text-primary-foreground" />
           </Button>
