@@ -129,19 +129,19 @@ export function TradingViewChart({
     // If responsive mode is enabled, prefer the REAL available container height (mobile needs to respect UI like the "clock" bar)
     if (isMobile && isResponsiveMode.mobile) {
       if (containerDimensions.height > 0) return containerDimensions.height;
-      // Fallback to viewport-based calculation only if container size isn't known yet
-      return Math.max(300, windowDimensions.height - offsetMobile);
+      // Fallback: never exceed the height passed by the parent (MobileChartView)
+      return Math.max(300, height);
     }
+
     if (isFullscreen && isResponsiveMode.fullscreen) {
       if (containerDimensions.height > 0) return containerDimensions.height;
       return Math.max(400, windowDimensions.height - offsetFullscreen);
     }
-      if (containerDimensions.height > 0) {
-        return containerDimensions.height;
-      }
+
+    if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
+      if (containerDimensions.height > 0) return containerDimensions.height;
       return Math.max(400, windowDimensions.height - offsetDesktop);
     }
-    
     // Fixed height mode
     if (isMobile) {
       return appearanceSettings.chart_height_mobile || 350;
@@ -1736,23 +1736,18 @@ export function TradingViewChart({
     const offsetFullscreen = appearanceSettings?.chart_height_offset_fullscreen ?? 96;
     const offsetDesktop = appearanceSettings?.chart_height_offset_desktop ?? 180;
     
-    // For desktop in responsive mode, use calculated height to prevent shrinking after load
-    if (!isMobile && !isFullscreen && useResponsive) {
-      const calculatedHeight = Math.max(400, windowDimensions.height - offsetDesktop);
-      style.height = `${calculatedHeight}px`;
-      style.minHeight = '400px';
-    } else if (useResponsive) {
-      // Calculate dynamic height for mobile/fullscreen
-      let dynamicHeight: number;
-      if (isMobile) {
-        dynamicHeight = Math.max(300, windowDimensions.height - offsetMobile);
-      } else if (isFullscreen) {
-        dynamicHeight = Math.max(400, windowDimensions.height - offsetFullscreen);
+    // In responsive mode:
+    // - Desktop uses viewport-based height (prevents shrinking after load)
+    // - Mobile/fullscreen MUST fill the parent container (so it never overlaps the fixed bottom menu/"clock")
+    if (useResponsive) {
+      if (!isMobile && !isFullscreen) {
+        const calculatedHeight = Math.max(400, windowDimensions.height - offsetDesktop);
+        style.height = `${calculatedHeight}px`;
+        style.minHeight = '400px';
       } else {
-        dynamicHeight = Math.max(400, windowDimensions.height - offsetDesktop);
+        style.height = '100%';
+        style.minHeight = isMobile ? '300px' : '400px';
       }
-      style.height = `${dynamicHeight}px`;
-      style.minHeight = isMobile ? '300px' : '400px';
     } else if (aspectRatio) {
       style.aspectRatio = `${aspectRatio}`;
     } else if (effectiveHeight) {
