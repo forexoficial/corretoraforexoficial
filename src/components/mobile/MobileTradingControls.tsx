@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ArrowUp, ArrowDown, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
@@ -26,13 +26,15 @@ interface MobileTradingControlsProps {
   isDemoMode: boolean;
   currentBalance: number;
   currentPrice?: number;
+  onHeightChange?: (height: number) => void;
 }
 
 export function MobileTradingControls({ 
   selectedAsset, 
   isDemoMode, 
   currentBalance,
-  currentPrice
+  currentPrice,
+  onHeightChange,
 }: MobileTradingControlsProps) {
   const { settings } = usePlatformSettings();
   const { hasOpenTrade } = useTradeContext();
@@ -61,6 +63,26 @@ export function MobileTradingControls({
   const [amount, setAmount] = useState(5);
   const [showAmountModal, setShowAmountModal] = useState(false);
   const [inputAmount, setInputAmount] = useState("");
+
+  const controlsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!onHeightChange) return;
+    const el = controlsRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.height > 0) onHeightChange(rect.height);
+    };
+
+    update();
+
+    const ro = new ResizeObserver(() => update());
+    ro.observe(el);
+
+    return () => ro.disconnect();
+  }, [onHeightChange]);
 
   // Durations: 10s, 30s, 1m, 5m, 10m, 15m, 30m, 60m (in minutes)
   const durations = [10/60, 30/60, 1, 5, 10, 15, 30, 60];
@@ -109,7 +131,7 @@ export function MobileTradingControls({
   };
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border pb-6 z-30" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}>
+    <div ref={controlsRef} className="fixed bottom-0 left-0 right-0 bg-background border-t border-border pb-6 z-30" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}>
       {/* Time & Value Controls */}
       <div className="grid grid-cols-2 gap-3 p-3">
         {/* Time Control */}
