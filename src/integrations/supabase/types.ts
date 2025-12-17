@@ -1018,6 +1018,7 @@ export type Database = {
           id: string
           image_url: string | null
           is_active: boolean
+          show_once_per_day: boolean | null
           start_date: string | null
           title: string
           updated_at: string
@@ -1030,6 +1031,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          show_once_per_day?: boolean | null
           start_date?: string | null
           title: string
           updated_at?: string
@@ -1042,6 +1044,7 @@ export type Database = {
           id?: string
           image_url?: string | null
           is_active?: boolean
+          show_once_per_day?: boolean | null
           start_date?: string | null
           title?: string
           updated_at?: string
