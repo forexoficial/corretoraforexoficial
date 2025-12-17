@@ -109,7 +109,7 @@ export function MobileTradingControls({
   };
 
   return (
-    <div className="bg-background border-t border-border pb-6">
+    <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border pb-6 z-30" style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 1rem)' }}>
       {/* Time & Value Controls */}
       <div className="grid grid-cols-2 gap-3 p-3">
         {/* Time Control */}

@@ -330,7 +330,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
   };
 
   return (
-    <div className="flex-1 bg-[hsl(var(--chart-bg))] relative flex flex-col">
+    <div className="h-full bg-[hsl(var(--chart-bg))] relative flex flex-col">
       {/* Asset Selector Row */}
       <div className="px-3 py-2.5">
         {(() => {
@@ -373,7 +373,7 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
       {/* Chart Area */}
       <div 
         ref={chartContainerRef}
-        className="flex-1 relative w-full overflow-hidden" 
+        className="flex-1 relative w-full overflow-hidden min-h-0" 
         style={isResponsiveMode ? {} : { 
           height: `${mobileChartHeight}px`,
           minHeight: `${mobileChartHeight}px`,
