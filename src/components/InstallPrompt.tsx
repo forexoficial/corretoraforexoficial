@@ -132,6 +132,12 @@ export function InstallPrompt() {
   };
 
   const handleLearnMore = () => {
+    if (isIOSDevice) {
+      // For iOS, show the dialog instead of navigating
+      setShowPrompt(false);
+      setShowIOSDialog(true);
+      return;
+    }
     setShowPrompt(false);
     navigate('/install');
   };
@@ -168,14 +174,16 @@ export function InstallPrompt() {
                     >
                       {isIOSDevice ? t("see_how", "See how") : t("install", "Install")}
                     </Button>
-                    <Button 
-                      onClick={handleLearnMore}
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                    >
-                      {t("learn_more", "Learn more")}
-                    </Button>
+                    {!isIOSDevice && (
+                      <Button 
+                        onClick={handleLearnMore}
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                      >
+                        {t("learn_more", "Learn more")}
+                      </Button>
+                    )}
                   </div>
                 </div>
 
@@ -193,37 +201,36 @@ export function InstallPrompt() {
         </div>
       )}
 
-      {/* iOS Installation Instructions Dialog */}
+      {/* iOS Installation Instructions Dialog - Compact */}
       <Dialog open={showIOSDialog} onOpenChange={setShowIOSDialog}>
-        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-center">
+        <DialogContent className="max-w-[320px] p-4">
+          <DialogHeader className="pb-2">
+            <DialogTitle className="text-center text-base">
               {t("ios_install_title", "Como instalar no iPhone")}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
-              {t("ios_install_desc", "Siga o vídeo abaixo para instalar o app no seu iPhone")}
-            </p>
-            
-            {/* Wistia Video Player */}
-            <div className="w-full rounded-lg overflow-hidden bg-muted">
+          <div className="space-y-3">
+            {/* Wistia Video Player - Compact */}
+            <div className="w-full rounded-lg overflow-hidden bg-muted max-h-[280px]">
               <style>
                 {`
                   wistia-player[media-id='flc394s418']:not(:defined) { 
                     background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/flc394s418/swatch'); 
                     display: block; 
                     filter: blur(5px); 
-                    padding-top: 216.11%; 
+                    padding-top: 177%; 
+                  }
+                  wistia-player[media-id='flc394s418'] {
+                    max-height: 280px;
                   }
                 `}
               </style>
               <wistia-player media-id="flc394s418" aspect="0.46272493573264784"></wistia-player>
             </div>
 
-            <div className="space-y-2 text-sm">
-              <p className="font-medium">{t("ios_steps_title", "Passos:")}</p>
+            <div className="space-y-1.5 text-xs">
+              <p className="font-medium text-sm">{t("ios_steps_title", "Passos:")}</p>
               <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
                 <li>{t("ios_step_1", "Toque no ícone de Compartilhar")}</li>
                 <li>{t("ios_step_2", "Role e toque em 'Adicionar à Tela de Início'")}</li>
@@ -234,6 +241,7 @@ export function InstallPrompt() {
             <Button 
               onClick={() => setShowIOSDialog(false)} 
               className="w-full"
+              size="sm"
             >
               {t("understood", "Entendi")}
             </Button>
