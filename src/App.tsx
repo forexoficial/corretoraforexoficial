@@ -44,7 +44,6 @@ import AdminSocialAuth from "./pages/admin/AdminSocialAuth";
 import AdminTransactionRecovery from "./pages/admin/AdminTransactionRecovery";
 import AdminCopyTrade from "./pages/admin/AdminCopyTrade";
 import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
-import AdminEmailMarketing from "./pages/admin/AdminEmailMarketing";
 import CopyTrade from "./pages/CopyTrade";
 import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
@@ -162,7 +161,6 @@ const App = () => (
               <Route path="settings" element={<AdminSettings />} />
               <Route path="popups" element={<AdminPopups />} />
               <Route path="push-notifications" element={<AdminPushNotifications />} />
-              <Route path="email-marketing" element={<AdminEmailMarketing />} />
               <Route path="boosters" element={<AdminBoosters />} />
                 <Route path="affiliates" element={<AdminAffiliates />} />
                 <Route path="copy-trade" element={<AdminCopyTrade />} />

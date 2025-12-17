@@ -24,8 +24,7 @@ import {
   Wallet,
   Bell,
   KeyRound,
-  RefreshCw,
-  Mail
+  RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -45,7 +44,6 @@ const menuItems = [
   { icon: TrendingUp, label: "Negociações", path: "/admin/trades" },
   { icon: Coins, label: "Ativos", path: "/admin/assets" },
   { icon: Wallet, label: "Gateways", path: "/admin/gateways" },
-  { icon: Mail, label: "Email Marketing", path: "/admin/email-marketing" },
   { icon: Bell, label: "Notificações Push", path: "/admin/push-notifications" },
   { icon: Bell, label: "Pop-ups", path: "/admin/popups" },
   { icon: Zap, label: "Boosters", path: "/admin/boosters" },
