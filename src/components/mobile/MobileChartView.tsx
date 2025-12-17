@@ -441,8 +441,10 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
       </div>
 
       {/* Current Time */}
-      <div className="text-center text-[10px] text-muted-foreground py-1 border-t border-border bg-background/30">
-        {currentTime.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })} GMT-3
+      <div className="shrink-0 border-t border-border bg-background/30">
+        <div className="h-5 px-2 flex items-center justify-center text-center text-[10px] leading-none text-muted-foreground overflow-hidden">
+          {currentTime.toLocaleTimeString('pt-BR', { timeZone: 'America/Sao_Paulo' })} GMT-3
+        </div>
       </div>
 
       {/* Timeframe Selection Modal */}
