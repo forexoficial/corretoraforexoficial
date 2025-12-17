@@ -1,9 +1,22 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download, X, Share } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
+
+// Declare wistia-player custom element for TypeScript
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      'wistia-player': React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement> & {
+        'media-id'?: string;
+        aspect?: string;
+      }, HTMLElement>;
+    }
+  }
+}
 
 // Detect iOS Safari
 const isIOS = () => {
@@ -23,6 +36,7 @@ const isSafari = () => {
 
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
+  const [showIOSDialog, setShowIOSDialog] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   const navigate = useNavigate();
@@ -65,11 +79,35 @@ export function InstallPrompt() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
 
+  // Load Wistia scripts when iOS dialog opens
+  useEffect(() => {
+    if (showIOSDialog) {
+      // Load Wistia player script
+      const playerScript = document.createElement('script');
+      playerScript.src = 'https://fast.wistia.com/player.js';
+      playerScript.async = true;
+      document.body.appendChild(playerScript);
+
+      // Load Wistia embed script
+      const embedScript = document.createElement('script');
+      embedScript.src = 'https://fast.wistia.com/embed/flc394s418.js';
+      embedScript.async = true;
+      embedScript.type = 'module';
+      document.body.appendChild(embedScript);
+
+      return () => {
+        // Cleanup scripts when dialog closes
+        document.body.removeChild(playerScript);
+        document.body.removeChild(embedScript);
+      };
+    }
+  }, [showIOSDialog]);
+
   const handleInstall = async () => {
     if (isIOSDevice) {
-      // For iOS, navigate to install page with instructions
-      navigate('/install');
+      // For iOS, show the dialog with video instructions
       setShowPrompt(false);
+      setShowIOSDialog(true);
       return;
     }
 
@@ -98,62 +136,110 @@ export function InstallPrompt() {
     navigate('/install');
   };
 
-  if (!showPrompt) {
-    return null;
-  }
-
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm">
-      <Card className="bg-card/95 backdrop-blur-lg border-2 border-primary/20 shadow-2xl">
-        <CardContent className="p-4">
-          <div className="flex gap-3">
-            <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              {isIOSDevice ? (
-                <Share className="h-6 w-6 text-primary" />
-              ) : (
-                <Download className="h-6 w-6 text-primary" />
-              )}
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <h3 className="font-semibold mb-1">{t("install_app_title", "Install the App")}</h3>
-              <p className="text-sm text-muted-foreground mb-3">
-                {isIOSDevice 
-                  ? t("install_ios_desc", "Tap Share then 'Add to Home Screen'")
-                  : t("install_app_desc", "Access faster and trade offline!")
-                }
-              </p>
-              
-              <div className="flex gap-2">
-                <Button 
-                  onClick={handleInstall}
-                  size="sm"
-                  className="flex-1"
+    <>
+      {showPrompt && (
+        <div className="fixed bottom-20 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm">
+          <Card className="bg-card/95 backdrop-blur-lg border-2 border-primary/20 shadow-2xl">
+            <CardContent className="p-4">
+              <div className="flex gap-3">
+                <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  {isIOSDevice ? (
+                    <Share className="h-6 w-6 text-primary" />
+                  ) : (
+                    <Download className="h-6 w-6 text-primary" />
+                  )}
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold mb-1">{t("install_app_title", "Install the App")}</h3>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    {isIOSDevice 
+                      ? t("install_ios_desc", "Tap Share then 'Add to Home Screen'")
+                      : t("install_app_desc", "Access faster and trade offline!")
+                    }
+                  </p>
+                  
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={handleInstall}
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {isIOSDevice ? t("see_how", "See how") : t("install", "Install")}
+                    </Button>
+                    <Button 
+                      onClick={handleLearnMore}
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                    >
+                      {t("learn_more", "Learn more")}
+                    </Button>
+                  </div>
+                </div>
+
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 flex-shrink-0"
+                  onClick={handleDismiss}
                 >
-                  {isIOSDevice ? t("see_how", "See how") : t("install", "Install")}
-                </Button>
-                <Button 
-                  onClick={handleLearnMore}
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                >
-                  {t("learn_more", "Learn more")}
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* iOS Installation Instructions Dialog */}
+      <Dialog open={showIOSDialog} onOpenChange={setShowIOSDialog}>
+        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-center">
+              {t("ios_install_title", "Como instalar no iPhone")}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              {t("ios_install_desc", "Siga o vídeo abaixo para instalar o app no seu iPhone")}
+            </p>
+            
+            {/* Wistia Video Player */}
+            <div className="w-full rounded-lg overflow-hidden bg-muted">
+              <style>
+                {`
+                  wistia-player[media-id='flc394s418']:not(:defined) { 
+                    background: center / contain no-repeat url('https://fast.wistia.com/embed/medias/flc394s418/swatch'); 
+                    display: block; 
+                    filter: blur(5px); 
+                    padding-top: 216.11%; 
+                  }
+                `}
+              </style>
+              <wistia-player media-id="flc394s418" aspect="0.46272493573264784"></wistia-player>
             </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6 flex-shrink-0"
-              onClick={handleDismiss}
+            <div className="space-y-2 text-sm">
+              <p className="font-medium">{t("ios_steps_title", "Passos:")}</p>
+              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+                <li>{t("ios_step_1", "Toque no ícone de Compartilhar")}</li>
+                <li>{t("ios_step_2", "Role e toque em 'Adicionar à Tela de Início'")}</li>
+                <li>{t("ios_step_3", "Toque em 'Adicionar' no canto superior direito")}</li>
+              </ol>
+            </div>
+
+            <Button 
+              onClick={() => setShowIOSDialog(false)} 
+              className="w-full"
             >
-              <X className="h-4 w-4" />
+              {t("understood", "Entendi")}
             </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
