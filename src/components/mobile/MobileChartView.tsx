@@ -1,5 +1,5 @@
 import { TrendingUp, SlidersHorizontal, Pencil, Activity, ChevronLeft, X, TrendingUpIcon, CandlestickChart, AreaChart, BarChart3, Search, MousePointer, Minus, Ruler, Square, Percent, Trash2, Palette } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -217,8 +217,41 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
     { id: "fibonacci" as DrawingTool, icon: Percent, label: t("fibonacci", "Fibonacci") },
   ];
   
-  // Get dynamic chart height from settings
-  const mobileChartHeight = appearanceSettings?.chart_height_mobile || 350;
+  // Check if responsive mode is enabled
+  const isResponsiveMode = appearanceSettings?.chart_responsive_mobile ?? true;
+  
+  // Ref for measuring container height
+  const chartContainerRef = useRef<HTMLDivElement>(null);
+  const [containerHeight, setContainerHeight] = useState(0);
+  
+  // ResizeObserver for responsive mode
+  useEffect(() => {
+    if (!isResponsiveMode || !chartContainerRef.current) return;
+    
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const height = entry.contentRect.height;
+        if (height > 0) {
+          setContainerHeight(height);
+        }
+      }
+    });
+    
+    resizeObserver.observe(chartContainerRef.current);
+    
+    // Initial measurement
+    const initialHeight = chartContainerRef.current.getBoundingClientRect().height;
+    if (initialHeight > 0) {
+      setContainerHeight(initialHeight);
+    }
+    
+    return () => resizeObserver.disconnect();
+  }, [isResponsiveMode]);
+  
+  // Calculate chart height based on mode
+  const mobileChartHeight = isResponsiveMode 
+    ? (containerHeight > 0 ? containerHeight : 350) // Use measured height or fallback
+    : (appearanceSettings?.chart_height_mobile || 350);
 
   // Track trade progress
   useEffect(() => {
@@ -339,8 +372,9 @@ export function MobileChartView({ selectedAsset, onAssetChange, onCurrentPriceUp
 
       {/* Chart Area */}
       <div 
+        ref={chartContainerRef}
         className="flex-1 relative w-full overflow-hidden" 
-        style={{ 
+        style={isResponsiveMode ? {} : { 
           height: `${mobileChartHeight}px`,
           minHeight: `${mobileChartHeight}px`,
           maxHeight: `${mobileChartHeight}px`
