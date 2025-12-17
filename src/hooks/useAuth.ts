@@ -131,6 +131,22 @@ export function useAuth() {
         }
       }
 
+      // Send welcome email via SendPulse
+      if (data.user) {
+        try {
+          await supabase.functions.invoke("sendpulse-send-email", {
+            body: {
+              action: "welcome",
+              email: formData.email,
+              name: formData.fullName,
+            },
+          });
+        } catch (emailError) {
+          console.error("Error sending welcome email:", emailError);
+          // Don't block signup if email fails
+        }
+      }
+
       toast({
         title: t("signup_success", "Registration complete!"),
         description: t("signup_success_desc", "You can now login to the platform."),
