@@ -1,34 +1,60 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Download, X } from "lucide-react";
+import { Download, X, Share } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
+
+// Detect iOS Safari
+const isIOS = () => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /iphone|ipad|ipod/.test(userAgent);
+};
+
+const isInStandaloneMode = () => {
+  return window.matchMedia('(display-mode: standalone)').matches || 
+         (window.navigator as any).standalone === true;
+};
+
+const isSafari = () => {
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  return /safari/.test(userAgent) && !/chrome/.test(userAgent) && !/crios/.test(userAgent);
+};
 
 export function InstallPrompt() {
   const [showPrompt, setShowPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOSDevice, setIsIOSDevice] = useState(false);
   const navigate = useNavigate();
   const { t } = useTranslation();
 
   useEffect(() => {
-    // Verificar se já foi instalado
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    // Already installed as PWA
+    if (isInStandaloneMode()) {
       return;
     }
 
-    // Verificar se o usuário já dispensou o prompt
+    // Check if dismissed
     const dismissed = localStorage.getItem('install_prompt_dismissed');
     if (dismissed) {
       return;
     }
 
-    // Capturar o evento de instalação
+    // Check if iOS Safari
+    if (isIOS() && isSafari()) {
+      setIsIOSDevice(true);
+      // Show prompt after 3 seconds for iOS
+      setTimeout(() => {
+        setShowPrompt(true);
+      }, 3000);
+      return;
+    }
+
+    // For non-iOS browsers, use beforeinstallprompt
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e);
       
-      // Mostrar o prompt após 3 segundos
       setTimeout(() => {
         setShowPrompt(true);
       }, 3000);
@@ -40,8 +66,14 @@ export function InstallPrompt() {
   }, []);
 
   const handleInstall = async () => {
+    if (isIOSDevice) {
+      // For iOS, navigate to install page with instructions
+      navigate('/install');
+      setShowPrompt(false);
+      return;
+    }
+
     if (!deferredPrompt) {
-      // Se não tiver o prompt automático, redirecionar para página de instalação
       navigate('/install');
       return;
     }
@@ -76,13 +108,20 @@ export function InstallPrompt() {
         <CardContent className="p-4">
           <div className="flex gap-3">
             <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <Download className="h-6 w-6 text-primary" />
+              {isIOSDevice ? (
+                <Share className="h-6 w-6 text-primary" />
+              ) : (
+                <Download className="h-6 w-6 text-primary" />
+              )}
             </div>
             
             <div className="flex-1 min-w-0">
               <h3 className="font-semibold mb-1">{t("install_app_title", "Install the App")}</h3>
               <p className="text-sm text-muted-foreground mb-3">
-                {t("install_app_desc", "Access faster and trade offline!")}
+                {isIOSDevice 
+                  ? t("install_ios_desc", "Tap Share then 'Add to Home Screen'")
+                  : t("install_app_desc", "Access faster and trade offline!")
+                }
               </p>
               
               <div className="flex gap-2">
@@ -91,7 +130,7 @@ export function InstallPrompt() {
                   size="sm"
                   className="flex-1"
                 >
-                  {t("install", "Install")}
+                  {isIOSDevice ? t("see_how", "See how") : t("install", "Install")}
                 </Button>
                 <Button 
                   onClick={handleLearnMore}
