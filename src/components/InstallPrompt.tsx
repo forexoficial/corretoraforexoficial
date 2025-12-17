@@ -195,20 +195,20 @@ export function InstallPrompt() {
 
       {/* iOS Installation Instructions Dialog */}
       <Dialog open={showIOSDialog} onOpenChange={setShowIOSDialog}>
-        <DialogContent className="max-w-md mx-auto max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle className="text-center">
+        <DialogContent className="max-w-[280px] mx-auto max-h-[85vh] overflow-y-auto p-4">
+          <DialogHeader className="pb-1">
+            <DialogTitle className="text-center text-sm">
               {t("ios_install_title", "Como instalar no iPhone")}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground text-center">
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground text-center">
               {t("ios_install_desc", "Siga o vídeo abaixo para instalar o app no seu iPhone")}
             </p>
             
             {/* Wistia Video Player */}
-            <div className="w-full rounded-lg overflow-hidden bg-muted">
+            <div className="w-full rounded-md overflow-hidden bg-muted">
               <style>
                 {`
                   wistia-player[media-id='flc394s418']:not(:defined) { 
@@ -222,9 +222,9 @@ export function InstallPrompt() {
               <wistia-player media-id="flc394s418" aspect="0.46272493573264784"></wistia-player>
             </div>
 
-            <div className="space-y-2 text-sm">
+            <div className="space-y-1 text-xs">
               <p className="font-medium">{t("ios_steps_title", "Passos:")}</p>
-              <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
+              <ol className="list-decimal list-inside space-y-0.5 text-muted-foreground">
                 <li>{t("ios_step_1", "Toque no ícone de Compartilhar")}</li>
                 <li>{t("ios_step_2", "Role e toque em 'Adicionar à Tela de Início'")}</li>
                 <li>{t("ios_step_3", "Toque em 'Adicionar' no canto superior direito")}</li>
@@ -233,7 +233,8 @@ export function InstallPrompt() {
 
             <Button 
               onClick={() => setShowIOSDialog(false)} 
-              className="w-full"
+              className="w-full h-8 text-xs"
+              size="sm"
             >
               {t("understood", "Entendi")}
             </Button>
