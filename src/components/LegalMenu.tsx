@@ -7,11 +7,12 @@ import {
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { FileText, Shield, Cookie, Info, Mail, BookOpen, Scale, Lock } from "lucide-react";
+import { FileText, Shield, Cookie, Info, Mail, BookOpen, Scale, Lock, AlertTriangle, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useNavigate } from "react-router-dom";
 
 interface LegalMenuProps {
   open: boolean;
@@ -41,6 +42,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
   const [companyInfo, setCompanyInfo] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (open) {
@@ -78,10 +80,8 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
   };
 
   const handleDocumentClick = (doc: LegalDocument) => {
-    // Here you could navigate to a dedicated page with the full content
-    console.log("Open document:", doc.slug);
-    // For now, just show a toast
-    toast.info(t("document", "Document") + ": " + doc.title);
+    onOpenChange(false);
+    navigate(`/legal/${doc.slug}`);
   };
 
   const getIconComponent = (iconName: string) => {
@@ -94,6 +94,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
       BookOpen,
       Info,
       Mail,
+      AlertTriangle,
     };
     return icons[iconName] || FileText;
   };
@@ -127,7 +128,7 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
                     <button
                       key={doc.id}
                       onClick={() => handleDocumentClick(doc)}
-                      className="w-full flex items-start gap-4 p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-left group"
+                      className="w-full flex items-center gap-4 p-4 rounded-lg border border-border bg-card hover:bg-accent/50 transition-colors text-left group"
                     >
                       <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
                         <Icon className="w-5 h-5 text-primary" />
@@ -136,10 +137,11 @@ export const LegalMenu = ({ open, onOpenChange }: LegalMenuProps) => {
                         <h3 className="font-semibold text-sm mb-1 text-foreground">
                           {doc.title}
                         </h3>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-xs text-muted-foreground line-clamp-1">
                           {doc.description}
                         </p>
                       </div>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
                     </button>
                   );
                 })}

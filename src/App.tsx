@@ -22,6 +22,7 @@ import Signup from "./pages/Signup";
 import Preloader from "./pages/Preloader";
 import NotFound from "./pages/NotFound";
 import VerifyIdentity from "./pages/VerifyIdentity";
+import LegalDocument from "./pages/LegalDocument";
 import Install from "./pages/Install";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -139,6 +140,7 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              <Route path="/legal/:slug" element={<LegalDocument />} />
               <Route
                 path="/admin"
                 element={
