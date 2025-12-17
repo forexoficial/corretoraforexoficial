@@ -438,32 +438,30 @@ export default function Deposit() {
                     </div>
                   </button>
 
-                  {language === 'pt' && (
-                    <button
-                      onClick={() => setPaymentMethod("pix")}
-                      className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
-                        paymentMethod === "pix"
-                          ? "border-primary bg-primary/10"
-                          : "border-border hover:border-muted-foreground/50"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-white rounded-lg">
-                          <img 
-                            src={pixIcon} 
-                            alt="PIX" 
-                            className="w-full h-full object-contain p-1" 
-                          />
-                        </div>
-                        <div className="text-left flex-1">
-                          <div className="font-semibold text-sm">PIX (Brasil)</div>
-                          <div className="text-xs text-muted-foreground">
-                            {t("instant_payment") || "Instant payment"}
-                          </div>
+                  <button
+                    onClick={() => setPaymentMethod("pix")}
+                    className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
+                      paymentMethod === "pix"
+                        ? "border-primary bg-primary/10"
+                        : "border-border hover:border-muted-foreground/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-white rounded-lg">
+                        <img 
+                          src={pixIcon} 
+                          alt="PIX" 
+                          className="w-full h-full object-contain p-1" 
+                        />
+                      </div>
+                      <div className="text-left flex-1">
+                        <div className="font-semibold text-sm">PIX (Brasil)</div>
+                        <div className="text-xs text-muted-foreground">
+                          {t("instant_payment") || "Instant payment"}
                         </div>
                       </div>
-                    </button>
-                  )}
+                    </div>
+                  </button>
 
                   {hasCoinbaseGateway && (
                     <button
