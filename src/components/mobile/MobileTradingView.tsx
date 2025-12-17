@@ -142,11 +142,14 @@ export function MobileTradingView({
       <div className="flex flex-col h-screen bg-background">
         <MobileTradingHeader selectedAsset={selectedAsset} />
         <div className="mobile-header-spacer" />
-        <MobileChartView
-          selectedAsset={selectedAsset} 
-          onAssetChange={handleAssetChange}
-          onCurrentPriceUpdate={handlePriceUpdate}
-        />
+        {/* Chart area with padding bottom to respect fixed controls */}
+        <div className="flex-1 overflow-hidden" style={{ paddingBottom: '200px' }}>
+          <MobileChartView
+            selectedAsset={selectedAsset} 
+            onAssetChange={handleAssetChange}
+            onCurrentPriceUpdate={handlePriceUpdate}
+          />
+        </div>
         <MobileTradingControls
           selectedAsset={selectedAsset}
           isDemoMode={isDemoMode}
