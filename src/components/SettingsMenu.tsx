@@ -8,15 +8,26 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "next-themes";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useLanguageContext } from "@/contexts/LanguageContext";
+import flagEN from "@/assets/flag-en.webp";
+import flagBR from "@/assets/flag-br.webp";
+import flagES from "@/assets/flag-es.webp";
 
 interface SettingsMenuProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const languages = [
+  { code: "en", name: "English", flag: flagEN },
+  { code: "pt", name: "Português", flag: flagBR },
+  { code: "es", name: "Español", flag: flagES },
+];
+
 export const SettingsMenu = ({ open, onOpenChange }: SettingsMenuProps) => {
   const { theme, setTheme } = useTheme();
   const { t } = useTranslation();
+  const { language, setLanguage } = useLanguageContext();
 
   const themes = [
     { id: "dark", label: t("default_theme"), color: "hsl(0 0% 10%)" },
@@ -31,6 +42,44 @@ export const SettingsMenu = ({ open, onOpenChange }: SettingsMenuProps) => {
         </SheetHeader>
         
         <div className="mt-6 space-y-6">
+          {/* Idioma */}
+          <div className="space-y-2">
+            <label className="text-sm font-semibold text-foreground">
+              {t("language", "Language")}
+            </label>
+            <div className="space-y-2">
+              {languages.map((lang) => {
+                const isActive = language === lang.code;
+                
+                return (
+                  <button
+                    key={lang.code}
+                    className={`w-full flex items-center justify-between p-3 rounded-lg transition-colors ${
+                      isActive ? 'bg-primary/10 border-primary/20' : 'hover:bg-muted'
+                    }`}
+                    onClick={() => setLanguage(lang.code as 'pt' | 'en' | 'es')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={lang.flag}
+                        alt={lang.name}
+                        className="w-6 h-6 rounded-full object-cover"
+                      />
+                      <span className={`text-sm font-medium ${isActive ? 'text-primary' : ''}`}>
+                        {lang.name}
+                      </span>
+                    </div>
+                    {isActive ? (
+                      <Check className="w-5 h-5 text-primary" />
+                    ) : (
+                      <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           {/* Fuso horário */}
           <div className="space-y-2">
             <label className="text-sm font-semibold text-foreground">
