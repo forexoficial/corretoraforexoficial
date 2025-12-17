@@ -18,12 +18,12 @@ self.addEventListener('push', (event) => {
   console.log('[SW Push] Push recebido:', event);
   
   let notificationData = {
-    title: 'BlackRock Broker',
+    title: 'Forex',
     body: 'Você tem uma nova notificação!',
     icon: '/pwa-192x192.png',
     badge: '/pwa-192x192.png',
     vibrate: [200, 100, 200],
-    tag: 'blackrock-notification',
+    tag: 'forex-notification',
     renotify: true,
     requireInteraction: false,
     data: {

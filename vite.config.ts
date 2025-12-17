@@ -18,8 +18,8 @@ export default defineConfig(({ mode }) => ({
       injectRegister: false,
       includeAssets: ['favicon.webp', 'robots.txt', 'apple-touch-icon.webp', 'sounds/*.MP3', 'sounds/*.mp3'],
       manifest: {
-        name: 'BlackRock Broker',
-        short_name: 'BlackRock',
+        name: 'Forex',
+        short_name: 'Forex',
         description: 'Plataforma de trading profissional para opções binárias',
         theme_color: '#000000',
         background_color: '#000000',
