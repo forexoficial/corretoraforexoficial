@@ -7,8 +7,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Sparkles, TrendingUp, Shield, Zap } from "lucide-react";
+import { TrendingUp, Shield, Zap } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { usePlatformCustomization } from "@/contexts/PlatformCustomizationContext";
 
 interface FirstDepositDialogProps {
   open: boolean;
@@ -18,6 +19,7 @@ interface FirstDepositDialogProps {
 export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogProps) {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { customization } = usePlatformCustomization();
 
   const handleDeposit = () => {
     onOpenChange(false);
@@ -31,8 +33,16 @@ export function FirstDepositDialog({ open, onOpenChange }: FirstDepositDialogPro
           <div className="flex items-center justify-center mb-4">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-success/20 blur-xl animate-pulse" />
-              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-success via-success to-success/80 flex items-center justify-center">
-                <Sparkles className="w-8 h-8 text-success-foreground" />
+              <div className="relative w-16 h-16 rounded-full bg-gradient-to-br from-success via-success to-success/80 flex items-center justify-center overflow-hidden">
+                {customization.currentLogo ? (
+                  <img 
+                    src={customization.currentLogo} 
+                    alt="Logo" 
+                    className="w-10 h-10 object-contain"
+                  />
+                ) : (
+                  <span className="text-2xl font-bold text-success-foreground">$</span>
+                )}
               </div>
             </div>
           </div>
