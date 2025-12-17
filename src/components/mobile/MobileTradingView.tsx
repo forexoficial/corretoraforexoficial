@@ -136,20 +136,31 @@ export function MobileTradingView({
     setCurrentPrice(price);
   };
 
+  // Height of the fixed bottom controls (approximately)
+  const BOTTOM_CONTROLS_HEIGHT = 200;
+
   return (
     <>
       <PlatformPopup />
       <div className="flex flex-col h-screen bg-background">
         <MobileTradingHeader selectedAsset={selectedAsset} />
         <div className="mobile-header-spacer" />
-        {/* Chart area with padding bottom to respect fixed controls */}
-        <div className="flex-1 overflow-hidden" style={{ paddingBottom: '200px' }}>
+        {/* Chart area - must account for fixed bottom controls */}
+        <div 
+          className="flex-1 overflow-hidden"
+          style={{ 
+            maxHeight: `calc(100vh - env(safe-area-inset-top, 0px) - 60px - ${BOTTOM_CONTROLS_HEIGHT}px)`,
+            height: `calc(100vh - env(safe-area-inset-top, 0px) - 60px - ${BOTTOM_CONTROLS_HEIGHT}px)`
+          }}
+        >
           <MobileChartView
             selectedAsset={selectedAsset} 
             onAssetChange={handleAssetChange}
             onCurrentPriceUpdate={handlePriceUpdate}
           />
         </div>
+        {/* Spacer for fixed bottom controls */}
+        <div style={{ height: `${BOTTOM_CONTROLS_HEIGHT}px`, flexShrink: 0 }} />
         <MobileTradingControls
           selectedAsset={selectedAsset}
           isDemoMode={isDemoMode}
