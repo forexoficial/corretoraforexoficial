@@ -20,6 +20,7 @@ interface Popup {
   end_date: string | null;
   image_url: string | null;
   video_url: string | null;
+  show_once_per_day: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -36,6 +37,7 @@ export default function AdminPopups() {
     start_date: "",
     end_date: "",
     video_url: "",
+    show_once_per_day: false,
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -105,6 +107,7 @@ export default function AdminPopups() {
         end_date: formData.end_date || null,
         image_url: imageUrl,
         video_url: formData.video_url || null,
+        show_once_per_day: formData.show_once_per_day,
       };
 
       if (editingPopup) {
@@ -158,6 +161,7 @@ export default function AdminPopups() {
       start_date: popup.start_date ? format(new Date(popup.start_date), "yyyy-MM-dd'T'HH:mm") : "",
       end_date: popup.end_date ? format(new Date(popup.end_date), "yyyy-MM-dd'T'HH:mm") : "",
       video_url: popup.video_url || "",
+      show_once_per_day: popup.show_once_per_day || false,
     });
     setImagePreview(popup.image_url);
     setImageFile(null);
@@ -172,6 +176,7 @@ export default function AdminPopups() {
       start_date: "",
       end_date: "",
       video_url: "",
+      show_once_per_day: false,
     });
     setImageFile(null);
     setImagePreview(null);
@@ -287,13 +292,23 @@ export default function AdminPopups() {
                 </div>
               </div>
 
-              <div className="flex items-center space-x-2 pt-1">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
-                />
-                <Label htmlFor="is_active" className="text-sm">Ativo</Label>
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  />
+                  <Label htmlFor="is_active" className="text-sm">Ativo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="show_once_per_day"
+                    checked={formData.show_once_per_day}
+                    onCheckedChange={(checked) => setFormData({ ...formData, show_once_per_day: checked })}
+                  />
+                  <Label htmlFor="show_once_per_day" className="text-sm">Exibir apenas 1x por dia</Label>
+                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -336,12 +351,15 @@ export default function AdminPopups() {
                       <span>Vídeo: {popup.video_url}</span>
                     </div>
                   )}
-                  <div className="flex gap-4 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
                     {popup.start_date && (
                       <span>Início: {format(new Date(popup.start_date), "dd/MM/yyyy HH:mm")}</span>
                     )}
                     {popup.end_date && (
                       <span>Término: {format(new Date(popup.end_date), "dd/MM/yyyy HH:mm")}</span>
+                    )}
+                    {popup.show_once_per_day && (
+                      <span className="text-primary">1x por dia</span>
                     )}
                   </div>
                 </div>

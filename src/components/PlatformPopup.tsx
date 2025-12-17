@@ -9,6 +9,7 @@ interface Popup {
   content: string;
   image_url: string | null;
   video_url: string | null;
+  show_once_per_day: boolean;
 }
 
 export default function PlatformPopup() {
@@ -24,15 +25,30 @@ export default function PlatformPopup() {
     try {
       const { data, error } = await supabase
         .from("platform_popups")
-        .select("id, title, content, image_url, video_url")
+        .select("id, title, content, image_url, video_url, show_once_per_day")
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
       if (error) throw error;
       
       if (data && data.length > 0) {
-        setPopups(data);
-        setOpen(true);
+        // Filter popups based on show_once_per_day setting
+        const today = new Date().toDateString();
+        const filteredPopups = data.filter((popup) => {
+          if (popup.show_once_per_day) {
+            const storageKey = `popup_shown_${popup.id}`;
+            const lastShown = localStorage.getItem(storageKey);
+            if (lastShown === today) {
+              return false; // Already shown today
+            }
+          }
+          return true;
+        });
+        
+        if (filteredPopups.length > 0) {
+          setPopups(filteredPopups);
+          setOpen(true);
+        }
       }
     } catch (error) {
       console.error("Error fetching popups:", error);
@@ -40,6 +56,13 @@ export default function PlatformPopup() {
   };
 
   const handleNext = () => {
+    // Mark current popup as shown today if show_once_per_day is enabled
+    const currentPopup = popups[currentPopupIndex];
+    if (currentPopup.show_once_per_day) {
+      const storageKey = `popup_shown_${currentPopup.id}`;
+      localStorage.setItem(storageKey, new Date().toDateString());
+    }
+    
     if (currentPopupIndex < popups.length - 1) {
       setCurrentPopupIndex(currentPopupIndex + 1);
     } else {
@@ -48,6 +71,12 @@ export default function PlatformPopup() {
   };
 
   const handleClose = () => {
+    // Mark current popup as shown today if show_once_per_day is enabled
+    const currentPopup = popups[currentPopupIndex];
+    if (currentPopup?.show_once_per_day) {
+      const storageKey = `popup_shown_${currentPopup.id}`;
+      localStorage.setItem(storageKey, new Date().toDateString());
+    }
     setOpen(false);
   };
 
