@@ -126,17 +126,16 @@ export function TradingViewChart({
     const offsetFullscreen = appearanceSettings.chart_height_offset_fullscreen ?? 96;
     const offsetDesktop = appearanceSettings.chart_height_offset_desktop ?? 180;
     
-    // If responsive mode is enabled, calculate based on viewport
+    // If responsive mode is enabled, prefer the REAL available container height (mobile needs to respect UI like the "clock" bar)
     if (isMobile && isResponsiveMode.mobile) {
-      // Mobile: use viewport height minus configurable offset
+      if (containerDimensions.height > 0) return containerDimensions.height;
+      // Fallback to viewport-based calculation only if container size isn't known yet
       return Math.max(300, windowDimensions.height - offsetMobile);
     }
     if (isFullscreen && isResponsiveMode.fullscreen) {
-      // Fullscreen: use viewport minus configurable offset
+      if (containerDimensions.height > 0) return containerDimensions.height;
       return Math.max(400, windowDimensions.height - offsetFullscreen);
     }
-    if (!isMobile && !isFullscreen && isResponsiveMode.desktop) {
-      // Desktop responsive: fill container height or use viewport minus configurable offset
       if (containerDimensions.height > 0) {
         return containerDimensions.height;
       }
@@ -672,13 +671,20 @@ export function TradingViewChart({
           const offsetFullscreen = appearanceSettings?.chart_height_offset_fullscreen ?? 96;
           const offsetDesktop = appearanceSettings?.chart_height_offset_desktop ?? 180;
           
-          // Calculate height based on mode
           let newHeight: number;
           if (useResponsive) {
+            // IMPORTANT: on mobile, the chart must respect the available container height
+            // (so it never overlaps UI elements like the "clock" bar and bottom controls).
+            const availableHeight = parent?.clientHeight || container.clientHeight;
+
             if (isMobile) {
-              newHeight = Math.max(300, window.innerHeight - offsetMobile);
+              newHeight = availableHeight && availableHeight > 0
+                ? availableHeight
+                : Math.max(300, window.innerHeight - offsetMobile);
             } else if (isFullscreen) {
-              newHeight = Math.max(400, window.innerHeight - offsetFullscreen);
+              newHeight = availableHeight && availableHeight > 0
+                ? availableHeight
+                : Math.max(400, window.innerHeight - offsetFullscreen);
             } else {
               // Desktop: ALWAYS use viewport-based calculation
               // This prevents chart shrinking when loading state changes
