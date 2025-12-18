@@ -10,6 +10,7 @@ import type { SignupFormData } from "@/hooks/useAuth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useTranslation } from "@/hooks/useTranslation";
 import { detectUserCountry, type CountryInfo } from "@/utils/countryDetection";
+import { trackLead } from "@/utils/metaPixel";
 
 interface SignupFormProps {
   onSubmit: (formData: SignupFormData) => void;
@@ -69,6 +70,12 @@ export function SignupForm({ onSubmit, isLoading }: SignupFormProps) {
       toast({ title: t('fill_document'), variant: "destructive" });
       return;
     }
+    
+    // Track Lead event when user progresses past email step
+    if (step === 2) {
+      trackLead({ content_name: 'Signup Progress', content_category: 'registration' });
+    }
+    
     setStep(step + 1);
   };
 

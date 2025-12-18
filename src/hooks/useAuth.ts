@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useTranslation } from "@/hooks/useTranslation";
 import { z } from "zod";
+import { trackCompleteRegistration } from "@/utils/metaPixel";
 
 export const signupSchema = z.object({
   fullName: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -130,6 +131,12 @@ export function useAuth() {
           // Don't block signup if referral creation fails
         }
       }
+
+      // Track CompleteRegistration event
+      trackCompleteRegistration({
+        content_name: 'User Registration',
+        status: 'success',
+      });
 
       toast({
         title: t("signup_success", "Registration complete!"),
