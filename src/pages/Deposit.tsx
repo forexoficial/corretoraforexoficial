@@ -31,6 +31,7 @@ import { formatDocument, validateDocument, DocumentType } from "@/lib/validators
 import PaymentSuccess from "@/components/payment/PaymentSuccess";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { MobileTradingHeader } from "@/components/mobile/MobileTradingHeader";
+import { trackInitiateCheckout, trackPurchase, trackAddPaymentInfo } from "@/utils/metaPixel";
 
 const cryptoLogos = [
   { name: "Bitcoin", symbol: "BTC", logo: bitcoinLogo },
@@ -155,6 +156,15 @@ export default function Deposit() {
                 setNewBalance(profile.balance);
                 setPaymentCompleted(true);
                 
+                // Track Purchase event for successful PIX deposit
+                trackPurchase({
+                  value: transaction.amount,
+                  currency: 'BRL',
+                  content_name: 'PIX Deposit',
+                  content_type: 'deposit',
+                  transaction_id: transaction.id,
+                });
+                
                 toast.success("Pagamento confirmado!", {
                   description: `R$ ${transaction.amount.toFixed(2)} foi creditado na sua conta`,
                 });
@@ -214,6 +224,14 @@ export default function Deposit() {
       return;
     }
 
+    // Track InitiateCheckout event
+    trackInitiateCheckout({
+      value: numAmount,
+      currency: 'BRL',
+      content_name: 'PIX Deposit',
+      payment_method: 'pix',
+    });
+
     await createPayment(
       numAmount,
       payerName.trim(),
@@ -232,6 +250,14 @@ export default function Deposit() {
       return;
     }
 
+    // Track InitiateCheckout event
+    trackInitiateCheckout({
+      value: numAmount,
+      currency: 'USD',
+      content_name: 'Card Deposit',
+      payment_method: 'stripe',
+    });
+
     setStripeAmount(numAmount);
     setShowStripeCheckout(true);
   };
@@ -245,6 +271,14 @@ export default function Deposit() {
       toast.error("Minimum crypto deposit is $5.00");
       return;
     }
+
+    // Track InitiateCheckout event
+    trackInitiateCheckout({
+      value: numAmount,
+      currency: 'USD',
+      content_name: 'Crypto Deposit',
+      payment_method: 'crypto',
+    });
 
     setCryptoAmount(numAmount);
     setShowCoinbaseCheckout(true);
@@ -275,6 +309,15 @@ export default function Deposit() {
         setNewBalance(profile.balance);
       }
     }
+    
+    // Track Purchase event for successful deposit
+    trackPurchase({
+      value: stripeAmount,
+      currency: 'USD',
+      content_name: 'Deposit',
+      content_type: 'deposit',
+    });
+    
     setCompletedAmount(stripeAmount);
     setPaymentCompleted(true);
   };
