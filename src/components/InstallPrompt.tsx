@@ -3,8 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Download, X, Share } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "@/hooks/useTranslation";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Declare wistia-player custom element for TypeScript
 declare global {
@@ -40,7 +41,13 @@ export function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOSDevice, setIsIOSDevice] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { t } = useTranslation();
+  const { user } = useAuth();
+
+  // Don't show on auth/signup pages or when not logged in
+  const isAuthPage = location.pathname === '/auth' || location.pathname === '/signup';
+  const shouldShowPrompt = showPrompt && user && !isAuthPage;
 
   useEffect(() => {
     // Already installed as PWA
@@ -138,7 +145,7 @@ export function InstallPrompt() {
 
   return (
     <>
-      {showPrompt && (
+      {shouldShowPrompt && (
         <div className="fixed bottom-20 left-4 right-4 z-50 md:left-auto md:right-4 md:max-w-sm">
           <Card className="bg-card/95 backdrop-blur-lg border-2 border-primary/20 shadow-2xl">
             <CardContent className="p-4">
