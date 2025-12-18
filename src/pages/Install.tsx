@@ -5,6 +5,12 @@ import { Download, Smartphone, Chrome, Apple, Share2, MoreVertical, CheckCircle2
 import { useNavigate } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTranslation } from "@/hooks/useTranslation";
+// Safari icon component - defined before use
+const SafariIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+  </svg>
+);
 
 export default function Install() {
   const navigate = useNavigate();
@@ -53,7 +59,7 @@ export default function Install() {
       return {
         title: t("install_on_ios", "Install on iPhone/iPad"),
         steps: [
-          { icon: <Safari className="h-5 w-5" />, text: t("install_ios_step1", "Open this site in Safari") },
+          { icon: <SafariIcon className="h-5 w-5" />, text: t("install_ios_step1", "Open this site in Safari") },
           { icon: <Share2 className="h-5 w-5" />, text: t("install_ios_step2", "Tap the \"Share\" icon at the bottom") },
           { icon: <Download className="h-5 w-5" />, text: t("install_ios_step3", "Select \"Add to Home Screen\"") },
           { icon: <CheckCircle2 className="h-5 w-5" />, text: t("install_ios_step4", "Tap Add") }
@@ -83,11 +89,7 @@ export default function Install() {
 
   const instructions = getDeviceInstructions();
 
-  const Safari = ({ className }: { className?: string }) => (
-    <svg className={className} viewBox="0 0 24 24" fill="currentColor">
-      <path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-    </svg>
-  );
+  // Safari icon moved to top of file as SafariIcon
 
   if (isInstalled) {
     return (
