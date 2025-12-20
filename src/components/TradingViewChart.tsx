@@ -6,6 +6,7 @@ import { TradeResultPopup } from "./TradeResultPopup";
 import { WorldMapBackground } from "./WorldMapBackground";
 import { CandleTimeIndicator } from "./CandleTimeIndicator";
 import { ChartZoomControls } from "./ChartZoomControls";
+import { ChartSkeleton } from "./ChartSkeleton";
 import { useChartAppearance } from "@/hooks/useChartAppearance";
 import { useTheme } from "next-themes";
 import { calculateSMA, calculateEMA, calculateRSI, calculateBollingerBands, calculateMACD } from "@/utils/technicalIndicators";
@@ -1782,11 +1783,7 @@ export function TradingViewChart({
         </div>
       )}
       
-      {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/50 z-10">
-          <div className="text-muted-foreground">{t("loading_chart", "Loading chart...")}</div>
-        </div>
-      )}
+      {isLoading && <ChartSkeleton />}
       <div ref={chartContainerRef} className="w-full h-full relative z-[1]" style={{ backgroundColor: 'transparent', touchAction: 'none' }} />
       
       {/* Candle Time Indicator */}

@@ -75,6 +75,8 @@ All colors MUST be HSL.
     --radius: 0.5rem;
 
     --chart-bg: 45 10% 6%;
+    --chart-up: 142 71% 45%;
+    --chart-down: 3 84% 52%;
     --panel-bg: 45 10% 6%;
     
     --sidebar-background: 45 10% 8%;
@@ -123,6 +125,8 @@ All colors MUST be HSL.
     --ring: 45 100% 45%;
     
     --chart-bg: 0 0% 100%;
+    --chart-up: 142 71% 45%;
+    --chart-down: 3 84% 52%;
     --panel-bg: 0 0% 98%;
     
     --sidebar-background: 0 0% 98%;
@@ -171,6 +175,8 @@ All colors MUST be HSL.
     --ring: 45 100% 50%;
     
     --chart-bg: 45 10% 6%;
+    --chart-up: 142 71% 45%;
+    --chart-down: 3 84% 52%;
     --panel-bg: 45 10% 6%;
     
     --sidebar-background: 45 10% 8%;
