@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { Timer, TrendingUp, TrendingDown, DollarSign, TrendingUpDown, Target } from "lucide-react";
 import { useTranslation } from "@/hooks/useTranslation";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TradeMarkerProps {
   trade: {
@@ -10,6 +11,7 @@ interface TradeMarkerProps {
     expires_at: string;
     amount: number;
     payout: number;
+    user_id?: string;
     assets?: {
       payout_percentage?: number;
     };
@@ -22,9 +24,49 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
   const { t } = useTranslation();
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [isVisible, setIsVisible] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [frozenPrice, setFrozenPrice] = useState<number | null>(null);
   
+  // Ref to track if we already processed this trade
+  const processedRef = useRef(false);
   // Ref to track previous P&L state for visual changes only
   const prevPnlStatusRef = useRef<boolean | null>(null);
+
+  // Process trade immediately when timer hits zero
+  const processTradeImmediately = useCallback(async (exitPrice: number) => {
+    if (processedRef.current || isProcessing) return;
+    
+    processedRef.current = true;
+    setIsProcessing(true);
+    setFrozenPrice(exitPrice);
+    
+    console.log(`[TradeMarker] Timer hit zero! Capturing price ${exitPrice} and processing trade ${trade.id}`);
+    
+    try {
+      // Call edge function immediately with the captured price
+      const { error } = await supabase.functions.invoke('process-expired-trades', {
+        body: { 
+          continuous: false, 
+          specificUserId: trade.user_id,
+          specificTradeId: trade.id,
+          clientExitPrice: exitPrice
+        }
+      });
+
+      if (error) {
+        console.error('[TradeMarker] Error processing trade:', error);
+      } else {
+        console.log('[TradeMarker] Trade processed successfully with exit price:', exitPrice);
+      }
+    } catch (error) {
+      console.error('[TradeMarker] Error:', error);
+    }
+    
+    // Notify parent after a small delay to show the frozen state
+    setTimeout(() => {
+      onExpire(trade.id);
+    }, 500);
+  }, [trade.id, trade.user_id, isProcessing, onExpire]);
 
   useEffect(() => {
     // Trigger entrance animation
@@ -39,16 +81,18 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
       const remaining = Math.max(0, expiresAt - now);
       setTimeRemaining(remaining);
 
-      if (remaining <= 0) {
-        onExpire(trade.id);
+      // CRITICAL: When timer hits zero, immediately capture price and process
+      if (remaining <= 0 && !processedRef.current && currentPrice > 0) {
+        processTradeImmediately(currentPrice);
       }
     };
 
     calculateTimeRemaining();
-    const interval = setInterval(calculateTimeRemaining, 1000);
+    // Check more frequently (every 100ms) for more precise timing
+    const interval = setInterval(calculateTimeRemaining, 100);
 
     return () => clearInterval(interval);
-  }, [trade.expires_at, trade.id, onExpire]);
+  }, [trade.expires_at, currentPrice, processTradeImmediately]);
 
   const formatTime = (ms: number) => {
     const totalSeconds = Math.floor(ms / 1000);
@@ -64,11 +108,14 @@ export function TradeMarker({ trade, onExpire, currentPrice = 0 }: TradeMarkerPr
   const isCriticalTime = timeRemaining > 0 && timeRemaining <= 30000;
   const isVeryUrgent = timeRemaining > 0 && timeRemaining <= 10000;
 
-  // Calculate P&L in real-time
+  // Use frozen price if available (when trade expired), otherwise use current price
+  const displayPrice = frozenPrice !== null ? frozenPrice : currentPrice;
+
+  // Calculate P&L in real-time (or with frozen price when expired)
   const calculatePnL = () => {
-    if (!currentPrice || currentPrice === 0) return { value: 0, percentage: 0, isProfit: false };
+    if (!displayPrice || displayPrice === 0) return { value: 0, percentage: 0, isProfit: false };
     
-    const priceDiff = currentPrice - trade.entry_price;
+    const priceDiff = displayPrice - trade.entry_price;
     const percentageChange = (priceDiff / trade.entry_price) * 100;
     
     // For CALL: profit if price goes up, loss if price goes down

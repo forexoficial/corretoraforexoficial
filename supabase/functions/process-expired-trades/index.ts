@@ -28,8 +28,10 @@ serve(async (req) => {
     const isContinuous = body.continuous === true
     const intervalSeconds = body.interval || 2
     const specificUserId = body.specificUserId || null
+    const specificTradeId = body.specificTradeId || null
+    const clientExitPrice = body.clientExitPrice || null
 
-    console.log(`Starting trade processor - Continuous: ${isContinuous}, Interval: ${intervalSeconds}s, User: ${specificUserId || 'all'}`)
+    console.log(`Starting trade processor - Continuous: ${isContinuous}, Interval: ${intervalSeconds}s, User: ${specificUserId || 'all'}, TradeId: ${specificTradeId || 'all'}, ClientPrice: ${clientExitPrice || 'none'}`)
 
     if (isContinuous) {
       // Continuous mode: run for ~55 seconds with interval
@@ -43,7 +45,7 @@ serve(async (req) => {
         cycles++
         console.log(`[Cycle ${cycles}] Processing expired trades...`)
 
-        const result = await processExpiredTrades(supabase, specificUserId)
+        const result = await processExpiredTrades(supabase, specificUserId, specificTradeId, clientExitPrice)
         totalProcessed += result.processed
         totalErrors += result.errors
 
@@ -77,7 +79,7 @@ serve(async (req) => {
 
     // Single execution mode
     console.log('Starting to process expired trades (single execution)...')
-    const result = await processExpiredTrades(supabase, specificUserId)
+    const result = await processExpiredTrades(supabase, specificUserId, specificTradeId, clientExitPrice)
 
     return new Response(
       JSON.stringify({ 
@@ -99,7 +101,12 @@ serve(async (req) => {
 })
 
 // Main processing function
-async function processExpiredTrades(supabase: any, specificUserId: string | null = null) {
+async function processExpiredTrades(
+  supabase: any, 
+  specificUserId: string | null = null,
+  specificTradeId: string | null = null,
+  clientExitPrice: number | null = null
+) {
   // Get all expired open trades
   const now = new Date().toISOString()
   
@@ -112,6 +119,11 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
   // Filter by specific user if provided
   if (specificUserId) {
     query = query.eq('user_id', specificUserId)
+  }
+
+  // Filter by specific trade if provided (for immediate processing)
+  if (specificTradeId) {
+    query = query.eq('id', specificTradeId)
   }
   
   const { data: expiredTrades, error: tradesError } = await query
@@ -144,27 +156,32 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
           continue
         }
 
-        // Get closing price - use the MOST RECENT candle for the asset
-        // NOTE: Some assets have candles with future timestamps (auto-generated),
-        // so we need to get the absolute most recent candle, not filtered by expires_at
-        const { data: closeCandle } = await supabase
-          .from('candles')
-          .select('close, timestamp')
-          .eq('asset_id', trade.asset_id)
-          .eq('timeframe', '1m') // Use 1m timeframe for consistency
-          .order('timestamp', { ascending: false })
-          .limit(1)
-          .single()
+        let exitPrice: number
 
-        if (!closeCandle) {
-          console.error(`Missing close candle data for trade ${trade.id}`)
-          errorCount++
-          continue
+        // PRIORITY: Use client-provided exit price if available (captured at exact expiration moment)
+        if (clientExitPrice && clientExitPrice > 0 && specificTradeId === trade.id) {
+          exitPrice = clientExitPrice
+          console.log(`Trade ${trade.id}: Using CLIENT-PROVIDED exit price: ${exitPrice}`)
+        } else {
+          // Fallback: Get closing price from the most recent candle
+          const { data: closeCandle } = await supabase
+            .from('candles')
+            .select('close, timestamp')
+            .eq('asset_id', trade.asset_id)
+            .eq('timeframe', '1m')
+            .order('timestamp', { ascending: false })
+            .limit(1)
+            .single()
+
+          if (!closeCandle) {
+            console.error(`Missing close candle data for trade ${trade.id}`)
+            errorCount++
+            continue
+          }
+          
+          exitPrice = parseFloat(closeCandle.close)
+          console.log(`Trade ${trade.id}: Using candle exit price from ${closeCandle.timestamp}: ${exitPrice}`)
         }
-        
-        console.log(`Trade ${trade.id}: Using candle from ${closeCandle.timestamp} with close ${closeCandle.close}`)
-
-        const exitPrice = parseFloat(closeCandle.close)
         
         console.log(`Trade ${trade.id}: Entry=${entryPrice}, Exit=${exitPrice}, Type=${trade.trade_type}`)
 
@@ -181,20 +198,11 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
         const status = won ? 'won' : 'lost'
 
         // Calculate NET result for the trade (profit or loss)
-        // This value is applied directly to the user's balance by the trigger:
-        //   - WON  => result = +payout  (user gains the profit)
-        //   - LOST => result = -amount (user loses the investment)
         const result = won ? trade.payout : -trade.amount
 
         console.log(`Trade ${trade.id} result: ${status.toUpperCase()}, net result value: ${result}`)
 
-        // For display purposes: show profit/loss
-        const displayResult = result
-        
         // Update trade status
-        // The result field is used by the trigger: balance = balance + result
-        // If WON: balance = balance + payout
-        // If LOST: balance = balance - amount
         const { error: updateTradeError } = await supabase
           .from('trades')
           .update({
@@ -212,12 +220,9 @@ async function processExpiredTrades(supabase: any, specificUserId: string | null
         }
 
         // Balance is updated automatically by the database trigger handle_trade_balance_on_update
-        // The trigger applies: balance = balance + result
-        // If WON: balance increases by payout
-        // If LOST: balance decreases by amount
         
         processedCount++
-        console.log(`Successfully processed trade ${trade.id} - Status: ${status}, Display: ${displayResult > 0 ? '+' : ''}${displayResult}`)
+        console.log(`Successfully processed trade ${trade.id} - Status: ${status}, Result: ${result > 0 ? '+' : ''}${result}`)
 
       } catch (error) {
         console.error(`Error processing trade ${trade.id}:`, error)
