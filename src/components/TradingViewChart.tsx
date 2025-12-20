@@ -803,7 +803,7 @@ export function TradingViewChart({
 
   // Função para processar candles carregados (do cache ou DB)
   const processLoadedCandles = useCallback((candles: any[]) => {
-    if (!candles || candles.length === 0 || !candleSeriesRef.current) return;
+    if (!candles || candles.length === 0 || !candleSeriesRef.current || !chartRef.current) return;
 
     // Garantir que os candles estejam em ordem cronológica crescente
     const sortedCandles = [...candles].sort((a, b) =>
@@ -821,7 +821,20 @@ export function TradingViewChart({
       };
     });
 
+    // CRITICAL: Calculate zoom range BEFORE setting data
+    const visibleCandles = getVisibleCandlesForTimeframe(timeframe);
+    const from = Math.max(0, chartData.length - visibleCandles);
+    const to = chartData.length - 1;
+
+    // Set data
     candleSeriesRef.current.setData(chartData);
+    
+    // IMMEDIATELY set visible range to prevent "flat candles" issue
+    // This must happen synchronously after setData
+    if (chartData.length > 0) {
+      chartRef.current.timeScale().setVisibleLogicalRange({ from, to });
+      chartRef.current.timeScale().scrollToPosition(3, false);
+    }
     
     // Notify parent of current price and update internal state
     if (chartData.length > 0) {
@@ -835,18 +848,6 @@ export function TradingViewChart({
     // Render technical indicators if enabled
     if (indicatorSettings && chartRef.current) {
       renderIndicators(chartData);
-    }
-    
-    // Set initial zoom to focus on recent candles with right padding
-    if (chartRef.current && chartData.length > 0) {
-      const visibleCandles = getVisibleCandlesForTimeframe(timeframe);
-      const from = Math.max(0, chartData.length - visibleCandles);
-      const to = chartData.length - 1;
-      
-      setTimeout(() => {
-        chartRef.current?.timeScale().setVisibleLogicalRange({ from, to });
-        chartRef.current?.timeScale().scrollToPosition(3, false);
-      }, 100);
     }
     
     // Start animation for the most recent candle
@@ -864,15 +865,9 @@ export function TradingViewChart({
     const cacheKey = `candles-${assetId}-${timeframe}`;
     
     try {
-      // Verificar cache primeiro
-      const cachedCandles = candleCache.get(cacheKey);
-      if (cachedCandles && cachedCandles.length > 0) {
-        console.log('[LoadCandles] Usando cache:', cacheKey);
-        processLoadedCandles(cachedCandles);
-        setIsLoading(false);
-        return;
-      }
-
+      // IMPORTANT: Always fetch fresh data from DB first for better accuracy
+      // Cache is only used as fallback for very rapid asset switching
+      
       // Carregar quantidade padrão de 300 candles para todos os timeframes
       const candleLimitMap: Record<string, number> = {
         '10s': 300,
@@ -901,7 +896,15 @@ export function TradingViewChart({
 
       if (error) {
         console.error('Error loading candles:', error);
-        await generateInitialCandles();
+        
+        // Try cache as fallback
+        const cachedCandles = candleCache.get(cacheKey);
+        if (cachedCandles && cachedCandles.length > 0) {
+          console.log('[LoadCandles] DB error, using cache fallback:', cacheKey);
+          processLoadedCandles(cachedCandles);
+        } else {
+          await generateInitialCandles();
+        }
         return;
       }
 
