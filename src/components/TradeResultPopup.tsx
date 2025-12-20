@@ -164,7 +164,7 @@ export function TradeResultPopup({ trade, onClose }: TradeResultPopupProps) {
                   isWin ? "text-green-400" : "text-red-400"
                 )}
               >
-                {isWin ? `🎉 ${t('victory')}` : `❌ ${t('defeat')}`}
+                {isWin ? t('victory') : t('defeat')}
               </motion.h2>
 
               {/* Result Amount */}
