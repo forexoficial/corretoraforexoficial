@@ -110,7 +110,7 @@ export function TradeNotification({ trade, onClose }: TradeNotificationProps) {
                     isWin ? 'text-green-500' : 'text-red-500'
                   }`}
                 >
-                  {isWin ? 'Você Ganhou! 🎉' : 'Você Perdeu'}
+                  {isWin ? 'Você Ganhou!' : 'Você Perdeu'}
                 </motion.h3>
 
                 <motion.div
