@@ -64,6 +64,8 @@ export default {
         },
         chart: {
           bg: "hsl(var(--chart-bg))",
+          up: "hsl(var(--chart-up))",
+          down: "hsl(var(--chart-down))",
         },
         panel: {
           bg: "hsl(var(--panel-bg))",
