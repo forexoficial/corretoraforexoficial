@@ -67,6 +67,7 @@ export const DesktopAssetSelector = ({
   const { activeTrade } = useTradeContext();
   const { t } = useTranslation();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHiddenAssetsModalOpen, setIsHiddenAssetsModalOpen] = useState(false);
   const [assets, setAssets] = useState<Asset[]>(assetsCache || []);
   const [isLoading, setIsLoading] = useState(!assetsCache);
   const [searchQuery, setSearchQuery] = useState("");
@@ -167,6 +168,7 @@ export const DesktopAssetSelector = ({
 
   const MAX_VISIBLE = 3;
   const visibleAssets = selectedAssets.slice(0, MAX_VISIBLE);
+  const hiddenAssets = selectedAssets.slice(MAX_VISIBLE);
   const stackedCount = selectedAssets.length - MAX_VISIBLE;
   const hasStacked = stackedCount > 0;
 
@@ -275,7 +277,7 @@ export const DesktopAssetSelector = ({
         {hasStacked && (
           <div
             className="h-12 px-4 flex items-center justify-center bg-gradient-to-br from-primary/20 to-primary/10 text-primary rounded-lg border border-primary/30 shadow-[0_4px_12px_-2px_rgba(0,0,0,0.3),inset_0_1px_0_0_rgba(255,255,255,0.1)] text-sm font-semibold flex-shrink-0 cursor-pointer hover:shadow-[0_6px_16px_-2px_rgba(0,0,0,0.4)] hover:scale-105 transition-all"
-            onClick={() => setIsModalOpen(true)}
+            onClick={() => setIsHiddenAssetsModalOpen(true)}
           >
             +{stackedCount}
           </div>
@@ -492,6 +494,90 @@ export const DesktopAssetSelector = ({
                 )}
               </>
             )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Hidden Assets Modal */}
+      <Dialog open={isHiddenAssetsModalOpen} onOpenChange={setIsHiddenAssetsModalOpen}>
+        <DialogContent className="max-w-sm p-0 gap-0 bg-card border-border">
+          <DialogHeader className="p-4 pb-3 border-b border-border">
+            <DialogTitle className="text-lg font-semibold text-foreground">
+              Ativos Abertos
+            </DialogTitle>
+            <div className="pt-1 text-xs text-muted-foreground">
+              <span className="font-medium text-foreground">{hiddenAssets.length}</span> {hiddenAssets.length === 1 ? 'ativo oculto' : 'ativos ocultos'}
+            </div>
+          </DialogHeader>
+
+          <div className="max-h-[350px] overflow-y-auto p-2">
+            {hiddenAssets.map((asset) => {
+              const hasActiveTrade = activeTrade && activeTrade.status === 'open' && activeTrade.asset_id === asset.id;
+              
+              return (
+                <div
+                  key={asset.id}
+                  className={`relative flex items-center justify-between p-3 rounded-lg hover:bg-accent transition-colors group ${
+                    hasActiveTrade ? "bg-primary/10 ring-1 ring-primary/30" : ""
+                  }`}
+                >
+                  <button
+                    onClick={() => {
+                      onAssetSelect(asset);
+                      setIsHiddenAssetsModalOpen(false);
+                    }}
+                    className="flex items-center gap-3 flex-1"
+                  >
+                    {asset.icon_url ? (
+                      <img
+                        src={asset.icon_url}
+                        alt={asset.name}
+                        className="w-9 h-9 rounded-full ring-2 ring-border/30"
+                      />
+                    ) : (
+                      <div
+                        className="w-9 h-9 rounded-full ring-2 ring-border/30"
+                        style={{ backgroundColor: "#f7931a" }}
+                      />
+                    )}
+                    <div className="flex flex-col items-start">
+                      <span className="text-sm font-medium text-foreground">
+                        {asset.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {asset.symbol}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 ml-auto">
+                      <span className="text-sm font-semibold text-success">
+                        +{asset.payout_percentage}%
+                      </span>
+                      {hasActiveTrade && (
+                        <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                      )}
+                    </div>
+                  </button>
+                  
+                  {/* Close button */}
+                  {selectedAssets.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAssetRemove(asset.id);
+                        // Close modal if no more hidden assets
+                        if (hiddenAssets.length <= 1) {
+                          setIsHiddenAssetsModalOpen(false);
+                        }
+                      }}
+                      className="ml-2 p-1.5 rounded-md hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </DialogContent>
       </Dialog>
