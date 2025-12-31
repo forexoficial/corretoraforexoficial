@@ -5,12 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface Asset {
-  id: string;
-  symbol: string;
-  is_active: boolean;
-}
-
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -22,113 +16,106 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('🧹 Starting daily candles cleanup...');
+    console.log('🧹 Starting AGGRESSIVE candles cleanup (keeping only last 24 hours)...');
 
-    // Fetch all active assets
-    const { data: assets, error: assetsError } = await supabase
-      .from('assets')
-      .select('id, symbol, is_active')
-      .eq('is_active', true);
+    // Calculate cutoff time (24 hours ago)
+    const cutoffTime = new Date();
+    cutoffTime.setHours(cutoffTime.getHours() - 24);
+    const cutoffTimestamp = cutoffTime.toISOString();
 
-    if (assetsError) {
-      console.error('Error fetching assets:', assetsError);
-      throw assetsError;
-    }
+    console.log(`Cutoff timestamp: ${cutoffTimestamp}`);
 
-    if (!assets || assets.length === 0) {
-      console.log('No active assets found');
-      return new Response(
-        JSON.stringify({ success: true, message: 'No active assets found' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Count candles before deletion
+    const { count: beforeCount } = await supabase
+      .from('candles')
+      .select('id', { count: 'exact', head: true });
 
-    console.log(`Found ${assets.length} active assets`);
+    console.log(`Total candles before cleanup: ${beforeCount}`);
 
-    // Timeframes to clean
-    const timeframes = ['10s', '30s', '1m', '5m'];
-    const KEEP_LAST_N_CANDLES = 200;
+    // Count candles to be deleted
+    const { count: toDeleteCount } = await supabase
+      .from('candles')
+      .select('id', { count: 'exact', head: true })
+      .lt('timestamp', cutoffTimestamp);
 
+    console.log(`Candles older than 24h to delete: ${toDeleteCount}`);
+
+    // Delete all candles older than 24 hours in smaller batches
     let totalDeleted = 0;
-    const cleanupResults: any[] = [];
+    const BATCH_SIZE = 1000; // Smaller batch size
+    let hasMore = true;
+    let iterations = 0;
+    const MAX_ITERATIONS = 500; // Safety limit
 
-    // Process each asset and timeframe
-    for (const asset of assets as Asset[]) {
-      for (const timeframe of timeframes) {
-        console.log(`Processing ${asset.symbol} - ${timeframe}`);
+    while (hasMore && iterations < MAX_ITERATIONS) {
+      iterations++;
+      
+      // Get batch of old candle IDs
+      const { data: oldCandles, error: fetchError } = await supabase
+        .from('candles')
+        .select('id')
+        .lt('timestamp', cutoffTimestamp)
+        .limit(BATCH_SIZE);
 
-        // Get total count of candles for this asset/timeframe
-        const { count: totalCount, error: countError } = await supabase
-          .from('candles')
-          .select('id', { count: 'exact', head: true })
-          .eq('asset_id', asset.id)
-          .eq('timeframe', timeframe);
-
-        if (countError) {
-          console.error(`Error counting candles for ${asset.symbol} ${timeframe}:`, countError);
-          continue;
-        }
-
-        if (!totalCount || totalCount <= KEEP_LAST_N_CANDLES) {
-          console.log(`  ✓ ${asset.symbol} ${timeframe}: ${totalCount} candles (within limit)`);
-          continue;
-        }
-
-        // Calculate how many to delete
-        const candlesToDelete = totalCount - KEEP_LAST_N_CANDLES;
-
-        // Get the IDs of the oldest candles to delete
-        const { data: oldestCandles, error: fetchError } = await supabase
-          .from('candles')
-          .select('id')
-          .eq('asset_id', asset.id)
-          .eq('timeframe', timeframe)
-          .order('timestamp', { ascending: true })
-          .limit(candlesToDelete);
-
-        if (fetchError) {
-          console.error(`Error fetching old candles for ${asset.symbol} ${timeframe}:`, fetchError);
-          continue;
-        }
-
-        if (!oldestCandles || oldestCandles.length === 0) {
-          continue;
-        }
-
-        // Delete the old candles
-        const idsToDelete = oldestCandles.map(c => c.id);
-        const { error: deleteError } = await supabase
-          .from('candles')
-          .delete()
-          .in('id', idsToDelete);
-
-        if (deleteError) {
-          console.error(`Error deleting candles for ${asset.symbol} ${timeframe}:`, deleteError);
-          continue;
-        }
-
-        const deletedCount = oldestCandles.length;
-        totalDeleted += deletedCount;
-
-        console.log(`  🗑️  ${asset.symbol} ${timeframe}: Deleted ${deletedCount} old candles (kept last ${KEEP_LAST_N_CANDLES})`);
-
-        cleanupResults.push({
-          asset: asset.symbol,
-          timeframe,
-          deleted: deletedCount,
-          remaining: KEEP_LAST_N_CANDLES
-        });
+      if (fetchError) {
+        console.error('Error fetching old candles:', fetchError);
+        throw fetchError;
       }
+
+      if (!oldCandles || oldCandles.length === 0) {
+        hasMore = false;
+        break;
+      }
+
+      // Delete batch using direct filter instead of IN clause
+      const { error: deleteError, count: deletedCount } = await supabase
+        .from('candles')
+        .delete()
+        .lt('timestamp', cutoffTimestamp)
+        .limit(BATCH_SIZE);
+
+      if (deleteError) {
+        console.error('Error deleting candles batch:', deleteError);
+        // Try alternative approach: delete by IDs in smaller chunks
+        const chunkSize = 100;
+        for (let i = 0; i < oldCandles.length; i += chunkSize) {
+          const chunk = oldCandles.slice(i, i + chunkSize).map(c => c.id);
+          await supabase.from('candles').delete().in('id', chunk);
+        }
+      }
+
+      totalDeleted += oldCandles.length;
+      
+      if (iterations % 50 === 0) {
+        console.log(`🗑️ Progress: Deleted ${totalDeleted} candles so far...`);
+      }
+
+      // Continue if we got a full batch
+      hasMore = oldCandles.length === BATCH_SIZE;
     }
 
-    console.log(`✅ Cleanup completed! Total deleted: ${totalDeleted} candles`);
+    // Count candles after deletion
+    const { count: afterCount } = await supabase
+      .from('candles')
+      .select('id', { count: 'exact', head: true });
+
+    const estimatedMBFreed = Math.round((totalDeleted * 600) / 1024 / 1024);
+
+    console.log(`✅ Cleanup completed!`);
+    console.log(`   - Deleted: ${totalDeleted} candles`);
+    console.log(`   - Remaining: ${afterCount} candles`);
+    console.log(`   - Space freed: ~${estimatedMBFreed} MB`);
+    console.log(`   - Iterations: ${iterations}`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Cleanup completed successfully`,
-        totalDeleted,
-        results: cleanupResults
+        message: `Aggressive cleanup completed - kept only last 24 hours`,
+        before: beforeCount,
+        deleted: totalDeleted,
+        remaining: afterCount,
+        estimatedMBFreed,
+        iterations
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

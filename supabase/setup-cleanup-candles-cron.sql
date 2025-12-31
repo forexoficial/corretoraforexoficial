@@ -1,12 +1,19 @@
--- Enable pg_cron and pg_net extensions
+-- =============================================
+-- AGGRESSIVE CLEANUP: Keep only last 24 hours of candles
+-- Run every hour to keep database size under control
+-- =============================================
+
+-- Enable extensions if not already enabled
 CREATE EXTENSION IF NOT EXISTS pg_cron;
 CREATE EXTENSION IF NOT EXISTS pg_net;
 
--- Schedule the cleanup-old-candles function to run daily at 3 AM Brazil time (6 AM UTC)
--- Cron expression: '0 6 * * *' means "at minute 0 of hour 6, every day"
+-- Remove old cron job if exists
+SELECT cron.unschedule('cleanup-old-candles-daily');
+
+-- Schedule the cleanup to run EVERY HOUR for aggressive cleanup
 SELECT cron.schedule(
-  'cleanup-old-candles-daily',
-  '0 6 * * *', -- Every day at 6 AM UTC (3 AM UTC-3)
+  'cleanup-old-candles-hourly',
+  '0 * * * *', -- Every hour at minute 0
   $$
   SELECT
     net.http_post(
@@ -17,5 +24,5 @@ SELECT cron.schedule(
   $$
 );
 
--- Check if the cron job was created successfully
-SELECT * FROM cron.job WHERE jobname = 'cleanup-old-candles-daily';
+-- Verify the cron job was created
+SELECT * FROM cron.job WHERE jobname = 'cleanup-old-candles-hourly';
