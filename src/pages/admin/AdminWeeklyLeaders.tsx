@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,10 +12,10 @@ import {
   Plus, 
   Trash2, 
   Save, 
-  GripVertical,
   Pencil,
-  X,
-  Medal
+  Medal,
+  Upload,
+  Image as ImageIcon
 } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
@@ -39,8 +39,12 @@ export default function AdminWeeklyLeaders() {
   const [leaders, setLeaders] = useState<WeeklyLeader[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLeader, setEditingLeader] = useState<WeeklyLeader | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({
     display_name: "",
     avatar_url: "",
@@ -79,6 +83,8 @@ export default function AdminWeeklyLeaders() {
       position: String(leaders.length + 1),
       is_active: true
     });
+    setAvatarPreview(null);
+    setAvatarFile(null);
     setDialogOpen(true);
   };
 
@@ -91,7 +97,66 @@ export default function AdminWeeklyLeaders() {
       position: String(leader.position),
       is_active: leader.is_active
     });
+    setAvatarPreview(leader.avatar_url || null);
+    setAvatarFile(null);
     setDialogOpen(true);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem válida");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    setAvatarFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const uploadAvatar = async (): Promise<string | null> => {
+    if (!avatarFile) return formData.avatar_url || null;
+
+    setUploading(true);
+    try {
+      const fileExt = avatarFile.name.split(".").pop();
+      const fileName = `leader-${Date.now()}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("weekly-leaders-avatars")
+        .upload(fileName, avatarFile, {
+          cacheControl: "3600",
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage
+        .from("weekly-leaders-avatars")
+        .getPublicUrl(fileName);
+
+      return data.publicUrl;
+    } catch (error) {
+      console.error("Erro ao fazer upload:", error);
+      toast.error("Erro ao fazer upload da imagem");
+      return null;
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSave = async () => {
@@ -102,9 +167,12 @@ export default function AdminWeeklyLeaders() {
 
     setSaving(true);
     try {
+      // Upload avatar if a new file was selected
+      const avatarUrl = await uploadAvatar();
+
       const leaderData = {
         display_name: formData.display_name.trim(),
-        avatar_url: formData.avatar_url.trim() || null,
+        avatar_url: avatarUrl,
         balance: parseFloat(formData.balance) || 0,
         position: parseInt(formData.position) || 1,
         is_active: formData.is_active
@@ -308,15 +376,40 @@ export default function AdminWeeklyLeaders() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="avatar_url">URL do Avatar (opcional)</Label>
-              <Input
-                id="avatar_url"
-                value={formData.avatar_url}
-                onChange={(e) =>
-                  setFormData({ ...formData, avatar_url: e.target.value })
-                }
-                placeholder="https://..."
-              />
+              <Label>Avatar</Label>
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={avatarPreview || undefined} />
+                  <AvatarFallback className="text-lg">
+                    {formData.display_name ? getInitials(formData.display_name) : <ImageIcon className="h-6 w-6" />}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 space-y-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploading}
+                    className="w-full"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {avatarFile ? "Alterar Imagem" : "Fazer Upload"}
+                  </Button>
+                  {avatarFile && (
+                    <p className="text-xs text-muted-foreground truncate">
+                      {avatarFile.name}
+                    </p>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -364,13 +457,13 @@ export default function AdminWeeklyLeaders() {
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancelar
             </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
+            <Button onClick={handleSave} disabled={saving || uploading}>
+              {saving || uploading ? (
                 <LoadingSpinner size="sm" className="mr-2" />
               ) : (
                 <Save className="h-4 w-4 mr-2" />
               )}
-              Salvar
+              {uploading ? "Enviando..." : "Salvar"}
             </Button>
           </DialogFooter>
         </DialogContent>
