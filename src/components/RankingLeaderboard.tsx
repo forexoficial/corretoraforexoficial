@@ -7,12 +7,12 @@ import { Trophy, Medal } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { useTranslation } from "@/hooks/useTranslation";
 
-interface RankingUser {
+interface WeeklyLeader {
   id: string;
-  user_id: string;
-  full_name: string;
+  display_name: string;
   avatar_url: string | null;
   balance: number;
+  position: number;
 }
 
 interface RankingLeaderboardProps {
@@ -21,7 +21,7 @@ interface RankingLeaderboardProps {
 }
 
 export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardProps) => {
-  const [topUsers, setTopUsers] = useState<RankingUser[]>([]);
+  const [topUsers, setTopUsers] = useState<WeeklyLeader[]>([]);
   const [loading, setLoading] = useState(false);
   const { t } = useTranslation();
 
@@ -35,9 +35,10 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('profiles')
-        .select('id, user_id, full_name, avatar_url, balance')
-        .order('balance', { ascending: false })
+        .from('weekly_leaders')
+        .select('id, display_name, avatar_url, balance, position')
+        .eq('is_active', true)
+        .order('position', { ascending: true })
         .limit(10);
 
       if (error) throw error;
@@ -72,6 +73,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
   };
 
   const getInitials = (name: string) => {
+    if (!name) return "??";
     return name
       .split(' ')
       .map(n => n[0])
@@ -99,8 +101,8 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
             </div>
           ) : (
             <div className="space-y-2 max-h-[calc(100vh-140px)] overflow-y-auto">
-              {topUsers.map((user, index) => {
-                const position = index + 1;
+              {topUsers.map((user) => {
+                const position = user.position;
                 const isTopThree = position <= 3;
                 
                 return (
@@ -121,7 +123,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
                     }`}>
                       <AvatarImage src={user.avatar_url || undefined} />
                       <AvatarFallback className="text-xs font-semibold">
-                        {getInitials(user.full_name)}
+                        {getInitials(user.display_name)}
                       </AvatarFallback>
                     </Avatar>
 
@@ -129,7 +131,7 @@ export const RankingLeaderboard = ({ open, onOpenChange }: RankingLeaderboardPro
                       <p className={`text-sm font-semibold truncate ${
                         isTopThree ? 'text-foreground' : 'text-foreground'
                       }`}>
-                        {user.full_name}
+                        {user.display_name}
                       </p>
                       <div className="flex items-center gap-1 mt-0.5">
                         <div className="w-2 h-2 rounded-full bg-success"></div>
