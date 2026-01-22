@@ -45,6 +45,7 @@ import AdminSocialAuth from "./pages/admin/AdminSocialAuth";
 import AdminTransactionRecovery from "./pages/admin/AdminTransactionRecovery";
 import AdminCopyTrade from "./pages/admin/AdminCopyTrade";
 import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
+import AdminWeeklyLeaders from "./pages/admin/AdminWeeklyLeaders";
 import CopyTrade from "./pages/CopyTrade";
 import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
@@ -164,6 +165,7 @@ const App = () => (
               <Route path="popups" element={<AdminPopups />} />
               <Route path="push-notifications" element={<AdminPushNotifications />} />
               <Route path="boosters" element={<AdminBoosters />} />
+                <Route path="weekly-leaders" element={<AdminWeeklyLeaders />} />
                 <Route path="affiliates" element={<AdminAffiliates />} />
                 <Route path="copy-trade" element={<AdminCopyTrade />} />
                 <Route path="withdrawals" element={<AdminWithdrawals />} />

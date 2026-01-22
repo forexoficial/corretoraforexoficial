@@ -1492,6 +1492,39 @@ export type Database = {
         }
         Relationships: []
       }
+      weekly_leaders: {
+        Row: {
+          avatar_url: string | null
+          balance: number
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          balance?: number
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          balance?: number
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       withdrawal_requests: {
         Row: {
           affiliate_id: string
