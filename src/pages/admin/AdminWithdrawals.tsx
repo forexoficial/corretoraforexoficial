@@ -214,9 +214,9 @@ export default function AdminWithdrawals() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-3xl font-bold">Solicitações de Saque</h2>
+        <h2 className="text-3xl font-bold">Saques de Afiliados</h2>
         <p className="text-muted-foreground">
-          Gerencie as solicitações de saque dos afiliados
+          Gerencie as solicitações de saque das comissões dos afiliados
         </p>
       </div>
 
