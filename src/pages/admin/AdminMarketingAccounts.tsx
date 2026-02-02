@@ -17,8 +17,14 @@ import {
   Save,
   X,
   Sparkles,
-  Eye
+  Eye,
+  CalendarIcon
 } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -70,6 +76,8 @@ interface MarketingMetrics {
   is_active: boolean;
   notes: string | null;
   created_at: string;
+  period_start: string | null;
+  period_end: string | null;
   affiliate?: Affiliate;
 }
 
@@ -84,6 +92,8 @@ interface FormData {
   fake_active_users: number;
   is_active: boolean;
   notes: string;
+  period_start: Date | undefined;
+  period_end: Date | undefined;
 }
 
 const initialFormData: FormData = {
@@ -97,6 +107,8 @@ const initialFormData: FormData = {
   fake_active_users: 0,
   is_active: true,
   notes: "",
+  period_start: undefined,
+  period_end: undefined,
 };
 
 export default function AdminMarketingAccounts() {
@@ -186,6 +198,8 @@ export default function AdminMarketingAccounts() {
             fake_active_users: formData.fake_active_users,
             is_active: formData.is_active,
             notes: formData.notes || null,
+            period_start: formData.period_start?.toISOString() || null,
+            period_end: formData.period_end?.toISOString() || null,
           })
           .eq("id", editingId);
 
@@ -214,6 +228,8 @@ export default function AdminMarketingAccounts() {
             fake_active_users: formData.fake_active_users,
             is_active: formData.is_active,
             notes: formData.notes || null,
+            period_start: formData.period_start?.toISOString() || null,
+            period_end: formData.period_end?.toISOString() || null,
           });
 
         if (error) throw error;
@@ -245,6 +261,8 @@ export default function AdminMarketingAccounts() {
       fake_active_users: metric.fake_active_users,
       is_active: metric.is_active,
       notes: metric.notes || "",
+      period_start: metric.period_start ? new Date(metric.period_start) : undefined,
+      period_end: metric.period_end ? new Date(metric.period_end) : undefined,
     });
     setDialogOpen(true);
   };
@@ -457,6 +475,89 @@ export default function AdminMarketingAccounts() {
                     <Label>Ativo</Label>
                   </div>
                 </div>
+              </div>
+
+              {/* Date Range for Period Filter */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <CalendarIcon className="h-4 w-4 text-primary" />
+                  Período das Métricas (opcional)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Se configurado, as métricas fictícias só aparecem quando o afiliado filtrar por este período
+                </p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Data Inicial</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.period_start && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {formData.period_start ? format(formData.period_start, "dd/MM/yyyy", { locale: ptBR }) : "Selecione"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.period_start}
+                          onSelect={(date) => setFormData({ ...formData, period_start: date })}
+                          initialFocus
+                          locale={ptBR}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-muted-foreground">Data Final</label>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.period_end && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                          <span className="text-xs">
+                            {formData.period_end ? format(formData.period_end, "dd/MM/yyyy", { locale: ptBR }) : "Selecione"}
+                          </span>
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.period_end}
+                          onSelect={(date) => setFormData({ ...formData, period_end: date })}
+                          initialFocus
+                          locale={ptBR}
+                          disabled={(date) => formData.period_start ? date < formData.period_start : false}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                  </div>
+                </div>
+                {(formData.period_start || formData.period_end) && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => setFormData({ ...formData, period_start: undefined, period_end: undefined })}
+                  >
+                    <X className="h-3 w-3 mr-1" />
+                    Limpar período
+                  </Button>
+                )}
               </div>
 
               {/* Notes */}

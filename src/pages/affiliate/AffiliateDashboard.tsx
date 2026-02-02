@@ -48,6 +48,8 @@ interface MarketingMetrics {
   fake_conversion_rate: number;
   fake_active_users: number;
   is_active: boolean;
+  period_start: string | null;
+  period_end: string | null;
 }
 
 export default function AffiliateDashboard() {
@@ -96,22 +98,44 @@ export default function AffiliateDashboard() {
 
       const affiliateLink = `${window.location.origin}/signup?ref=${affiliate.affiliate_code}`;
 
-      // If marketing metrics exist and are active, use them instead of real data
+      // If marketing metrics exist and are active, check if period matches
       if (marketingMetrics) {
         const metrics = marketingMetrics as MarketingMetrics;
-        setStats({
-          totalReferrals: metrics.fake_total_referrals,
-          activeReferrals: metrics.fake_active_users,
-          totalCommissions: Number(metrics.fake_total_commission),
-          pendingCommissions: Number(metrics.fake_pending_commission),
-          monthlyEarnings: Number(metrics.fake_total_commission),
-          conversionRate: Number(metrics.fake_conversion_rate),
-          affiliateCode: affiliate.affiliate_code,
-          affiliateLink,
-          isMarketingAccount: true,
-        });
-        setLoading(false);
-        return;
+        
+        // Check if the selected date range matches the marketing metrics period
+        let shouldShowFakeMetrics = true;
+        
+        if (metrics.period_start && metrics.period_end && startDate && endDate) {
+          const metricsPeriodStart = new Date(metrics.period_start);
+          const metricsPeriodEnd = new Date(metrics.period_end);
+          
+          // Normalize dates to compare just the date part
+          metricsPeriodStart.setHours(0, 0, 0, 0);
+          metricsPeriodEnd.setHours(23, 59, 59, 999);
+          const filterStart = new Date(startDate);
+          filterStart.setHours(0, 0, 0, 0);
+          const filterEnd = new Date(endDate);
+          filterEnd.setHours(23, 59, 59, 999);
+          
+          // Check if selected range overlaps with marketing metrics period
+          shouldShowFakeMetrics = filterStart <= metricsPeriodEnd && filterEnd >= metricsPeriodStart;
+        }
+        
+        if (shouldShowFakeMetrics) {
+          setStats({
+            totalReferrals: metrics.fake_total_referrals,
+            activeReferrals: metrics.fake_active_users,
+            totalCommissions: Number(metrics.fake_total_commission),
+            pendingCommissions: Number(metrics.fake_pending_commission),
+            monthlyEarnings: Number(metrics.fake_total_commission),
+            conversionRate: Number(metrics.fake_conversion_rate),
+            affiliateCode: affiliate.affiliate_code,
+            affiliateLink,
+            isMarketingAccount: true,
+          });
+          setLoading(false);
+          return;
+        }
       }
 
       // Continue with real data if no marketing metrics
