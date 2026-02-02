@@ -18,8 +18,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { endOfDay, format, parseISO, startOfDay } from "date-fns";
 
 interface AffiliateStats {
   totalReferrals: number;
@@ -95,42 +94,47 @@ export default function AffiliateDashboard() {
       }
 
       // Check for marketing metrics (fake data for content creators)
-      const { data: marketingMetrics } = await supabase
+      // NOTE: We must NOT use .single() here because an affiliate can have multiple
+      // simulations (e.g. one per month).
+      const { data: marketingMetricsList, error: marketingMetricsError } = await supabase
         .from("affiliate_marketing_metrics")
         .select("*")
         .eq("affiliate_id", affiliate.id)
         .eq("is_active", true)
-        .single();
+        .order("period_start", { ascending: false });
+
+      if (marketingMetricsError) {
+        console.warn("Error fetching marketing metrics:", marketingMetricsError);
+      }
 
       const affiliateLink = `${window.location.origin}/signup?ref=${affiliate.affiliate_code}`;
 
-      // If marketing metrics exist and are active, check if period matches
-      if (marketingMetrics) {
-        const metrics = {
-          ...marketingMetrics,
-          fake_chart_data: (marketingMetrics.fake_chart_data as unknown) as FakeChartDataPoint[] | null
-        } as MarketingMetrics;
+      // If marketing metrics exist and are active, select the record that matches the filtered period
+      const marketingMetrics = (marketingMetricsList || []) as unknown as MarketingMetrics[];
+      if (marketingMetrics.length > 0 && startDate && endDate) {
+        const filterStart = startOfDay(startDate);
+        const filterEnd = endOfDay(endDate);
+
+        const matchesPeriod = (m: MarketingMetrics) => {
+          // If period is not set, treat it as always applicable
+          if (!m.period_start || !m.period_end) return true;
+
+          // parseISO handles date-only strings (YYYY-MM-DD) in local time,
+          // avoiding timezone shifting issues from new Date('YYYY-MM-DD')
+          const periodStart = startOfDay(parseISO(m.period_start));
+          const periodEnd = endOfDay(parseISO(m.period_end));
+          return filterStart <= periodEnd && filterEnd >= periodStart;
+        };
+
+        const selectedMetrics = marketingMetrics.find(matchesPeriod);
+
+        if (selectedMetrics) {
+          const metrics = {
+            ...selectedMetrics,
+            fake_chart_data: (selectedMetrics.fake_chart_data as unknown) as FakeChartDataPoint[] | null,
+          } as MarketingMetrics;
         
-        // Check if the selected date range matches the marketing metrics period
-        let shouldShowFakeMetrics = true;
-        
-        if (metrics.period_start && metrics.period_end && startDate && endDate) {
-          const metricsPeriodStart = new Date(metrics.period_start);
-          const metricsPeriodEnd = new Date(metrics.period_end);
-          
-          // Normalize dates to compare just the date part
-          metricsPeriodStart.setHours(0, 0, 0, 0);
-          metricsPeriodEnd.setHours(23, 59, 59, 999);
-          const filterStart = new Date(startDate);
-          filterStart.setHours(0, 0, 0, 0);
-          const filterEnd = new Date(endDate);
-          filterEnd.setHours(23, 59, 59, 999);
-          
-          // Check if selected range overlaps with marketing metrics period
-          shouldShowFakeMetrics = filterStart <= metricsPeriodEnd && filterEnd >= metricsPeriodStart;
-        }
-        
-        if (shouldShowFakeMetrics) {
+          // Apply fake metrics
           setStats({
             totalReferrals: metrics.fake_total_referrals,
             activeReferrals: metrics.fake_active_users,
@@ -144,19 +148,17 @@ export default function AffiliateDashboard() {
           });
           
           // Set fake chart data if available, filtered by date range
-          const filterStart = new Date(startDate!);
-          filterStart.setHours(0, 0, 0, 0);
-          const filterEnd = new Date(endDate!);
-          filterEnd.setHours(23, 59, 59, 999);
+          const filterStart = startOfDay(startDate);
+          const filterEnd = endOfDay(endDate);
 
           if (metrics.fake_chart_data && metrics.fake_chart_data.length > 0) {
             const filteredChartData = metrics.fake_chart_data
               .filter((point) => {
-                const pointDate = new Date(point.date);
+                const pointDate = parseISO(point.date);
                 return pointDate >= filterStart && pointDate <= filterEnd;
               })
               .map((point) => ({
-                date: new Date(point.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                date: parseISO(point.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
                 commissions: point.commissions,
                 referrals: point.referrals,
               }));
