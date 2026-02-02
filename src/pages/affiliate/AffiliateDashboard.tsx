@@ -30,12 +30,24 @@ interface AffiliateStats {
   conversionRate: number;
   affiliateCode: string;
   affiliateLink: string;
+  isMarketingAccount?: boolean;
 }
 
 interface ChartData {
   date: string;
   commissions: number;
   referrals: number;
+}
+
+interface MarketingMetrics {
+  fake_total_referrals: number;
+  fake_total_deposits: number;
+  fake_total_commission: number;
+  fake_pending_commission: number;
+  fake_paid_commission: number;
+  fake_conversion_rate: number;
+  fake_active_users: number;
+  is_active: boolean;
 }
 
 export default function AffiliateDashboard() {
@@ -74,6 +86,35 @@ export default function AffiliateDashboard() {
         return;
       }
 
+      // Check for marketing metrics (fake data for content creators)
+      const { data: marketingMetrics } = await supabase
+        .from("affiliate_marketing_metrics")
+        .select("*")
+        .eq("affiliate_id", affiliate.id)
+        .eq("is_active", true)
+        .single();
+
+      const affiliateLink = `${window.location.origin}/signup?ref=${affiliate.affiliate_code}`;
+
+      // If marketing metrics exist and are active, use them instead of real data
+      if (marketingMetrics) {
+        const metrics = marketingMetrics as MarketingMetrics;
+        setStats({
+          totalReferrals: metrics.fake_total_referrals,
+          activeReferrals: metrics.fake_active_users,
+          totalCommissions: Number(metrics.fake_total_commission),
+          pendingCommissions: Number(metrics.fake_pending_commission),
+          monthlyEarnings: Number(metrics.fake_total_commission),
+          conversionRate: Number(metrics.fake_conversion_rate),
+          affiliateCode: affiliate.affiliate_code,
+          affiliateLink,
+          isMarketingAccount: true,
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Continue with real data if no marketing metrics
       // Get referrals
       const { data: referrals, error: referralsError } = await supabase
         .from("referrals")
@@ -120,8 +161,6 @@ export default function AffiliateDashboard() {
       // Available balance = total commission - already withdrawn
       const availableBalance = Math.max(0, Number(affiliate.total_commission) - totalWithdrawn);
 
-      const affiliateLink = `${window.location.origin}/signup?ref=${affiliate.affiliate_code}`;
-
       setStats({
         totalReferrals: filteredReferrals.length,
         activeReferrals,
@@ -130,7 +169,8 @@ export default function AffiliateDashboard() {
         monthlyEarnings: periodEarnings,
         conversionRate: referrals?.length ? (activeReferrals / referrals.length) * 100 : 0,
         affiliateCode: affiliate.affiliate_code,
-        affiliateLink
+        affiliateLink,
+        isMarketingAccount: false,
       });
     } catch (error) {
       console.error("Error fetching affiliate data:", error);

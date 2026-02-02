@@ -91,6 +91,65 @@ export type Database = {
           },
         ]
       }
+      affiliate_marketing_metrics: {
+        Row: {
+          affiliate_id: string
+          created_at: string
+          created_by: string | null
+          fake_active_users: number | null
+          fake_conversion_rate: number | null
+          fake_paid_commission: number | null
+          fake_pending_commission: number | null
+          fake_total_commission: number | null
+          fake_total_deposits: number | null
+          fake_total_referrals: number | null
+          id: string
+          is_active: boolean | null
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          affiliate_id: string
+          created_at?: string
+          created_by?: string | null
+          fake_active_users?: number | null
+          fake_conversion_rate?: number | null
+          fake_paid_commission?: number | null
+          fake_pending_commission?: number | null
+          fake_total_commission?: number | null
+          fake_total_deposits?: number | null
+          fake_total_referrals?: number | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          affiliate_id?: string
+          created_at?: string
+          created_by?: string | null
+          fake_active_users?: number | null
+          fake_conversion_rate?: number | null
+          fake_paid_commission?: number | null
+          fake_pending_commission?: number | null
+          fake_total_commission?: number | null
+          fake_total_deposits?: number | null
+          fake_total_referrals?: number | null
+          id?: string
+          is_active?: boolean | null
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_marketing_metrics_affiliate_id_fkey"
+            columns: ["affiliate_id"]
+            isOneToOne: true
+            referencedRelation: "affiliates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       affiliates: {
         Row: {
           affiliate_code: string
