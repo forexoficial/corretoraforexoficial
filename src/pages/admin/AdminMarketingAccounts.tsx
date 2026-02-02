@@ -285,13 +285,7 @@ export default function AdminMarketingAccounts() {
         if (error) throw error;
         toast.success("Métricas atualizadas com sucesso!");
       } else {
-        // Check if affiliate already has metrics
-        const existing = metrics.find(m => m.affiliate_id === formData.affiliate_id);
-        if (existing) {
-          toast.error("Este afiliado já possui métricas de marketing configuradas");
-          setSaving(false);
-          return;
-        }
+        // Create new (allow multiple entries per affiliate)
 
         // Create new
         const { error } = await supabase
@@ -388,10 +382,8 @@ export default function AdminMarketingAccounts() {
     setDialogOpen(true);
   };
 
-  // Filter affiliates that don't have metrics yet (for create)
-  const availableAffiliates = affiliates.filter(
-    a => !metrics.some(m => m.affiliate_id === a.id) || editingId
-  );
+  // All affiliates are available for selection (allow multiple metrics per affiliate)
+  const availableAffiliates = affiliates;
 
   if (loading) {
     return <LoadingSpinner size="lg" className="min-h-[400px]" />;
