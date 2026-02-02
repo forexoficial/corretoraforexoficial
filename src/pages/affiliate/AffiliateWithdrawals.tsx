@@ -113,22 +113,38 @@ export default function AffiliateWithdrawals() {
       }
 
       // Check for marketing metrics (fake data for content creators)
-      const { data: marketingMetrics } = await supabase
+      // Get ALL active marketing metrics for this affiliate (all periods)
+      const { data: allMarketingMetrics } = await supabase
         .from("affiliate_marketing_metrics")
         .select("fake_pending_commission, fake_withdrawal_history, is_active")
         .eq("affiliate_id", affiliate.id)
-        .eq("is_active", true)
-        .single();
+        .eq("is_active", true);
 
-      // If marketing metrics exist and are active, use fake balance
-      if (marketingMetrics) {
+      // If any marketing metrics exist and are active, aggregate them for total
+      if (allMarketingMetrics && allMarketingMetrics.length > 0) {
         setIsMarketingAccount(true);
         setMarketingAffiliateId(affiliate.id);
-        setAvailableBalance(Number(marketingMetrics.fake_pending_commission) || 0);
         
-        // Load fake withdrawal history for marketing accounts
-        const fakeHistory = (marketingMetrics.fake_withdrawal_history as unknown as FakeWithdrawal[]) || [];
-        const formattedHistory: WithdrawalRequest[] = fakeHistory.map(fw => ({
+        // Sum all fake_pending_commission from all periods
+        const totalPendingCommission = allMarketingMetrics.reduce(
+          (sum, m) => sum + (Number(m.fake_pending_commission) || 0), 
+          0
+        );
+        setAvailableBalance(totalPendingCommission);
+        
+        // Aggregate all fake withdrawal histories from all periods
+        const allFakeHistory: FakeWithdrawal[] = [];
+        allMarketingMetrics.forEach(m => {
+          const history = (m.fake_withdrawal_history as unknown as FakeWithdrawal[]) || [];
+          allFakeHistory.push(...history);
+        });
+        
+        // Sort by created_at descending
+        allFakeHistory.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        
+        const formattedHistory: WithdrawalRequest[] = allFakeHistory.map(fw => ({
           id: fw.id,
           amount: fw.amount,
           status: fw.status,
