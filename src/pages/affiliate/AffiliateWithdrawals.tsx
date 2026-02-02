@@ -58,10 +58,19 @@ interface WithdrawalRequest {
   amount: number;
   status: string;
   payment_method: string;
-  payment_details: any;
+  payment_details?: any;
   created_at: string;
   processed_at: string | null;
-  rejection_reason: string | null;
+  rejection_reason?: string | null;
+}
+
+interface FakeWithdrawal {
+  id: string;
+  amount: number;
+  status: string;
+  payment_method: string;
+  created_at: string;
+  processed_at: string | null;
 }
 
 export default function AffiliateWithdrawals() {
@@ -107,7 +116,7 @@ export default function AffiliateWithdrawals() {
       // Check for marketing metrics (fake data for content creators)
       const { data: marketingMetrics } = await supabase
         .from("affiliate_marketing_metrics")
-        .select("fake_pending_commission, is_active")
+        .select("fake_pending_commission, fake_withdrawal_history, is_active")
         .eq("affiliate_id", affiliate.id)
         .eq("is_active", true)
         .single();
@@ -118,8 +127,17 @@ export default function AffiliateWithdrawals() {
         setMarketingAffiliateId(affiliate.id);
         setAvailableBalance(Number(marketingMetrics.fake_pending_commission) || 0);
         
-        // Don't load real withdrawal history for marketing accounts
-        setWithdrawals([]);
+        // Load fake withdrawal history for marketing accounts
+        const fakeHistory = (marketingMetrics.fake_withdrawal_history as unknown as FakeWithdrawal[]) || [];
+        const formattedHistory: WithdrawalRequest[] = fakeHistory.map(fw => ({
+          id: fw.id,
+          amount: fw.amount,
+          status: fw.status,
+          payment_method: fw.payment_method,
+          created_at: fw.created_at,
+          processed_at: fw.processed_at,
+        }));
+        setWithdrawals(formattedHistory);
         setLoading(false);
         return;
       }

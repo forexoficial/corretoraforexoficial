@@ -70,6 +70,15 @@ interface FakeChartDataPoint {
   referrals: number;
 }
 
+interface FakeWithdrawal {
+  id: string;
+  amount: number;
+  status: string;
+  payment_method: string;
+  created_at: string;
+  processed_at: string | null;
+}
+
 interface MarketingMetrics {
   id: string;
   affiliate_id: string;
@@ -86,6 +95,7 @@ interface MarketingMetrics {
   period_start: string | null;
   period_end: string | null;
   fake_chart_data: FakeChartDataPoint[] | null;
+  fake_withdrawal_history: FakeWithdrawal[] | null;
   affiliate?: Affiliate;
 }
 
@@ -103,6 +113,7 @@ interface FormData {
   period_start: Date | undefined;
   period_end: Date | undefined;
   generate_chart_data: boolean;
+  fake_withdrawals: FakeWithdrawal[];
 }
 
 const initialFormData: FormData = {
@@ -119,6 +130,7 @@ const initialFormData: FormData = {
   period_start: undefined,
   period_end: undefined,
   generate_chart_data: true,
+  fake_withdrawals: [],
 };
 
 // Function to generate realistic daily chart data
@@ -230,7 +242,8 @@ export default function AdminMarketingAccounts() {
       const metricsWithAffiliates = metricsData?.map(metric => ({
         ...metric,
         affiliate: affiliatesWithProfiles.find(a => a.id === metric.affiliate_id),
-        fake_chart_data: (metric.fake_chart_data as unknown) as FakeChartDataPoint[] | null
+        fake_chart_data: (metric.fake_chart_data as unknown) as FakeChartDataPoint[] | null,
+        fake_withdrawal_history: (metric.fake_withdrawal_history as unknown) as FakeWithdrawal[] | null
       })) || [];
 
       setMetrics(metricsWithAffiliates as MarketingMetrics[]);
@@ -262,6 +275,11 @@ export default function AdminMarketingAccounts() {
         ) as unknown as Json;
       }
 
+      // Prepare withdrawal history
+      const withdrawalHistory: Json | null = formData.fake_withdrawals.length > 0 
+        ? formData.fake_withdrawals as unknown as Json 
+        : null;
+
       if (editingId) {
         // Update existing
         const { error } = await supabase
@@ -279,6 +297,7 @@ export default function AdminMarketingAccounts() {
             period_start: formData.period_start?.toISOString() || null,
             period_end: formData.period_end?.toISOString() || null,
             fake_chart_data: chartData,
+            fake_withdrawal_history: withdrawalHistory,
           })
           .eq("id", editingId);
 
@@ -304,6 +323,7 @@ export default function AdminMarketingAccounts() {
             period_start: formData.period_start?.toISOString() || null,
             period_end: formData.period_end?.toISOString() || null,
             fake_chart_data: chartData,
+            fake_withdrawal_history: withdrawalHistory,
           }]);
 
         if (error) throw error;
@@ -338,6 +358,7 @@ export default function AdminMarketingAccounts() {
       period_start: metric.period_start ? new Date(metric.period_start) : undefined,
       period_end: metric.period_end ? new Date(metric.period_end) : undefined,
       generate_chart_data: !!metric.fake_chart_data,
+      fake_withdrawals: metric.fake_withdrawal_history || [],
     });
     setDialogOpen(true);
   };
@@ -651,6 +672,140 @@ export default function AdminMarketingAccounts() {
                   </p>
                 </div>
               )}
+
+              {/* Fake Withdrawal History */}
+              <div className="space-y-3 p-3 rounded-lg bg-muted/50 border">
+                <div className="flex items-center justify-between">
+                  <Label className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-success" />
+                    Histórico de Saques Fictício
+                  </Label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newWithdrawal: FakeWithdrawal = {
+                        id: crypto.randomUUID(),
+                        amount: 1000,
+                        status: "approved",
+                        payment_method: "pix",
+                        created_at: new Date().toISOString(),
+                        processed_at: new Date().toISOString(),
+                      };
+                      setFormData({
+                        ...formData,
+                        fake_withdrawals: [...formData.fake_withdrawals, newWithdrawal],
+                      });
+                    }}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Adicionar Saque
+                  </Button>
+                </div>
+                
+                {formData.fake_withdrawals.length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-2">
+                    Nenhum saque fictício configurado
+                  </p>
+                ) : (
+                  <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                    {formData.fake_withdrawals.map((withdrawal, index) => (
+                      <div key={withdrawal.id} className="flex items-center gap-2 p-2 bg-background rounded border">
+                        <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="Valor"
+                            value={withdrawal.amount}
+                            onChange={(e) => {
+                              const updated = [...formData.fake_withdrawals];
+                              updated[index] = { ...updated[index], amount: parseFloat(e.target.value) || 0 };
+                              setFormData({ ...formData, fake_withdrawals: updated });
+                            }}
+                            className="h-8 text-xs"
+                          />
+                          <Select
+                            value={withdrawal.status}
+                            onValueChange={(value) => {
+                              const updated = [...formData.fake_withdrawals];
+                              updated[index] = { ...updated[index], status: value };
+                              setFormData({ ...formData, fake_withdrawals: updated });
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="approved">Aprovado</SelectItem>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                              <SelectItem value="processing">Processando</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Select
+                            value={withdrawal.payment_method}
+                            onValueChange={(value) => {
+                              const updated = [...formData.fake_withdrawals];
+                              updated[index] = { ...updated[index], payment_method: value };
+                              setFormData({ ...formData, fake_withdrawals: updated });
+                            }}
+                          >
+                            <SelectTrigger className="h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pix">PIX</SelectItem>
+                              <SelectItem value="bank_transfer">Transferência</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <Popover>
+                            <PopoverTrigger asChild>
+                              <Button variant="outline" size="sm" className="h-8 text-xs justify-start">
+                                <CalendarIcon className="h-3 w-3 mr-1" />
+                                {format(new Date(withdrawal.created_at), "dd/MM/yy")}
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0" align="start">
+                              <Calendar
+                                mode="single"
+                                selected={new Date(withdrawal.created_at)}
+                                onSelect={(date) => {
+                                  if (date) {
+                                    const updated = [...formData.fake_withdrawals];
+                                    updated[index] = { 
+                                      ...updated[index], 
+                                      created_at: date.toISOString(),
+                                      processed_at: date.toISOString()
+                                    };
+                                    setFormData({ ...formData, fake_withdrawals: updated });
+                                  }
+                                }}
+                                initialFocus
+                                locale={ptBR}
+                              />
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setFormData({
+                              ...formData,
+                              fake_withdrawals: formData.fake_withdrawals.filter((_, i) => i !== index),
+                            });
+                          }}
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Notes */}
               <div className="space-y-2">

@@ -104,6 +104,7 @@ export type Database = {
           fake_total_commission: number | null
           fake_total_deposits: number | null
           fake_total_referrals: number | null
+          fake_withdrawal_history: Json | null
           id: string
           is_active: boolean | null
           notes: string | null
@@ -123,6 +124,7 @@ export type Database = {
           fake_total_commission?: number | null
           fake_total_deposits?: number | null
           fake_total_referrals?: number | null
+          fake_withdrawal_history?: Json | null
           id?: string
           is_active?: boolean | null
           notes?: string | null
@@ -142,6 +144,7 @@ export type Database = {
           fake_total_commission?: number | null
           fake_total_deposits?: number | null
           fake_total_referrals?: number | null
+          fake_withdrawal_history?: Json | null
           id?: string
           is_active?: boolean | null
           notes?: string | null
