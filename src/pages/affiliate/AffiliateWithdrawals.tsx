@@ -72,6 +72,7 @@ export default function AffiliateWithdrawals() {
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [isMarketingAccount, setIsMarketingAccount] = useState(false);
+  const [marketingAffiliateId, setMarketingAffiliateId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState({
     amount: "",
@@ -114,6 +115,7 @@ export default function AffiliateWithdrawals() {
       // If marketing metrics exist and are active, use fake balance
       if (marketingMetrics) {
         setIsMarketingAccount(true);
+        setMarketingAffiliateId(affiliate.id);
         setAvailableBalance(Number(marketingMetrics.fake_pending_commission) || 0);
         
         // Don't load real withdrawal history for marketing accounts
@@ -123,6 +125,7 @@ export default function AffiliateWithdrawals() {
       }
 
       setIsMarketingAccount(false);
+      setMarketingAffiliateId(null);
 
       // Get approved withdrawals to calculate available balance
       const { data: approvedWithdrawals } = await supabase
@@ -185,6 +188,35 @@ export default function AffiliateWithdrawals() {
       // Check available balance
       if (validatedData.amount > availableBalance) {
         toast.error("Saldo insuficiente para este saque");
+        return;
+      }
+
+      // For marketing accounts, just update the fake balance locally
+      if (isMarketingAccount && marketingAffiliateId) {
+        // Update the fake_pending_commission in the database
+        const newBalance = availableBalance - validatedData.amount;
+        
+        const { error: updateError } = await supabase
+          .from("affiliate_marketing_metrics")
+          .update({ fake_pending_commission: newBalance })
+          .eq("affiliate_id", marketingAffiliateId)
+          .eq("is_active", true);
+
+        if (updateError) throw updateError;
+
+        // Update local state immediately
+        setAvailableBalance(newBalance);
+        toast.success(`Saque de R$ ${formatCurrency(validatedData.amount)} realizado com sucesso!`);
+        setDialogOpen(false);
+        setFormData({
+          amount: "",
+          payment_method: "",
+          pix_key: "",
+          bank_name: "",
+          bank_account: "",
+          bank_agency: "",
+          account_holder: "",
+        });
         return;
       }
 
@@ -266,17 +298,7 @@ export default function AffiliateWithdrawals() {
         </p>
       </div>
 
-      {/* Marketing Account Notice */}
-      {isMarketingAccount && (
-        <Card className="border-yellow-500/30 bg-yellow-500/5">
-          <CardContent className="pt-4">
-            <p className="text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" />
-              <span>Conta de marketing - saldo fictício para demonstração</span>
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Marketing Account Notice - Removed as requested */}
 
       {/* Balance Card */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
@@ -296,7 +318,7 @@ export default function AffiliateWithdrawals() {
             R$ {formatCurrency(availableBalance)}
           </div>
           
-          {!isMarketingAccount && (
+          {(
             <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
               <DialogTrigger asChild>
                 <Button 
@@ -447,7 +469,7 @@ export default function AffiliateWithdrawals() {
             </Dialog>
           )}
 
-          {!isMarketingAccount && availableBalance < MIN_WITHDRAWAL && (
+          {availableBalance < MIN_WITHDRAWAL && (
             <p className="text-xs sm:text-sm text-muted-foreground mt-3 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               Saldo insuficiente. Mínimo para saque: R$ {MIN_WITHDRAWAL}
