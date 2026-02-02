@@ -75,7 +75,6 @@ export default function AffiliateDashboard() {
   useEffect(() => {
     if (user && startDate && endDate) {
       fetchAffiliateData();
-      fetchChartData();
     }
   }, [user, startDate, endDate]);
 
@@ -145,18 +144,25 @@ export default function AffiliateDashboard() {
           });
           
           // Set fake chart data if available, filtered by date range
+          const filterStart = new Date(startDate!);
+          filterStart.setHours(0, 0, 0, 0);
+          const filterEnd = new Date(endDate!);
+          filterEnd.setHours(23, 59, 59, 999);
+
           if (metrics.fake_chart_data && metrics.fake_chart_data.length > 0) {
             const filteredChartData = metrics.fake_chart_data
-              .filter(point => {
+              .filter((point) => {
                 const pointDate = new Date(point.date);
-                return pointDate >= startDate! && pointDate <= endDate!;
+                return pointDate >= filterStart && pointDate <= filterEnd;
               })
-              .map(point => ({
+              .map((point) => ({
                 date: new Date(point.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
                 commissions: point.commissions,
-                referrals: point.referrals
+                referrals: point.referrals,
               }));
             setChartData(filteredChartData);
+          } else {
+            setChartData([]);
           }
           
           setLoading(false);
@@ -222,6 +228,9 @@ export default function AffiliateDashboard() {
         affiliateLink,
         isMarketingAccount: false,
       });
+
+      // For real accounts, load chart data from real tables
+      await fetchChartData(affiliate.id);
     } catch (error) {
       console.error("Error fetching affiliate data:", error);
       toast.error("Erro ao carregar dados");
@@ -230,28 +239,22 @@ export default function AffiliateDashboard() {
     }
   };
 
-  const fetchChartData = async () => {
+  const fetchChartData = async (affiliateId: string) => {
     try {
-      const { data: affiliate } = await supabase
-        .from("affiliates")
-        .select("id")
-        .eq("user_id", user?.id)
-        .single();
-
-      if (!affiliate || !startDate || !endDate) return;
+      if (!affiliateId || !startDate || !endDate) return;
 
       // Fetch all commissions and referrals in the date range with just 2 queries
       const [commissionsResponse, referralsResponse] = await Promise.all([
         supabase
           .from("commissions")
           .select("amount, created_at")
-          .eq("affiliate_id", affiliate.id)
+          .eq("affiliate_id", affiliateId)
           .gte("created_at", startDate.toISOString())
           .lte("created_at", endDate.toISOString()),
         supabase
           .from("referrals")
           .select("id, created_at")
-          .eq("affiliate_id", affiliate.id)
+          .eq("affiliate_id", affiliateId)
           .gte("created_at", startDate.toISOString())
           .lte("created_at", endDate.toISOString())
       ]);
