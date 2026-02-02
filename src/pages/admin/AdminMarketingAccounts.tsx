@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import type { Json } from "@/integrations/supabase/types";
 import { 
   Users, 
   DollarSign, 
@@ -63,6 +64,12 @@ interface Affiliate {
   };
 }
 
+interface FakeChartDataPoint {
+  date: string;
+  commissions: number;
+  referrals: number;
+}
+
 interface MarketingMetrics {
   id: string;
   affiliate_id: string;
@@ -78,6 +85,7 @@ interface MarketingMetrics {
   created_at: string;
   period_start: string | null;
   period_end: string | null;
+  fake_chart_data: FakeChartDataPoint[] | null;
   affiliate?: Affiliate;
 }
 
@@ -94,6 +102,7 @@ interface FormData {
   notes: string;
   period_start: Date | undefined;
   period_end: Date | undefined;
+  generate_chart_data: boolean;
 }
 
 const initialFormData: FormData = {
@@ -109,6 +118,63 @@ const initialFormData: FormData = {
   notes: "",
   period_start: undefined,
   period_end: undefined,
+  generate_chart_data: true,
+};
+
+// Function to generate realistic daily chart data
+const generateFakeChartData = (
+  periodStart: Date,
+  periodEnd: Date,
+  totalCommission: number,
+  totalReferrals: number
+): FakeChartDataPoint[] => {
+  const chartData: FakeChartDataPoint[] = [];
+  const daysDiff = Math.ceil((periodEnd.getTime() - periodStart.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  
+  // Distribute values with some randomness to look realistic
+  let remainingCommissions = totalCommission;
+  let remainingReferrals = totalReferrals;
+  
+  for (let i = 0; i < daysDiff; i++) {
+    const currentDate = new Date(periodStart);
+    currentDate.setDate(currentDate.getDate() + i);
+    
+    const isLastDay = i === daysDiff - 1;
+    
+    // Calculate daily values with variance
+    let dailyCommission = 0;
+    let dailyReferrals = 0;
+    
+    if (isLastDay) {
+      // Assign remaining values to last day
+      dailyCommission = Math.max(0, remainingCommissions);
+      dailyReferrals = Math.max(0, remainingReferrals);
+    } else {
+      const daysRemaining = daysDiff - i;
+      const avgCommission = remainingCommissions / daysRemaining;
+      const avgReferrals = remainingReferrals / daysRemaining;
+      
+      // Add variance (0.3 to 1.7 of average)
+      const variance = 0.3 + Math.random() * 1.4;
+      dailyCommission = Math.max(0, Math.round(avgCommission * variance * 100) / 100);
+      dailyReferrals = Math.max(0, Math.round(avgReferrals * variance));
+      
+      // Don't exceed remaining
+      dailyCommission = Math.min(dailyCommission, remainingCommissions);
+      dailyReferrals = Math.min(dailyReferrals, remainingReferrals);
+    }
+    
+    remainingCommissions -= dailyCommission;
+    remainingReferrals -= dailyReferrals;
+    
+    chartData.push({
+      date: currentDate.toISOString().split('T')[0],
+      commissions: dailyCommission,
+      referrals: dailyReferrals
+    });
+  }
+  
+  return chartData;
 };
 
 export default function AdminMarketingAccounts() {
@@ -163,10 +229,11 @@ export default function AdminMarketingAccounts() {
       // Merge affiliate info into metrics
       const metricsWithAffiliates = metricsData?.map(metric => ({
         ...metric,
-        affiliate: affiliatesWithProfiles.find(a => a.id === metric.affiliate_id)
+        affiliate: affiliatesWithProfiles.find(a => a.id === metric.affiliate_id),
+        fake_chart_data: (metric.fake_chart_data as unknown) as FakeChartDataPoint[] | null
       })) || [];
 
-      setMetrics(metricsWithAffiliates);
+      setMetrics(metricsWithAffiliates as MarketingMetrics[]);
       setAffiliates(affiliatesWithProfiles);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -184,6 +251,17 @@ export default function AdminMarketingAccounts() {
 
     setSaving(true);
     try {
+      // Generate chart data if period is set and generate_chart_data is true
+      let chartData: Json | null = null;
+      if (formData.generate_chart_data && formData.period_start && formData.period_end) {
+        chartData = generateFakeChartData(
+          formData.period_start,
+          formData.period_end,
+          formData.fake_total_commission,
+          formData.fake_total_referrals
+        ) as unknown as Json;
+      }
+
       if (editingId) {
         // Update existing
         const { error } = await supabase
@@ -200,6 +278,7 @@ export default function AdminMarketingAccounts() {
             notes: formData.notes || null,
             period_start: formData.period_start?.toISOString() || null,
             period_end: formData.period_end?.toISOString() || null,
+            fake_chart_data: chartData,
           })
           .eq("id", editingId);
 
@@ -217,7 +296,7 @@ export default function AdminMarketingAccounts() {
         // Create new
         const { error } = await supabase
           .from("affiliate_marketing_metrics")
-          .insert({
+          .insert([{
             affiliate_id: formData.affiliate_id,
             fake_total_referrals: formData.fake_total_referrals,
             fake_total_deposits: formData.fake_total_deposits,
@@ -230,7 +309,8 @@ export default function AdminMarketingAccounts() {
             notes: formData.notes || null,
             period_start: formData.period_start?.toISOString() || null,
             period_end: formData.period_end?.toISOString() || null,
-          });
+            fake_chart_data: chartData,
+          }]);
 
         if (error) throw error;
         toast.success("Métricas criadas com sucesso!");
@@ -263,6 +343,7 @@ export default function AdminMarketingAccounts() {
       notes: metric.notes || "",
       period_start: metric.period_start ? new Date(metric.period_start) : undefined,
       period_end: metric.period_end ? new Date(metric.period_end) : undefined,
+      generate_chart_data: !!metric.fake_chart_data,
     });
     setDialogOpen(true);
   };
@@ -559,6 +640,25 @@ export default function AdminMarketingAccounts() {
                   </Button>
                 )}
               </div>
+
+              {/* Chart Data Generation */}
+              {formData.period_start && formData.period_end && (
+                <div className="space-y-2 p-3 rounded-lg bg-muted/50 border">
+                  <div className="flex items-center space-x-2">
+                    <Switch
+                      checked={formData.generate_chart_data}
+                      onCheckedChange={(checked) => setFormData({ ...formData, generate_chart_data: checked })}
+                    />
+                    <Label className="flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-success" />
+                      Gerar dados do gráfico automaticamente
+                    </Label>
+                  </div>
+                  <p className="text-xs text-muted-foreground pl-8">
+                    Os valores de comissões e referidos serão distribuídos dia a dia de forma realista no período configurado
+                  </p>
+                </div>
+              )}
 
               {/* Notes */}
               <div className="space-y-2">
