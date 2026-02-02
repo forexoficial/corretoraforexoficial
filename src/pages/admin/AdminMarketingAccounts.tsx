@@ -756,6 +756,7 @@ export default function AdminMarketingAccounts() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="pix">PIX</SelectItem>
+                              <SelectItem value="crypto">Cripto (USDT)</SelectItem>
                               <SelectItem value="bank_transfer">Transferência</SelectItem>
                             </SelectContent>
                           </Select>
