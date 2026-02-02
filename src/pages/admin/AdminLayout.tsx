@@ -53,7 +53,7 @@ const menuItems = [
   { icon: UserCheck, label: "Afiliados", path: "/admin/affiliates" },
   { icon: Sparkles, label: "Contas de Marketing", path: "/admin/marketing-accounts" },
   { icon: Users, label: "Copy Trade", path: "/admin/copy-trade" },
-  { icon: DollarSign, label: "Saques", path: "/admin/withdrawals" },
+  { icon: DollarSign, label: "Saques Afiliados", path: "/admin/withdrawals" },
   { icon: FileText, label: "Documentos Legais", path: "/admin/legal" },
   { icon: KeyRound, label: "Login Social", path: "/admin/social-auth" },
   { icon: Settings, label: "Configurações", path: "/admin/settings" },
