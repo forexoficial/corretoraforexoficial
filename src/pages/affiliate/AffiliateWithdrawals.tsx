@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
-import { DollarSign, Wallet, AlertCircle, CheckCircle2, Clock } from "lucide-react";
+import { DollarSign, Wallet, AlertCircle, CheckCircle2, Clock, Bitcoin } from "lucide-react";
 import { toast } from "sonner";
 import { z } from "zod";
 import {
@@ -35,6 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const MIN_WITHDRAWAL = 50;
 
@@ -43,14 +44,13 @@ const withdrawalSchema = z.object({
     .min(MIN_WITHDRAWAL, `Valor mínimo de saque é R$ ${MIN_WITHDRAWAL}`)
     .positive("Valor deve ser positivo"),
   payment_method: z.string().refine(
-    (val) => val === "pix" || val === "bank_transfer",
+    (val) => val === "pix" || val === "crypto",
     { message: "Selecione um método de pagamento" }
   ),
   pix_key: z.string().optional(),
-  bank_name: z.string().optional(),
-  bank_account: z.string().optional(),
-  bank_agency: z.string().optional(),
-  account_holder: z.string().optional(),
+  pix_key_type: z.string().optional(),
+  crypto_wallet: z.string().optional(),
+  crypto_network: z.string().optional(),
 });
 
 interface WithdrawalRequest {
@@ -85,12 +85,11 @@ export default function AffiliateWithdrawals() {
   
   const [formData, setFormData] = useState({
     amount: "",
-    payment_method: "",
+    payment_method: "pix",
     pix_key: "",
-    bank_name: "",
-    bank_account: "",
-    bank_agency: "",
-    account_holder: "",
+    pix_key_type: "cpf",
+    crypto_wallet: "",
+    crypto_network: "trc20",
   });
 
   useEffect(() => {
@@ -197,10 +196,9 @@ export default function AffiliateWithdrawals() {
         amount: parseFloat(formData.amount),
         payment_method: formData.payment_method,
         pix_key: formData.pix_key,
-        bank_name: formData.bank_name,
-        bank_account: formData.bank_account,
-        bank_agency: formData.bank_agency,
-        account_holder: formData.account_holder,
+        pix_key_type: formData.pix_key_type,
+        crypto_wallet: formData.crypto_wallet,
+        crypto_network: formData.crypto_network,
       });
 
       // Check available balance
@@ -228,25 +226,19 @@ export default function AffiliateWithdrawals() {
         setDialogOpen(false);
         setFormData({
           amount: "",
-          payment_method: "",
+          payment_method: "pix",
           pix_key: "",
-          bank_name: "",
-          bank_account: "",
-          bank_agency: "",
-          account_holder: "",
+          pix_key_type: "cpf",
+          crypto_wallet: "",
+          crypto_network: "trc20",
         });
         return;
       }
 
       // Prepare payment details
       const payment_details = validatedData.payment_method === "pix"
-        ? { pix_key: formData.pix_key }
-        : {
-            bank_name: formData.bank_name,
-            bank_account: formData.bank_account,
-            bank_agency: formData.bank_agency,
-            account_holder: formData.account_holder,
-          };
+        ? { pix_key: formData.pix_key, pix_key_type: formData.pix_key_type }
+        : { crypto_wallet: formData.crypto_wallet, crypto_network: formData.crypto_network };
 
       // Create withdrawal request
       const { error } = await supabase
@@ -264,12 +256,11 @@ export default function AffiliateWithdrawals() {
       setDialogOpen(false);
       setFormData({
         amount: "",
-        payment_method: "",
+        payment_method: "pix",
         pix_key: "",
-        bank_name: "",
-        bank_account: "",
-        bank_agency: "",
-        account_holder: "",
+        pix_key_type: "cpf",
+        crypto_wallet: "",
+        crypto_network: "trc20",
       });
       fetchData();
     } catch (error: any) {
@@ -376,97 +367,117 @@ export default function AffiliateWithdrawals() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="payment_method" className="text-xs sm:text-sm">Método de Pagamento</Label>
-                    <Select
-                      value={formData.payment_method}
-                      onValueChange={(value) =>
-                        setFormData({ ...formData, payment_method: value })
-                      }
-                      required
+                    <Label className="text-xs sm:text-sm">Método de Pagamento</Label>
+                    <Tabs 
+                      value={formData.payment_method} 
+                      onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
+                      className="w-full"
                     >
-                      <SelectTrigger className="text-sm">
-                        <SelectValue placeholder="Selecione o método" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pix">PIX</SelectItem>
-                        <SelectItem value="bank_transfer">Transferência Bancária</SelectItem>
-                      </SelectContent>
-                    </Select>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="pix" className="flex items-center gap-2">
+                          <DollarSign className="w-4 h-4" />
+                          PIX
+                        </TabsTrigger>
+                        <TabsTrigger value="crypto" className="flex items-center gap-2">
+                          <Bitcoin className="w-4 h-4" />
+                          Cripto (USDT)
+                        </TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="pix" className="space-y-4 mt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="pix_key_type" className="text-xs sm:text-sm">Tipo de Chave PIX</Label>
+                          <Select
+                            value={formData.pix_key_type}
+                            onValueChange={(value) => setFormData({ ...formData, pix_key_type: value })}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="Selecione o tipo" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="cpf">CPF</SelectItem>
+                              <SelectItem value="cnpj">CNPJ</SelectItem>
+                              <SelectItem value="email">E-mail</SelectItem>
+                              <SelectItem value="phone">Telefone</SelectItem>
+                              <SelectItem value="random">Chave Aleatória</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="pix_key" className="text-xs sm:text-sm">Chave PIX</Label>
+                          <Input
+                            id="pix_key"
+                            value={formData.pix_key}
+                            onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
+                            placeholder={
+                              formData.pix_key_type === 'cpf' ? '000.000.000-00' :
+                              formData.pix_key_type === 'cnpj' ? '00.000.000/0000-00' :
+                              formData.pix_key_type === 'email' ? 'exemplo@email.com' :
+                              formData.pix_key_type === 'phone' ? '+55 11 99999-9999' :
+                              'Chave aleatória'
+                            }
+                            required={formData.payment_method === 'pix'}
+                            className="text-sm"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Certifique-se de que a chave PIX está vinculada a uma conta em seu nome.
+                          </p>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="crypto" className="space-y-4 mt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="crypto_network" className="text-xs sm:text-sm">Rede</Label>
+                          <Select
+                            value={formData.crypto_network}
+                            onValueChange={(value) => setFormData({ ...formData, crypto_network: value })}
+                          >
+                            <SelectTrigger className="text-sm">
+                              <SelectValue placeholder="Selecione a rede" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="trc20">TRC20 (Tron)</SelectItem>
+                              <SelectItem value="erc20">ERC20 (Ethereum)</SelectItem>
+                              <SelectItem value="bep20">BEP20 (BSC)</SelectItem>
+                              <SelectItem value="polygon">Polygon</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="crypto_wallet" className="text-xs sm:text-sm">Endereço da Carteira USDT</Label>
+                          <Input
+                            id="crypto_wallet"
+                            value={formData.crypto_wallet}
+                            onChange={(e) => setFormData({ ...formData, crypto_wallet: e.target.value })}
+                            placeholder={
+                              formData.crypto_network === 'trc20' ? 'T...' :
+                              formData.crypto_network === 'erc20' ? '0x...' :
+                              formData.crypto_network === 'bep20' ? '0x...' :
+                              '0x...'
+                            }
+                            required={formData.payment_method === 'crypto'}
+                            className="text-sm font-mono"
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Endereço de carteira para receber USDT na rede {
+                              formData.crypto_network === 'trc20' ? 'Tron (TRC20)' :
+                              formData.crypto_network === 'erc20' ? 'Ethereum (ERC20)' :
+                              formData.crypto_network === 'bep20' ? 'Binance Smart Chain (BEP20)' :
+                              'Polygon'
+                            }
+                          </p>
+                        </div>
+
+                        <div className="p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                          <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                            ⚠️ Atenção: Verifique cuidadosamente o endereço da carteira. Transações em cripto são irreversíveis.
+                          </p>
+                        </div>
+                      </TabsContent>
+                    </Tabs>
                   </div>
-
-                  {formData.payment_method === "pix" && (
-                    <div className="space-y-2">
-                      <Label htmlFor="pix_key" className="text-xs sm:text-sm">Chave PIX</Label>
-                      <Input
-                        id="pix_key"
-                        value={formData.pix_key}
-                        onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
-                        placeholder="CPF, e-mail, telefone ou chave aleatória"
-                        required
-                        className="text-sm"
-                      />
-                    </div>
-                  )}
-
-                  {formData.payment_method === "bank_transfer" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label htmlFor="account_holder" className="text-xs sm:text-sm">Titular da Conta</Label>
-                        <Input
-                          id="account_holder"
-                          value={formData.account_holder}
-                          onChange={(e) =>
-                            setFormData({ ...formData, account_holder: e.target.value })
-                          }
-                          placeholder="Nome completo"
-                          required
-                          className="text-sm"
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="bank_name" className="text-xs sm:text-sm">Banco</Label>
-                        <Input
-                          id="bank_name"
-                          value={formData.bank_name}
-                          onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                          placeholder="Nome do banco"
-                          required
-                          className="text-sm"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label htmlFor="bank_agency" className="text-xs sm:text-sm">Agência</Label>
-                          <Input
-                            id="bank_agency"
-                            value={formData.bank_agency}
-                            onChange={(e) =>
-                              setFormData({ ...formData, bank_agency: e.target.value })
-                            }
-                            placeholder="0000"
-                            required
-                            className="text-sm"
-                          />
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="bank_account" className="text-xs sm:text-sm">Conta</Label>
-                          <Input
-                            id="bank_account"
-                            value={formData.bank_account}
-                            onChange={(e) =>
-                              setFormData({ ...formData, bank_account: e.target.value })
-                            }
-                            placeholder="00000-0"
-                            required
-                            className="text-sm"
-                          />
-                        </div>
-                      </div>
-                    </>
-                  )}
 
                   <div className="flex gap-2 pt-2">
                     <Button
