@@ -25,7 +25,8 @@ import {
   Bell,
   KeyRound,
   RefreshCw,
-  Trophy
+  Trophy,
+  Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -50,6 +51,7 @@ const menuItems = [
   { icon: Zap, label: "Boosters", path: "/admin/boosters" },
   { icon: Trophy, label: "Líderes da Semana", path: "/admin/weekly-leaders" },
   { icon: UserCheck, label: "Afiliados", path: "/admin/affiliates" },
+  { icon: Sparkles, label: "Contas de Marketing", path: "/admin/marketing-accounts" },
   { icon: Users, label: "Copy Trade", path: "/admin/copy-trade" },
   { icon: DollarSign, label: "Saques", path: "/admin/withdrawals" },
   { icon: FileText, label: "Documentos Legais", path: "/admin/legal" },

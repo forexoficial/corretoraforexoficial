@@ -46,6 +46,7 @@ import AdminTransactionRecovery from "./pages/admin/AdminTransactionRecovery";
 import AdminCopyTrade from "./pages/admin/AdminCopyTrade";
 import AdminPushNotifications from "./pages/admin/AdminPushNotifications";
 import AdminWeeklyLeaders from "./pages/admin/AdminWeeklyLeaders";
+import AdminMarketingAccounts from "./pages/admin/AdminMarketingAccounts";
 import CopyTrade from "./pages/CopyTrade";
 import AffiliateLayout from "./pages/affiliate/AffiliateLayout";
 import AffiliateDashboard from "./pages/affiliate/AffiliateDashboard";
@@ -167,6 +168,7 @@ const App = () => (
               <Route path="boosters" element={<AdminBoosters />} />
                 <Route path="weekly-leaders" element={<AdminWeeklyLeaders />} />
                 <Route path="affiliates" element={<AdminAffiliates />} />
+                <Route path="marketing-accounts" element={<AdminMarketingAccounts />} />
                 <Route path="copy-trade" element={<AdminCopyTrade />} />
                 <Route path="withdrawals" element={<AdminWithdrawals />} />
                 <Route path="legal" element={<AdminLegal />} />
