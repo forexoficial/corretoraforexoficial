@@ -71,6 +71,7 @@ export default function AffiliateWithdrawals() {
   const [availableBalance, setAvailableBalance] = useState(0);
   const [withdrawals, setWithdrawals] = useState<WithdrawalRequest[]>([]);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [isMarketingAccount, setIsMarketingAccount] = useState(false);
   
   const [formData, setFormData] = useState({
     amount: "",
@@ -101,6 +102,27 @@ export default function AffiliateWithdrawals() {
         toast.error("Você não é um afiliado cadastrado");
         return;
       }
+
+      // Check for marketing metrics (fake data for content creators)
+      const { data: marketingMetrics } = await supabase
+        .from("affiliate_marketing_metrics")
+        .select("fake_pending_commission, is_active")
+        .eq("affiliate_id", affiliate.id)
+        .eq("is_active", true)
+        .single();
+
+      // If marketing metrics exist and are active, use fake balance
+      if (marketingMetrics) {
+        setIsMarketingAccount(true);
+        setAvailableBalance(Number(marketingMetrics.fake_pending_commission) || 0);
+        
+        // Don't load real withdrawal history for marketing accounts
+        setWithdrawals([]);
+        setLoading(false);
+        return;
+      }
+
+      setIsMarketingAccount(false);
 
       // Get approved withdrawals to calculate available balance
       const { data: approvedWithdrawals } = await supabase
@@ -244,6 +266,18 @@ export default function AffiliateWithdrawals() {
         </p>
       </div>
 
+      {/* Marketing Account Notice */}
+      {isMarketingAccount && (
+        <Card className="border-yellow-500/30 bg-yellow-500/5">
+          <CardContent className="pt-4">
+            <p className="text-sm text-yellow-600 dark:text-yellow-400 flex items-center gap-2">
+              <AlertCircle className="w-4 h-4" />
+              <span>Conta de marketing - saldo fictício para demonstração</span>
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Balance Card */}
       <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
         <CardHeader>
@@ -262,156 +296,158 @@ export default function AffiliateWithdrawals() {
             R$ {formatCurrency(availableBalance)}
           </div>
           
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="w-full sm:w-auto" 
-                disabled={availableBalance < MIN_WITHDRAWAL}
-              >
-                <DollarSign className="w-4 h-4 mr-2" />
-                Solicitar Saque
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Solicitar Saque</DialogTitle>
-                <DialogDescription>
-                  Valor mínimo: R$ {MIN_WITHDRAWAL}
-                </DialogDescription>
-              </DialogHeader>
+          {!isMarketingAccount && (
+            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  className="w-full sm:w-auto" 
+                  disabled={availableBalance < MIN_WITHDRAWAL}
+                >
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  Solicitar Saque
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Solicitar Saque</DialogTitle>
+                  <DialogDescription>
+                    Valor mínimo: R$ {MIN_WITHDRAWAL}
+                  </DialogDescription>
+                </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount" className="text-xs sm:text-sm">Valor do Saque (R$)</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    step="0.01"
-                    min={MIN_WITHDRAWAL}
-                    max={availableBalance}
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    placeholder={`Mínimo: R$ ${MIN_WITHDRAWAL}`}
-                    required
-                    className="text-sm"
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    Disponível: R$ {formatCurrency(availableBalance)}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="payment_method" className="text-xs sm:text-sm">Método de Pagamento</Label>
-                  <Select
-                    value={formData.payment_method}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, payment_method: value })
-                    }
-                    required
-                  >
-                    <SelectTrigger className="text-sm">
-                      <SelectValue placeholder="Selecione o método" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="bank_transfer">Transferência Bancária</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {formData.payment_method === "pix" && (
+                <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="pix_key" className="text-xs sm:text-sm">Chave PIX</Label>
+                    <Label htmlFor="amount" className="text-xs sm:text-sm">Valor do Saque (R$)</Label>
                     <Input
-                      id="pix_key"
-                      value={formData.pix_key}
-                      onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
-                      placeholder="CPF, e-mail, telefone ou chave aleatória"
+                      id="amount"
+                      type="number"
+                      step="0.01"
+                      min={MIN_WITHDRAWAL}
+                      max={availableBalance}
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      placeholder={`Mínimo: R$ ${MIN_WITHDRAWAL}`}
                       required
                       className="text-sm"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      Disponível: R$ {formatCurrency(availableBalance)}
+                    </p>
                   </div>
-                )}
 
-                {formData.payment_method === "bank_transfer" && (
-                  <>
+                  <div className="space-y-2">
+                    <Label htmlFor="payment_method" className="text-xs sm:text-sm">Método de Pagamento</Label>
+                    <Select
+                      value={formData.payment_method}
+                      onValueChange={(value) =>
+                        setFormData({ ...formData, payment_method: value })
+                      }
+                      required
+                    >
+                      <SelectTrigger className="text-sm">
+                        <SelectValue placeholder="Selecione o método" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="bank_transfer">Transferência Bancária</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.payment_method === "pix" && (
                     <div className="space-y-2">
-                      <Label htmlFor="account_holder" className="text-xs sm:text-sm">Titular da Conta</Label>
+                      <Label htmlFor="pix_key" className="text-xs sm:text-sm">Chave PIX</Label>
                       <Input
-                        id="account_holder"
-                        value={formData.account_holder}
-                        onChange={(e) =>
-                          setFormData({ ...formData, account_holder: e.target.value })
-                        }
-                        placeholder="Nome completo"
+                        id="pix_key"
+                        value={formData.pix_key}
+                        onChange={(e) => setFormData({ ...formData, pix_key: e.target.value })}
+                        placeholder="CPF, e-mail, telefone ou chave aleatória"
                         required
                         className="text-sm"
                       />
                     </div>
+                  )}
 
-                    <div className="space-y-2">
-                      <Label htmlFor="bank_name" className="text-xs sm:text-sm">Banco</Label>
-                      <Input
-                        id="bank_name"
-                        value={formData.bank_name}
-                        onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
-                        placeholder="Nome do banco"
-                        required
-                        className="text-sm"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3">
+                  {formData.payment_method === "bank_transfer" && (
+                    <>
                       <div className="space-y-2">
-                        <Label htmlFor="bank_agency" className="text-xs sm:text-sm">Agência</Label>
+                        <Label htmlFor="account_holder" className="text-xs sm:text-sm">Titular da Conta</Label>
                         <Input
-                          id="bank_agency"
-                          value={formData.bank_agency}
+                          id="account_holder"
+                          value={formData.account_holder}
                           onChange={(e) =>
-                            setFormData({ ...formData, bank_agency: e.target.value })
+                            setFormData({ ...formData, account_holder: e.target.value })
                           }
-                          placeholder="0000"
+                          placeholder="Nome completo"
                           required
                           className="text-sm"
                         />
                       </div>
 
                       <div className="space-y-2">
-                        <Label htmlFor="bank_account" className="text-xs sm:text-sm">Conta</Label>
+                        <Label htmlFor="bank_name" className="text-xs sm:text-sm">Banco</Label>
                         <Input
-                          id="bank_account"
-                          value={formData.bank_account}
-                          onChange={(e) =>
-                            setFormData({ ...formData, bank_account: e.target.value })
-                          }
-                          placeholder="00000-0"
+                          id="bank_name"
+                          value={formData.bank_name}
+                          onChange={(e) => setFormData({ ...formData, bank_name: e.target.value })}
+                          placeholder="Nome do banco"
                           required
                           className="text-sm"
                         />
                       </div>
-                    </div>
-                  </>
-                )}
 
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setDialogOpen(false)}
-                    className="flex-1"
-                    disabled={submitting}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button type="submit" className="flex-1" disabled={submitting}>
-                    {submitting ? "Enviando..." : "Solicitar"}
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label htmlFor="bank_agency" className="text-xs sm:text-sm">Agência</Label>
+                          <Input
+                            id="bank_agency"
+                            value={formData.bank_agency}
+                            onChange={(e) =>
+                              setFormData({ ...formData, bank_agency: e.target.value })
+                            }
+                            placeholder="0000"
+                            required
+                            className="text-sm"
+                          />
+                        </div>
 
-          {availableBalance < MIN_WITHDRAWAL && (
+                        <div className="space-y-2">
+                          <Label htmlFor="bank_account" className="text-xs sm:text-sm">Conta</Label>
+                          <Input
+                            id="bank_account"
+                            value={formData.bank_account}
+                            onChange={(e) =>
+                              setFormData({ ...formData, bank_account: e.target.value })
+                            }
+                            placeholder="00000-0"
+                            required
+                            className="text-sm"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDialogOpen(false)}
+                      className="flex-1"
+                      disabled={submitting}
+                    >
+                      Cancelar
+                    </Button>
+                    <Button type="submit" className="flex-1" disabled={submitting}>
+                      {submitting ? "Enviando..." : "Solicitar"}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          )}
+
+          {!isMarketingAccount && availableBalance < MIN_WITHDRAWAL && (
             <p className="text-xs sm:text-sm text-muted-foreground mt-3 flex items-center gap-2">
               <AlertCircle className="w-4 h-4" />
               Saldo insuficiente. Mínimo para saque: R$ {MIN_WITHDRAWAL}
