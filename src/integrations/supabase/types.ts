@@ -97,6 +97,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           fake_active_users: number | null
+          fake_chart_data: Json | null
           fake_conversion_rate: number | null
           fake_paid_commission: number | null
           fake_pending_commission: number | null
@@ -115,6 +116,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           fake_active_users?: number | null
+          fake_chart_data?: Json | null
           fake_conversion_rate?: number | null
           fake_paid_commission?: number | null
           fake_pending_commission?: number | null
@@ -133,6 +135,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           fake_active_users?: number | null
+          fake_chart_data?: Json | null
           fake_conversion_rate?: number | null
           fake_paid_commission?: number | null
           fake_pending_commission?: number | null

@@ -50,6 +50,13 @@ interface MarketingMetrics {
   is_active: boolean;
   period_start: string | null;
   period_end: string | null;
+  fake_chart_data: FakeChartDataPoint[] | null;
+}
+
+interface FakeChartDataPoint {
+  date: string;
+  commissions: number;
+  referrals: number;
 }
 
 export default function AffiliateDashboard() {
@@ -100,7 +107,10 @@ export default function AffiliateDashboard() {
 
       // If marketing metrics exist and are active, check if period matches
       if (marketingMetrics) {
-        const metrics = marketingMetrics as MarketingMetrics;
+        const metrics = {
+          ...marketingMetrics,
+          fake_chart_data: (marketingMetrics.fake_chart_data as unknown) as FakeChartDataPoint[] | null
+        } as MarketingMetrics;
         
         // Check if the selected date range matches the marketing metrics period
         let shouldShowFakeMetrics = true;
@@ -133,6 +143,22 @@ export default function AffiliateDashboard() {
             affiliateLink,
             isMarketingAccount: true,
           });
+          
+          // Set fake chart data if available, filtered by date range
+          if (metrics.fake_chart_data && metrics.fake_chart_data.length > 0) {
+            const filteredChartData = metrics.fake_chart_data
+              .filter(point => {
+                const pointDate = new Date(point.date);
+                return pointDate >= startDate! && pointDate <= endDate!;
+              })
+              .map(point => ({
+                date: new Date(point.date).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+                commissions: point.commissions,
+                referrals: point.referrals
+              }));
+            setChartData(filteredChartData);
+          }
+          
           setLoading(false);
           return;
         }
