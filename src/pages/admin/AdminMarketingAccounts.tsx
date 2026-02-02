@@ -756,7 +756,10 @@ export default function AdminMarketingAccounts() {
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="pix">PIX</SelectItem>
-                              <SelectItem value="crypto">Cripto (USDT)</SelectItem>
+                              <SelectItem value="usdt_trc20">USDT TRC20 (Tron)</SelectItem>
+                              <SelectItem value="usdt_erc20">USDT ERC20 (Ethereum)</SelectItem>
+                              <SelectItem value="usdt_bep20">USDT BEP20 (BSC)</SelectItem>
+                              <SelectItem value="usdt_polygon">USDT Polygon</SelectItem>
                               <SelectItem value="bank_transfer">Transferência</SelectItem>
                             </SelectContent>
                           </Select>
