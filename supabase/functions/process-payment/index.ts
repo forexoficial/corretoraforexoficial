@@ -501,11 +501,21 @@ async function processWoovi(
   const charge = wooviData.charge;
   
   console.log('Woovi charge created successfully:', charge?.identifier);
+  console.log('Woovi charge data:', JSON.stringify(charge, null, 2));
 
-  const qrCode = charge?.qrcode;
-  const qrCodeBase64 = charge?.qrcodeBase64;
+  // Woovi/OpenPix uses brCode for the EMV code and qrCodeImage for the base64 image
+  const qrCode = charge?.brCode || charge?.qrcode || '';
+  // qrCodeImage already contains the full data URI (data:image/png;base64,...)
+  // We need to extract just the base64 part if it has the prefix
+  let qrCodeBase64 = charge?.qrCodeImage || charge?.qrcodeBase64 || '';
+  if (qrCodeBase64.startsWith('data:image')) {
+    // Extract just the base64 part after the comma
+    qrCodeBase64 = qrCodeBase64.split(',')[1] || qrCodeBase64;
+  }
   const identifier = charge?.identifier;
   const paymentLinkUrl = charge?.paymentLinkUrl;
+
+  console.log('Extracted QR data - brCode length:', qrCode?.length, 'qrCodeImage present:', !!qrCodeBase64);
 
   // Update transaction with Woovi details
   // Store correlationID as transaction_reference for webhook matching
