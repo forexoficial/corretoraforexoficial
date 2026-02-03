@@ -270,6 +270,8 @@ export default function AdminGateways() {
         return <Key className="h-4 w-4 text-purple-500" />;
       case PixProvider.PIXUP:
         return <Wallet className="h-4 w-4 text-green-500" />;
+      case PixProvider.WOOVI:
+        return <Wallet className="h-4 w-4 text-teal-500" />;
       case CryptoProvider.CUSTOM_CRYPTO:
         return <Key className="h-4 w-4 text-amber-500" />;
       case CryptoProvider.COINBASE:
@@ -540,6 +542,7 @@ export default function AdminGateways() {
                     [PixProvider.MERCADO_PAGO]: "MERCADO_PAGO_ACCESS_TOKEN",
                     [PixProvider.CUSTOM_PIX]: "CUSTOM_PIX_API_KEY",
                     [PixProvider.PIXUP]: "PIXUP_CLIENT_ID",
+                    [PixProvider.WOOVI]: "WOOVI_APP_ID",
                   };
                   setFormData({ 
                     ...formData, 
@@ -557,6 +560,7 @@ export default function AdminGateways() {
                   <SelectItem value={PixProvider.MERCADO_PAGO}>Mercado Pago</SelectItem>
                   <SelectItem value={PixProvider.CUSTOM_PIX}>PIX Personalizado</SelectItem>
                   <SelectItem value={PixProvider.PIXUP}>PixUP</SelectItem>
+                  <SelectItem value={PixProvider.WOOVI}>Woovi (OpenPix)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
