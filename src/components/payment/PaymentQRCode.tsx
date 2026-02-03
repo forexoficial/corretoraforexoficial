@@ -10,6 +10,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 interface PaymentQRCodeProps {
   qrCode: string;
   qrCodeBase64?: string;
+  qrCodeImageUrl?: string;
   ticketUrl?: string;
   amount: number;
   expiresAt?: string;
@@ -19,6 +20,7 @@ interface PaymentQRCodeProps {
 export default function PaymentQRCode({ 
   qrCode, 
   qrCodeBase64,
+  qrCodeImageUrl,
   ticketUrl,
   amount, 
   expiresAt,
@@ -208,12 +210,22 @@ export default function PaymentQRCode({
                     alt="QR Code PIX" 
                     className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64"
                   />
-                ) : (
+                ) : qrCodeImageUrl ? (
+                  <img 
+                    src={qrCodeImageUrl}
+                    alt="QR Code PIX" 
+                    className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64"
+                  />
+                ) : qrCode ? (
                   <img 
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}`}
                     alt="QR Code PIX" 
                     className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64"
                   />
+                ) : (
+                  <div className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 flex items-center justify-center text-muted-foreground">
+                    QR Code não disponível
+                  </div>
                 )}
               </div>
 

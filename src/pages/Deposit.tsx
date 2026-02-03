@@ -438,6 +438,7 @@ export default function Deposit() {
             <PaymentQRCode
               qrCode={paymentData.qrCode || ""}
               qrCodeBase64={paymentData.qrCodeBase64}
+              qrCodeImageUrl={paymentData.qrCodeImageUrl}
               ticketUrl={paymentData.ticketUrl}
               amount={paymentData.amount}
               expiresAt={paymentData.expiresAt}

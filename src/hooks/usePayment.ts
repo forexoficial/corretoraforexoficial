@@ -7,6 +7,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 interface PaymentData {
   qrCode?: string;
   qrCodeBase64?: string;
+  qrCodeImageUrl?: string;
   ticketUrl?: string;
   transactionId: string;
   externalTransactionId: string;
@@ -58,6 +59,7 @@ export const usePayment = () => {
       const payment: PaymentData = {
         qrCode: data.qr_code,
         qrCodeBase64: data.qr_code_base64,
+        qrCodeImageUrl: data.qr_code_image_url,
         ticketUrl: data.ticket_url,
         transactionId: data.transaction_id,
         externalTransactionId: data.external_transaction_id,
