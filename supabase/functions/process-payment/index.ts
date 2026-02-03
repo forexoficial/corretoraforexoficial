@@ -503,19 +503,14 @@ async function processWoovi(
   console.log('Woovi charge created successfully:', charge?.identifier);
   console.log('Woovi charge data:', JSON.stringify(charge, null, 2));
 
-  // Woovi/OpenPix uses brCode for the EMV code and qrCodeImage for the base64 image
-  const qrCode = charge?.brCode || charge?.qrcode || '';
-  // qrCodeImage already contains the full data URI (data:image/png;base64,...)
-  // We need to extract just the base64 part if it has the prefix
-  let qrCodeBase64 = charge?.qrCodeImage || charge?.qrcodeBase64 || '';
-  if (qrCodeBase64.startsWith('data:image')) {
-    // Extract just the base64 part after the comma
-    qrCodeBase64 = qrCodeBase64.split(',')[1] || qrCodeBase64;
-  }
+  // Woovi/OpenPix uses brCode for the EMV code and qrCodeImage for the image URL
+  const qrCode = charge?.brCode || '';
+  // qrCodeImage is a URL to the QR code image, not base64
+  const qrCodeImageUrl = charge?.qrCodeImage || '';
   const identifier = charge?.identifier;
   const paymentLinkUrl = charge?.paymentLinkUrl;
 
-  console.log('Extracted QR data - brCode length:', qrCode?.length, 'qrCodeImage present:', !!qrCodeBase64);
+  console.log('Extracted QR data - brCode length:', qrCode?.length, 'qrCodeImageUrl:', qrCodeImageUrl);
 
   // Update transaction with Woovi details
   // Store correlationID as transaction_reference for webhook matching
@@ -529,7 +524,7 @@ async function processWoovi(
         woovi_identifier: identifier,
         correlation_id: transaction.id,
         qr_code: qrCode,
-        qr_code_base64: qrCodeBase64,
+        qr_code_image_url: qrCodeImageUrl,
         payment_link_url: paymentLinkUrl,
         created_at: new Date().toISOString(),
       }),
@@ -542,7 +537,7 @@ async function processWoovi(
       transaction_id: transaction.id,
       external_transaction_id: identifier,
       qr_code: qrCode,
-      qr_code_base64: qrCodeBase64,
+      qr_code_image_url: qrCodeImageUrl,
       payment_link_url: paymentLinkUrl,
       amount: paymentRequest.amount,
       status: 'pending',
