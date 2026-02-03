@@ -110,6 +110,8 @@ serve(async (req) => {
       return await processMercadoPago(credentials, transaction, paymentRequest, supabaseClient, supabaseAdmin, corsHeaders);
     } else if (provider === 'pixup') {
       return await processPixUp(credentials, transaction, paymentRequest, supabaseClient, supabaseAdmin, corsHeaders);
+    } else if (provider === 'woovi') {
+      return await processWoovi(credentials, transaction, paymentRequest, supabaseClient, supabaseAdmin, corsHeaders);
     } else {
       await supabaseAdmin
         .from('transactions')
@@ -404,6 +406,136 @@ async function processPixUp(
       amount: pixupData.amount,
       status: pixupData.status,
       expires_at: pixupData.calendar?.dueDate,
+    }), 
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// ============= WOOVI/OPENPIX PROCESSOR =============
+async function processWoovi(
+  credentials: any,
+  transaction: any,
+  paymentRequest: PaymentRequest,
+  supabaseClient: any,
+  supabaseAdmin: any,
+  corsHeaders: any
+) {
+  // Try to get APP_ID from credentials first, then from env
+  const appId = credentials.APP_ID || Deno.env.get('WOOVI_APP_ID');
+  
+  if (!appId) {
+    console.error('Missing APP_ID for Woovi');
+    await supabaseAdmin
+      .from('transactions')
+      .update({ status: 'failed', notes: 'App ID da Woovi não configurado' })
+      .eq('id', transaction.id);
+    
+    return new Response(
+      JSON.stringify({ error: 'App ID da Woovi não configurado' }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log('Creating Woovi PIX charge...');
+
+  // Build the payload
+  const wooviPayload: any = {
+    correlationID: transaction.id,
+    value: Math.round(paymentRequest.amount * 100), // Value in cents
+    comment: paymentRequest.description || "Depósito PIX",
+  };
+
+  // Add customer info if available
+  if (paymentRequest.payerName || paymentRequest.payerEmail || paymentRequest.payerDocument) {
+    wooviPayload.customer = {
+      name: paymentRequest.payerName || "Cliente",
+      email: paymentRequest.payerEmail || undefined,
+      phone: undefined,
+      taxID: paymentRequest.payerDocument?.replace(/\D/g, '') || undefined,
+    };
+  }
+
+  console.log('Woovi payload:', JSON.stringify(wooviPayload));
+
+  const wooviResponse = await fetch('https://api.openpix.com.br/api/v1/charge', {
+    method: 'POST',
+    headers: {
+      'Authorization': appId,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(wooviPayload),
+  });
+
+  const responseText = await wooviResponse.text();
+  console.log('Woovi response status:', wooviResponse.status);
+
+  if (!wooviResponse.ok) {
+    console.error('Woovi API error:', responseText);
+    
+    let errorMessage = 'Erro ao criar cobrança Woovi';
+    try {
+      const errorData = JSON.parse(responseText);
+      errorMessage = errorData.errors?.[0]?.message || errorData.message || errorMessage;
+    } catch (e) {
+      errorMessage = responseText || errorMessage;
+    }
+    
+    await supabaseAdmin
+      .from('transactions')
+      .update({ 
+        status: 'failed', 
+        notes: `Erro Woovi: ${errorMessage}` 
+      })
+      .eq('id', transaction.id);
+
+    return new Response(
+      JSON.stringify({ 
+        error: errorMessage,
+        details: responseText 
+      }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const wooviData = JSON.parse(responseText);
+  const charge = wooviData.charge;
+  
+  console.log('Woovi charge created successfully:', charge?.identifier);
+
+  const qrCode = charge?.qrcode;
+  const qrCodeBase64 = charge?.qrcodeBase64;
+  const identifier = charge?.identifier;
+  const paymentLinkUrl = charge?.paymentLinkUrl;
+
+  // Update transaction with Woovi details
+  // Store correlationID as transaction_reference for webhook matching
+  await supabaseAdmin
+    .from('transactions')
+    .update({ 
+      transaction_reference: transaction.id, // correlationID = transaction.id
+      status: 'pending',
+      notes: JSON.stringify({
+        provider: 'woovi',
+        woovi_identifier: identifier,
+        correlation_id: transaction.id,
+        qr_code: qrCode,
+        qr_code_base64: qrCodeBase64,
+        payment_link_url: paymentLinkUrl,
+        created_at: new Date().toISOString(),
+      }),
+    })
+    .eq('id', transaction.id);
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      transaction_id: transaction.id,
+      external_transaction_id: identifier,
+      qr_code: qrCode,
+      qr_code_base64: qrCodeBase64,
+      payment_link_url: paymentLinkUrl,
+      amount: paymentRequest.amount,
+      status: 'pending',
     }), 
     { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );

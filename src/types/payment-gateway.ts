@@ -20,7 +20,8 @@ export enum PaymentStatus {
 export enum PixProvider {
   MERCADO_PAGO = "mercado_pago",
   CUSTOM_PIX = "custom_pix",
-  PIXUP = "pixup"
+  PIXUP = "pixup",
+  WOOVI = "woovi"
 }
 
 // Provedores Cripto
@@ -102,6 +103,24 @@ export const PIX_PROVIDER_CREDENTIALS: Record<PixProvider, CredentialField[]> = 
       placeholder: "Seu Client Secret do PixUP",
       description: "Client Secret fornecido pelo PixUP",
       required: true,
+      type: "password"
+    }
+  ],
+  [PixProvider.WOOVI]: [
+    {
+      name: "APP_ID",
+      label: "App ID",
+      placeholder: "Seu App ID da Woovi/OpenPix",
+      description: "Obtenha em: Woovi → API/Plugins → Novo App",
+      required: true,
+      type: "password"
+    },
+    {
+      name: "WEBHOOK_SECRET",
+      label: "Webhook Secret",
+      placeholder: "Secret para validar webhooks",
+      description: "Secret configurado no webhook da Woovi",
+      required: false,
       type: "password"
     }
   ]
