@@ -206,7 +206,7 @@ export default function PaymentQRCode({
               <div className="bg-card p-3 sm:p-4 lg:p-5 rounded-xl sm:rounded-2xl shadow-xl inline-block border border-border">
                 {qrCodeBase64 ? (
                   <img 
-                    src={`data:image/png;base64,${qrCodeBase64}`}
+                    src={qrCodeBase64.startsWith('data:') ? qrCodeBase64 : `data:image/png;base64,${qrCodeBase64}`}
                     alt="QR Code PIX" 
                     className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64"
                   />
@@ -216,11 +216,18 @@ export default function PaymentQRCode({
                     alt="QR Code PIX" 
                     className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64"
                   />
-                ) : qrCode ? (
+                ) : qrCode && qrCode.length > 0 ? (
                   <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}`}
+                    src={`https://quickchart.io/qr?text=${encodeURIComponent(qrCode)}&size=300&margin=2`}
                     alt="QR Code PIX" 
                     className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64"
+                    onError={(e) => {
+                      // Fallback to another QR generator if first one fails
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('qrserver')) {
+                        target.src = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrCode)}`;
+                      }
+                    }}
                   />
                 ) : (
                   <div className="w-44 h-44 sm:w-52 sm:h-52 lg:w-64 lg:h-64 flex items-center justify-center text-muted-foreground">
