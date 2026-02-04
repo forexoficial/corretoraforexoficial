@@ -21,7 +21,8 @@ export enum PixProvider {
   MERCADO_PAGO = "mercado_pago",
   CUSTOM_PIX = "custom_pix",
   PIXUP = "pixup",
-  WOOVI = "woovi"
+  WOOVI = "woovi",
+  PUSHIN_PAY = "pushin_pay"
 }
 
 // Provedores Cripto
@@ -121,6 +122,16 @@ export const PIX_PROVIDER_CREDENTIALS: Record<PixProvider, CredentialField[]> = 
       placeholder: "Secret para validar webhooks",
       description: "Secret configurado no webhook da Woovi",
       required: false,
+      type: "password"
+    }
+  ],
+  [PixProvider.PUSHIN_PAY]: [
+    {
+      name: "API_TOKEN",
+      label: "API Token",
+      placeholder: "Seu Token da Pushin Pay",
+      description: "Obtenha em: Pushin Pay → Configurações → Integração",
+      required: true,
       type: "password"
     }
   ]

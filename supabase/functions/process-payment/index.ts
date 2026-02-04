@@ -112,6 +112,8 @@ serve(async (req) => {
       return await processPixUp(credentials, transaction, paymentRequest, supabaseClient, supabaseAdmin, corsHeaders);
     } else if (provider === 'woovi') {
       return await processWoovi(credentials, transaction, paymentRequest, supabaseClient, supabaseAdmin, corsHeaders);
+    } else if (provider === 'pushin_pay') {
+      return await processPushinPay(credentials, transaction, paymentRequest, supabaseClient, supabaseAdmin, corsHeaders);
     } else {
       await supabaseAdmin
         .from('transactions')
@@ -539,6 +541,132 @@ async function processWoovi(
       qr_code: qrCode,
       qr_code_image_url: qrCodeImageUrl,
       payment_link_url: paymentLinkUrl,
+      amount: paymentRequest.amount,
+      status: 'pending',
+    }), 
+    { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
+// ============= PUSHIN PAY PROCESSOR =============
+async function processPushinPay(
+  credentials: any,
+  transaction: any,
+  paymentRequest: PaymentRequest,
+  supabaseClient: any,
+  supabaseAdmin: any,
+  corsHeaders: any
+) {
+  // Try to get API_TOKEN from credentials first, then from env
+  const apiToken = credentials.API_TOKEN || Deno.env.get('PUSHIN_PAY_TOKEN');
+  
+  if (!apiToken) {
+    console.error('Missing API_TOKEN for Pushin Pay');
+    await supabaseAdmin
+      .from('transactions')
+      .update({ status: 'failed', notes: 'Token da Pushin Pay não configurado' })
+      .eq('id', transaction.id);
+    
+    return new Response(
+      JSON.stringify({ error: 'Token da Pushin Pay não configurado' }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  console.log('Creating Pushin Pay PIX charge...');
+
+  // Pushin Pay expects value in cents
+  const valueInCents = Math.round(paymentRequest.amount * 100);
+  
+  // Build webhook URL
+  const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/pushin-pay-webhook`;
+
+  const pushinPayload: any = {
+    value: valueInCents,
+    webhook_url: webhookUrl,
+    correlationID: transaction.id, // For tracking
+  };
+
+  console.log('Pushin Pay payload:', JSON.stringify(pushinPayload));
+
+  const pushinResponse = await fetch('https://api.pushinpay.com.br/api/pix/cashIn', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiToken}`,
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+    },
+    body: JSON.stringify(pushinPayload),
+  });
+
+  const responseText = await pushinResponse.text();
+  console.log('Pushin Pay response status:', pushinResponse.status);
+  console.log('Pushin Pay response body:', responseText);
+
+  if (!pushinResponse.ok) {
+    console.error('Pushin Pay API error:', responseText);
+    
+    let errorMessage = 'Erro ao criar cobrança Pushin Pay';
+    try {
+      const errorData = JSON.parse(responseText);
+      errorMessage = errorData.message || errorData.error || errorMessage;
+    } catch (e) {
+      errorMessage = responseText || errorMessage;
+    }
+    
+    await supabaseAdmin
+      .from('transactions')
+      .update({ 
+        status: 'failed', 
+        notes: `Erro Pushin Pay: ${errorMessage}` 
+      })
+      .eq('id', transaction.id);
+
+    return new Response(
+      JSON.stringify({ 
+        error: errorMessage,
+        details: responseText 
+      }), 
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+
+  const pushinData = JSON.parse(responseText);
+  
+  console.log('Pushin Pay charge created successfully:', pushinData.id);
+  console.log('Pushin Pay charge data:', JSON.stringify(pushinData, null, 2));
+
+  // Extract QR code data
+  const qrCode = pushinData.qr_code || pushinData.brCode || '';
+  const qrCodeBase64 = pushinData.qr_code_base64 || '';
+  const externalId = pushinData.id;
+
+  console.log('Extracted QR data - qr_code length:', qrCode?.length, 'qr_code_base64 present:', !!qrCodeBase64);
+
+  // Update transaction with Pushin Pay details
+  await supabaseAdmin
+    .from('transactions')
+    .update({ 
+      transaction_reference: externalId,
+      status: 'pending',
+      notes: JSON.stringify({
+        provider: 'pushin_pay',
+        pushin_pay_id: externalId,
+        correlation_id: transaction.id,
+        qr_code: qrCode,
+        qr_code_base64: qrCodeBase64,
+        created_at: new Date().toISOString(),
+      }),
+    })
+    .eq('id', transaction.id);
+
+  return new Response(
+    JSON.stringify({
+      success: true,
+      transaction_id: transaction.id,
+      external_transaction_id: externalId,
+      qr_code: qrCode,
+      qr_code_base64: qrCodeBase64,
       amount: paymentRequest.amount,
       status: 'pending',
     }), 

@@ -56,3 +56,9 @@ verify_jwt = false
 
 [functions.create-referral]
 verify_jwt = false
+
+[functions.pushin-pay-webhook]
+verify_jwt = false
+
+[functions.woovi-webhook]
+verify_jwt = false
