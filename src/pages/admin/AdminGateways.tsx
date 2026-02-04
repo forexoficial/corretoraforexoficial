@@ -272,6 +272,8 @@ export default function AdminGateways() {
         return <Wallet className="h-4 w-4 text-green-500" />;
       case PixProvider.WOOVI:
         return <Wallet className="h-4 w-4 text-teal-500" />;
+      case PixProvider.PUSHIN_PAY:
+        return <Wallet className="h-4 w-4 text-orange-500" />;
       case CryptoProvider.CUSTOM_CRYPTO:
         return <Key className="h-4 w-4 text-amber-500" />;
       case CryptoProvider.COINBASE:
