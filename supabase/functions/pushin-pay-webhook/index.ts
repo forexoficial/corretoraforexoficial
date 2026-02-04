@@ -25,18 +25,40 @@ serve(async (req) => {
   try {
     console.log('Pushin Pay webhook received');
     
+    const contentType = req.headers.get('content-type') || '';
     const body = await req.text();
+    console.log('Webhook content-type:', contentType);
     console.log('Webhook body:', body);
 
-    let payload: any;
-    try {
-      payload = JSON.parse(body);
-    } catch (e) {
-      console.error('Failed to parse webhook body:', e);
-      return new Response(JSON.stringify({ error: 'Invalid JSON' }), {
-        status: 400,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      });
+    let payload: any = {};
+    
+    // Parse based on content type - Pushin Pay sends URL-encoded form data
+    if (contentType.includes('application/x-www-form-urlencoded') || body.includes('=')) {
+      // Parse URL-encoded form data
+      console.log('Parsing as URL-encoded form data');
+      const params = new URLSearchParams(body);
+      for (const [key, value] of params.entries()) {
+        payload[key] = value;
+      }
+      // Convert value to number if present
+      if (payload.value) {
+        payload.value = parseInt(payload.value, 10);
+      }
+    } else {
+      // Try to parse as JSON
+      try {
+        payload = JSON.parse(body);
+      } catch (e) {
+        console.error('Failed to parse webhook body as JSON:', e);
+        // Try URL-encoded as fallback
+        const params = new URLSearchParams(body);
+        for (const [key, value] of params.entries()) {
+          payload[key] = value;
+        }
+        if (payload.value) {
+          payload.value = parseInt(payload.value, 10);
+        }
+      }
     }
 
     console.log('Parsed payload:', JSON.stringify(payload, null, 2));
