@@ -120,10 +120,13 @@ serve(async (req) => {
     }
 
     // Find transaction by transaction_reference (Pushin Pay ID)
+    // Important: Pushin Pay may send the ID in uppercase while we store it in lowercase.
+    // Use ilike to match case-insensitively.
+    const normalizedTransactionId = String(transactionId).trim();
     const { data: transactions, error: findError } = await supabaseAdmin
       .from('transactions')
       .select('*')
-      .eq('transaction_reference', transactionId)
+      .ilike('transaction_reference', normalizedTransactionId)
       .limit(1);
 
     if (findError) {
@@ -135,7 +138,7 @@ serve(async (req) => {
     }
 
     if (!transactions || transactions.length === 0) {
-      console.error('Transaction not found for Pushin Pay ID:', transactionId);
+      console.error('Transaction not found for Pushin Pay ID:', normalizedTransactionId);
       return new Response(JSON.stringify({ error: 'Transaction not found' }), {
         status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
