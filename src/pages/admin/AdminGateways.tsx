@@ -545,6 +545,7 @@ export default function AdminGateways() {
                     [PixProvider.CUSTOM_PIX]: "CUSTOM_PIX_API_KEY",
                     [PixProvider.PIXUP]: "PIXUP_CLIENT_ID",
                     [PixProvider.WOOVI]: "WOOVI_APP_ID",
+                    [PixProvider.PUSHIN_PAY]: "PUSHIN_PAY_TOKEN",
                   };
                   setFormData({ 
                     ...formData, 
@@ -563,6 +564,7 @@ export default function AdminGateways() {
                   <SelectItem value={PixProvider.CUSTOM_PIX}>PIX Personalizado</SelectItem>
                   <SelectItem value={PixProvider.PIXUP}>PixUP</SelectItem>
                   <SelectItem value={PixProvider.WOOVI}>Woovi (OpenPix)</SelectItem>
+                  <SelectItem value={PixProvider.PUSHIN_PAY}>Pushin Pay</SelectItem>
                 </SelectContent>
               </Select>
             </div>
