@@ -19,6 +19,9 @@ interface Affiliate {
   user_id: string;
   affiliate_code: string;
   commission_percentage: number;
+  commission_model: string;
+  cpa_value: number | null;
+  cpa_min_deposit: number | null;
   total_referrals: number;
   total_commission: number;
   is_active: boolean;
@@ -60,6 +63,9 @@ export default function AdminAffiliates() {
   const [newAffiliate, setNewAffiliate] = useState({
     userId: "",
     commissionPercentage: 10,
+    commissionModel: "rev" as "rev" | "cpa",
+    cpaValue: 50,
+    cpaMinDeposit: 100,
   });
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
@@ -95,8 +101,11 @@ export default function AdminAffiliates() {
 
           return {
             ...affiliate,
+            commission_model: (affiliate as any).commission_model || "rev",
+            cpa_value: (affiliate as any).cpa_value || null,
+            cpa_min_deposit: (affiliate as any).cpa_min_deposit || null,
             profiles: profile || undefined,
-          };
+          } as Affiliate;
         })
       );
 
@@ -164,20 +173,25 @@ export default function AdminAffiliates() {
     try {
       const affiliateCode = `AFF${Date.now().toString(36).toUpperCase()}`;
       
+      const insertData: any = {
+        user_id: newAffiliate.userId,
+        affiliate_code: affiliateCode,
+        commission_model: newAffiliate.commissionModel,
+        commission_percentage: newAffiliate.commissionModel === "rev" ? newAffiliate.commissionPercentage : 0,
+        cpa_value: newAffiliate.commissionModel === "cpa" ? newAffiliate.cpaValue : null,
+        cpa_min_deposit: newAffiliate.commissionModel === "cpa" ? newAffiliate.cpaMinDeposit : null,
+      };
+
       const { error } = await supabase
         .from("affiliates")
-        .insert({
-          user_id: newAffiliate.userId,
-          affiliate_code: affiliateCode,
-          commission_percentage: newAffiliate.commissionPercentage,
-        });
+        .insert(insertData);
 
       if (error) throw error;
 
       toast.success("Afiliado criado com sucesso!");
       setDialogOpen(false);
       fetchAffiliates();
-      setNewAffiliate({ userId: "", commissionPercentage: 10 });
+      setNewAffiliate({ userId: "", commissionPercentage: 10, commissionModel: "rev", cpaValue: 50, cpaMinDeposit: 100 });
     } catch (error) {
       console.error("Error creating affiliate:", error);
       toast.error("Erro ao criar afiliado");
@@ -312,16 +326,73 @@ export default function AdminAffiliates() {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Percentual de Comissão (%)</Label>
-                <Input
-                  type="number"
-                  value={newAffiliate.commissionPercentage}
-                  onChange={(e) => setNewAffiliate({ ...newAffiliate, commissionPercentage: parseFloat(e.target.value) })}
-                  min="0"
-                  max="100"
-                  step="0.1"
-                />
+                <Label>Modelo de Comissão</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={newAffiliate.commissionModel === "rev" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setNewAffiliate({ ...newAffiliate, commissionModel: "rev" })}
+                  >
+                    REV (%)
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={newAffiliate.commissionModel === "cpa" ? "default" : "outline"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => setNewAffiliate({ ...newAffiliate, commissionModel: "cpa" })}
+                  >
+                    CPA (Fixo)
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {newAffiliate.commissionModel === "rev"
+                    ? "REV: O afiliado recebe uma porcentagem sobre cada trade dos indicados."
+                    : "CPA: O afiliado recebe um valor fixo por indicação que atingir o depósito mínimo."}
+                </p>
               </div>
+              {newAffiliate.commissionModel === "rev" ? (
+                <div className="space-y-2">
+                  <Label>Percentual de Comissão (%)</Label>
+                  <Input
+                    type="number"
+                    value={newAffiliate.commissionPercentage}
+                    onChange={(e) => setNewAffiliate({ ...newAffiliate, commissionPercentage: parseFloat(e.target.value) })}
+                    min="0"
+                    max="100"
+                    step="0.1"
+                  />
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-2">
+                    <Label>Valor CPA (R$)</Label>
+                    <Input
+                      type="number"
+                      value={newAffiliate.cpaValue}
+                      onChange={(e) => setNewAffiliate({ ...newAffiliate, cpaValue: parseFloat(e.target.value) })}
+                      min="1"
+                      step="1"
+                      placeholder="Ex: 50"
+                    />
+                    <p className="text-xs text-muted-foreground">Valor fixo pago por cada indicação qualificada</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Depósito Mínimo para Qualificar (R$)</Label>
+                    <Input
+                      type="number"
+                      value={newAffiliate.cpaMinDeposit}
+                      onChange={(e) => setNewAffiliate({ ...newAffiliate, cpaMinDeposit: parseFloat(e.target.value) })}
+                      min="1"
+                      step="1"
+                      placeholder="Ex: 100"
+                    />
+                    <p className="text-xs text-muted-foreground">O indicado precisa depositar pelo menos esse valor para gerar a comissão</p>
+                  </div>
+                </>
+              )}
               <Button onClick={handleCreateAffiliate} className="w-full">
                 Criar Afiliado
               </Button>
@@ -597,7 +668,7 @@ export default function AdminAffiliates() {
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Código</TableHead>
-                <TableHead>Comissão</TableHead>
+                <TableHead>Modelo / Comissão</TableHead>
                 <TableHead>Indicações</TableHead>
                 <TableHead>Total Ganho</TableHead>
                 <TableHead>Status</TableHead>
@@ -640,7 +711,19 @@ export default function AdminAffiliates() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="outline">{affiliate.commission_percentage}%</Badge>
+                      {affiliate.commission_model === "cpa" ? (
+                        <div>
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/30">CPA</Badge>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            R$ {affiliate.cpa_value?.toFixed(2)} / min R$ {affiliate.cpa_min_deposit?.toFixed(2)}
+                          </div>
+                        </div>
+                      ) : (
+                        <div>
+                          <Badge variant="outline">REV</Badge>
+                          <div className="text-xs text-muted-foreground mt-1">{affiliate.commission_percentage}%</div>
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>{affiliate.total_referrals}</TableCell>
                     <TableCell>

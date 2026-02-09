@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Save, User, Mail, Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default function AffiliateSettings() {
   const { user } = useAuth();
@@ -15,6 +16,9 @@ export default function AffiliateSettings() {
     full_name: "",
     email: "",
     commission_percentage: 0,
+    commission_model: "rev",
+    cpa_value: 0,
+    cpa_min_deposit: 0,
   });
 
   useEffect(() => {
@@ -37,10 +41,22 @@ export default function AffiliateSettings() {
         .eq("user_id", user?.id)
         .single();
 
+      // Fetch extra CPA fields separately to avoid type issues with generated types
+      const { data: affiliateExtraRaw } = await supabase
+        .from("affiliates")
+        .select("*")
+        .eq("user_id", user?.id)
+        .single();
+      
+      const affiliateExtra = affiliateExtraRaw as any;
+
       setProfile({
         full_name: profileData?.full_name || "",
         email: user?.email || "",
         commission_percentage: affiliateData?.commission_percentage || 0,
+        commission_model: affiliateExtra?.commission_model || "rev",
+        cpa_value: affiliateExtra?.cpa_value || 0,
+        cpa_min_deposit: affiliateExtra?.cpa_min_deposit || 0,
       });
     } catch (error) {
       console.error("Error fetching profile:", error);
@@ -120,13 +136,31 @@ export default function AffiliateSettings() {
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label className="text-xs sm:text-sm">Percentual de Comissão</Label>
-              <div className="text-xl sm:text-2xl font-bold text-primary">
-                {profile.commission_percentage}%
+              <Label className="text-xs sm:text-sm">Modelo de Comissão</Label>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={profile.commission_model === "cpa" ? "bg-blue-500/10 text-blue-500 border-blue-500/30" : ""}>
+                  {profile.commission_model === "cpa" ? "CPA (Valor Fixo)" : "REV (Porcentagem)"}
+                </Badge>
               </div>
-              <p className="text-[10px] sm:text-xs text-muted-foreground">
-                Você ganha {profile.commission_percentage}% sobre cada depósito dos seus referidos
-              </p>
+              {profile.commission_model === "cpa" ? (
+                <>
+                  <div className="text-xl sm:text-2xl font-bold text-primary">
+                    R$ {profile.cpa_value.toFixed(2)}
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Você ganha R$ {profile.cpa_value.toFixed(2)} por cada indicado que depositar pelo menos R$ {profile.cpa_min_deposit.toFixed(2)}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="text-xl sm:text-2xl font-bold text-primary">
+                    {profile.commission_percentage}%
+                  </div>
+                  <p className="text-[10px] sm:text-xs text-muted-foreground">
+                    Você ganha {profile.commission_percentage}% sobre cada trade dos seus referidos
+                  </p>
+                </>
+              )}
             </div>
 
             <div className="space-y-2">
