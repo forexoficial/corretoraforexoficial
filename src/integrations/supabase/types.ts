@@ -165,7 +165,10 @@ export type Database = {
       affiliates: {
         Row: {
           affiliate_code: string
+          commission_model: string
           commission_percentage: number
+          cpa_min_deposit: number | null
+          cpa_value: number | null
           created_at: string | null
           id: string
           is_active: boolean | null
@@ -176,7 +179,10 @@ export type Database = {
         }
         Insert: {
           affiliate_code: string
+          commission_model?: string
           commission_percentage?: number
+          cpa_min_deposit?: number | null
+          cpa_value?: number | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -187,7 +193,10 @@ export type Database = {
         }
         Update: {
           affiliate_code?: string
+          commission_model?: string
           commission_percentage?: number
+          cpa_min_deposit?: number | null
+          cpa_value?: number | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
@@ -1278,6 +1287,7 @@ export type Database = {
       referrals: {
         Row: {
           affiliate_id: string
+          cpa_paid: boolean
           created_at: string | null
           id: string
           referred_user_id: string
@@ -1285,6 +1295,7 @@ export type Database = {
         }
         Insert: {
           affiliate_id: string
+          cpa_paid?: boolean
           created_at?: string | null
           id?: string
           referred_user_id: string
@@ -1292,6 +1303,7 @@ export type Database = {
         }
         Update: {
           affiliate_id?: string
+          cpa_paid?: boolean
           created_at?: string | null
           id?: string
           referred_user_id?: string
