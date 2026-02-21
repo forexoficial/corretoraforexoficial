@@ -141,6 +141,8 @@ CREATE TABLE public.profiles (
   country_code TEXT,
   country_name TEXT,
   preferred_currency TEXT DEFAULT 'USD',
+  phone TEXT,
+  email TEXT,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
 );
@@ -152,6 +154,7 @@ CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT
 CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Affiliates can view referred profiles" ON public.profiles FOR SELECT USING (user_id IN (SELECT r.referred_user_id FROM referrals r JOIN affiliates a ON a.id = r.affiliate_id WHERE a.user_id = auth.uid()));
 
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
@@ -216,6 +219,7 @@ CREATE POLICY "Users can create their own transactions" ON public.transactions F
 CREATE POLICY "Admins can view all transactions" ON public.transactions FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Admins can update all transactions" ON public.transactions FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Admins can delete transactions" ON public.transactions FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Affiliates can view referred deposits" ON public.transactions FOR SELECT USING ((type = 'deposit') AND (user_id IN (SELECT r.referred_user_id FROM referrals r JOIN affiliates a ON a.id = r.affiliate_id WHERE a.user_id = auth.uid())));
 
 CREATE TRIGGER update_transactions_updated_at
 BEFORE UPDATE ON public.transactions
@@ -269,6 +273,8 @@ ALTER TABLE public.platform_settings ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow public read access to platform settings" ON public.platform_settings FOR SELECT USING (true);
 CREATE POLICY "Admins can manage platform settings" ON public.platform_settings FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Allow admin to insert platform settings" ON public.platform_settings FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND is_admin = true));
+CREATE POLICY "Allow admin to update platform settings" ON public.platform_settings FOR UPDATE USING (EXISTS (SELECT 1 FROM profiles WHERE user_id = auth.uid() AND is_admin = true));
 
 CREATE OR REPLACE FUNCTION public.update_platform_settings_updated_at()
 RETURNS trigger
@@ -305,6 +311,7 @@ CREATE TABLE public.payment_gateways (
 ALTER TABLE public.payment_gateways ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admins can manage payment gateways" ON public.payment_gateways FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Anyone can view active payment gateways" ON public.payment_gateways FOR SELECT USING (is_active = true);
 
 -- Tabela: platform_popups
 CREATE TABLE public.platform_popups (
@@ -314,6 +321,7 @@ CREATE TABLE public.platform_popups (
   image_url TEXT,
   video_url TEXT,
   is_active BOOLEAN NOT NULL DEFAULT true,
+  show_once_per_day BOOLEAN DEFAULT false,
   start_date TIMESTAMP WITH TIME ZONE,
   end_date TIMESTAMP WITH TIME ZONE,
   created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
@@ -331,6 +339,9 @@ CREATE TABLE public.affiliates (
   user_id UUID NOT NULL,
   affiliate_code TEXT NOT NULL UNIQUE,
   commission_percentage NUMERIC NOT NULL DEFAULT 10,
+  commission_model TEXT NOT NULL DEFAULT 'rev',
+  cpa_value NUMERIC,
+  cpa_min_deposit NUMERIC,
   total_referrals INTEGER DEFAULT 0,
   total_commission NUMERIC DEFAULT 0,
   is_active BOOLEAN DEFAULT true,
@@ -353,6 +364,7 @@ CREATE TABLE public.referrals (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   affiliate_id UUID NOT NULL REFERENCES public.affiliates(id) ON DELETE CASCADE,
   referred_user_id UUID NOT NULL,
+  cpa_paid BOOLEAN NOT NULL DEFAULT false,
   status TEXT NOT NULL DEFAULT 'active',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
@@ -360,6 +372,7 @@ CREATE TABLE public.referrals (
 ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admins can manage all referrals" ON public.referrals FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Affiliates can view their own referrals" ON public.referrals FOR SELECT USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
 
 -- Tabela: commissions
 CREATE TABLE public.commissions (
@@ -374,6 +387,7 @@ CREATE TABLE public.commissions (
 ALTER TABLE public.commissions ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admins can manage all commissions" ON public.commissions FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+CREATE POLICY "Affiliates can view their own commissions" ON public.commissions FOR SELECT USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
 
 -- Tabela: withdrawal_requests
 CREATE TABLE public.withdrawal_requests (
@@ -870,6 +884,50 @@ ALTER TABLE public.social_auth_providers ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Todos podem ver provedores OAuth ativos" ON public.social_auth_providers FOR SELECT USING (is_enabled = true);
 CREATE POLICY "Admins podem gerenciar provedores OAuth" ON public.social_auth_providers FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 
+-- Tabela: weekly_leaders
+CREATE TABLE public.weekly_leaders (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  display_name TEXT NOT NULL,
+  balance NUMERIC NOT NULL DEFAULT 0,
+  avatar_url TEXT,
+  position INTEGER NOT NULL DEFAULT 0,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.weekly_leaders ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Everyone can view active leaders" ON public.weekly_leaders FOR SELECT USING (is_active = true);
+CREATE POLICY "Admins can manage weekly leaders" ON public.weekly_leaders FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
+
+-- Tabela: affiliate_marketing_metrics
+CREATE TABLE public.affiliate_marketing_metrics (
+  id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
+  affiliate_id UUID NOT NULL REFERENCES public.affiliates(id) ON DELETE CASCADE,
+  fake_total_referrals INTEGER DEFAULT 0,
+  fake_total_commission NUMERIC DEFAULT 0,
+  fake_total_deposits NUMERIC DEFAULT 0,
+  fake_paid_commission NUMERIC DEFAULT 0,
+  fake_pending_commission NUMERIC DEFAULT 0,
+  fake_active_users INTEGER DEFAULT 0,
+  fake_conversion_rate NUMERIC DEFAULT 0,
+  fake_chart_data JSONB,
+  fake_withdrawal_history JSONB,
+  is_active BOOLEAN DEFAULT true,
+  notes TEXT,
+  period_start TIMESTAMP WITH TIME ZONE,
+  period_end TIMESTAMP WITH TIME ZONE,
+  created_by UUID,
+  created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT now()
+);
+
+ALTER TABLE public.affiliate_marketing_metrics ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admins can manage marketing metrics" ON public.affiliate_marketing_metrics FOR ALL USING (EXISTS (SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'));
+CREATE POLICY "Affiliates can view their own marketing metrics" ON public.affiliate_marketing_metrics FOR SELECT USING (EXISTS (SELECT 1 FROM affiliates WHERE id = affiliate_marketing_metrics.affiliate_id AND user_id = auth.uid()));
+
 
 -- ============================================
 -- PARTE 4: FUNÇÕES DE NEGÓCIO
@@ -888,12 +946,14 @@ DECLARE
   v_country_code TEXT;
   v_country_name TEXT;
   v_preferred_currency TEXT;
+  v_phone TEXT;
 BEGIN
   v_document := new.raw_user_meta_data->>'document';
   v_document_type := COALESCE(NULLIF(new.raw_user_meta_data->>'document_type', ''), 'international');
   v_country_code := COALESCE(NULLIF(new.raw_user_meta_data->>'country_code', ''), 'XX');
   v_country_name := COALESCE(NULLIF(new.raw_user_meta_data->>'country_name', ''), 'Unknown');
   v_preferred_currency := COALESCE(NULLIF(new.raw_user_meta_data->>'preferred_currency', ''), 'USD');
+  v_phone := new.raw_user_meta_data->>'phone';
   
   IF v_document IS NULL OR v_document = '' OR v_document = 'N/A' THEN
     v_document := 'INT-' || extract(epoch from now())::bigint || '-' || substr(md5(random()::text), 1, 8);
@@ -906,7 +966,9 @@ BEGIN
     document_type,
     country_code,
     country_name,
-    preferred_currency
+    preferred_currency,
+    phone,
+    email
   )
   VALUES (
     new.id,
@@ -915,7 +977,9 @@ BEGIN
     v_document_type,
     v_country_code,
     v_country_name,
-    v_preferred_currency
+    v_preferred_currency,
+    v_phone,
+    new.email
   );
   RETURN new;
 END;
@@ -1059,6 +1123,7 @@ DECLARE
   v_referral_id uuid;
   v_affiliate_id uuid;
   v_commission_percentage numeric;
+  v_commission_model text;
   v_trade_result numeric;
   v_commission_amount numeric;
   v_transaction_id uuid;
@@ -1073,12 +1138,13 @@ BEGIN
     
     IF v_referral_id IS NOT NULL THEN
       
-      SELECT commission_percentage INTO v_commission_percentage
+      SELECT commission_percentage, commission_model INTO v_commission_percentage, v_commission_model
       FROM public.affiliates
       WHERE id = v_affiliate_id
         AND is_active = true;
       
-      IF v_commission_percentage IS NOT NULL THEN
+      -- Only process REV model affiliates
+      IF v_commission_percentage IS NOT NULL AND COALESCE(v_commission_model, 'rev') = 'rev' THEN
         
         v_trade_result := NEW.result;
         v_commission_amount := (v_trade_result * -1) * (v_commission_percentage / 100);
@@ -1125,6 +1191,162 @@ CREATE TRIGGER trigger_process_affiliate_commission
   AFTER UPDATE ON public.trades
   FOR EACH ROW
   EXECUTE FUNCTION public.process_affiliate_commission();
+
+-- Função para processar comissão CPA
+CREATE OR REPLACE FUNCTION public.process_cpa_commission()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_referral RECORD;
+  v_affiliate RECORD;
+  v_total_deposited numeric;
+  v_commission_amount numeric;
+BEGIN
+  IF NEW.type = 'deposit' AND NEW.status = 'completed' AND (OLD.status IS NULL OR OLD.status != 'completed') THEN
+    
+    SELECT r.id, r.affiliate_id, r.cpa_paid
+    INTO v_referral
+    FROM public.referrals r
+    WHERE r.referred_user_id = NEW.user_id
+      AND r.status = 'active'
+    LIMIT 1;
+    
+    IF v_referral.id IS NOT NULL AND v_referral.cpa_paid = false THEN
+      
+      SELECT a.id, a.commission_model, a.cpa_value, a.cpa_min_deposit, a.is_active
+      INTO v_affiliate
+      FROM public.affiliates a
+      WHERE a.id = v_referral.affiliate_id;
+      
+      IF v_affiliate.commission_model = 'cpa' AND v_affiliate.is_active = true THEN
+        
+        SELECT COALESCE(SUM(amount), 0) INTO v_total_deposited
+        FROM public.transactions
+        WHERE user_id = NEW.user_id
+          AND type = 'deposit'
+          AND status = 'completed';
+        
+        IF v_total_deposited >= COALESCE(v_affiliate.cpa_min_deposit, 0) THEN
+          
+          v_commission_amount := v_affiliate.cpa_value;
+          
+          INSERT INTO public.commissions (
+            affiliate_id,
+            referral_id,
+            amount
+          ) VALUES (
+            v_affiliate.id,
+            v_referral.id,
+            v_commission_amount
+          );
+          
+          UPDATE public.affiliates
+          SET 
+            total_commission = COALESCE(total_commission, 0) + v_commission_amount,
+            updated_at = now()
+          WHERE id = v_affiliate.id;
+          
+          UPDATE public.referrals
+          SET cpa_paid = true
+          WHERE id = v_referral.id;
+          
+        END IF;
+      END IF;
+    END IF;
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trigger_process_cpa_commission
+  AFTER UPDATE ON public.transactions
+  FOR EACH ROW
+  EXECUTE FUNCTION public.process_cpa_commission();
+
+-- Função para notificar admins
+CREATE OR REPLACE FUNCTION public.notify_admins_on_event()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  notification_type text;
+  user_name text;
+  amount_value numeric;
+  user_id_value uuid;
+BEGIN
+  CASE TG_TABLE_NAME
+    WHEN 'transactions' THEN
+      IF NEW.type = 'deposit' AND NEW.status = 'completed' AND (OLD IS NULL OR OLD.status != 'completed') THEN
+        notification_type := 'new_deposit';
+        amount_value := NEW.amount;
+        user_id_value := NEW.user_id;
+      ELSIF NEW.type = 'withdrawal' AND NEW.status = 'pending' AND (OLD IS NULL OR OLD.status != 'pending') THEN
+        notification_type := 'withdrawal_request';
+        amount_value := NEW.amount;
+        user_id_value := NEW.user_id;
+      ELSE
+        RETURN NEW;
+      END IF;
+    WHEN 'verification_requests' THEN
+      IF NEW.status = 'under_review' AND (OLD IS NULL OR OLD.status != 'under_review') THEN
+        notification_type := 'identity_verification';
+        user_id_value := NEW.user_id;
+      ELSE
+        RETURN NEW;
+      END IF;
+    WHEN 'withdrawal_requests' THEN
+      IF NEW.status = 'pending' AND (OLD IS NULL OR OLD.status != 'pending') THEN
+        notification_type := 'affiliate_withdrawal';
+        amount_value := NEW.amount;
+        SELECT a.user_id INTO user_id_value FROM affiliates a WHERE a.id = NEW.affiliate_id;
+      ELSE
+        RETURN NEW;
+      END IF;
+    WHEN 'profiles' THEN
+      IF TG_OP = 'INSERT' THEN
+        notification_type := 'new_user';
+        user_id_value := NEW.user_id;
+        user_name := NEW.full_name;
+      ELSE
+        RETURN NEW;
+      END IF;
+    ELSE
+      RETURN NEW;
+  END CASE;
+  
+  IF user_name IS NULL AND user_id_value IS NOT NULL THEN
+    SELECT full_name INTO user_name FROM profiles WHERE user_id = user_id_value;
+  END IF;
+  
+  INSERT INTO public.admin_notification_queue (notification_type, user_id, user_name, amount, created_at)
+  VALUES (notification_type, user_id_value, user_name, amount_value, now());
+  
+  RETURN NEW;
+END;
+$$;
+
+-- Triggers para notify_admins_on_event
+CREATE TRIGGER trigger_notify_admins_transactions
+  AFTER INSERT OR UPDATE ON public.transactions
+  FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_event();
+
+CREATE TRIGGER trigger_notify_admins_verification
+  AFTER INSERT OR UPDATE ON public.verification_requests
+  FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_event();
+
+CREATE TRIGGER trigger_notify_admins_withdrawal
+  AFTER INSERT OR UPDATE ON public.withdrawal_requests
+  FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_event();
+
+CREATE TRIGGER trigger_notify_admins_new_user
+  AFTER INSERT ON public.profiles
+  FOR EACH ROW EXECUTE FUNCTION public.notify_admins_on_event();
 
 -- Função para copy trade
 CREATE OR REPLACE FUNCTION public.process_copy_trade()
@@ -1545,7 +1767,8 @@ VALUES
   ('avatars', 'avatars', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
   ('verification-documents', 'verification-documents', false, 10485760, ARRAY['image/jpeg', 'image/png', 'image/webp', 'application/pdf']),
   ('popup-images', 'popup-images', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']),
-  ('chart-backgrounds', 'chart-backgrounds', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp']);
+  ('chart-backgrounds', 'chart-backgrounds', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp']),
+  ('weekly-leaders-avatars', 'weekly-leaders-avatars', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
 
 -- Políticas para avatars (público)
 CREATE POLICY "Avatar images are publicly accessible"
@@ -1598,6 +1821,17 @@ USING (bucket_id = 'chart-backgrounds');
 CREATE POLICY "Admins can manage chart backgrounds"
 ON storage.objects FOR ALL
 USING (bucket_id = 'chart-backgrounds' AND EXISTS (
+  SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'
+));
+
+-- Políticas para weekly-leaders-avatars (público)
+CREATE POLICY "Weekly leaders avatars are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'weekly-leaders-avatars');
+
+CREATE POLICY "Admins can manage weekly leaders avatars"
+ON storage.objects FOR ALL
+USING (bucket_id = 'weekly-leaders-avatars' AND EXISTS (
   SELECT 1 FROM user_roles WHERE user_id = auth.uid() AND role = 'admin'
 ));
 ```
@@ -1736,7 +1970,8 @@ No painel do Vercel, adicione:
 
 ```
 VITE_SUPABASE_URL=https://<SEU_PROJETO>.supabase.co
-VITE_SUPABASE_ANON_KEY=<SUA_ANON_KEY>
+VITE_SUPABASE_PUBLISHABLE_KEY=<SUA_ANON_KEY>
+VITE_SUPABASE_PROJECT_ID=<SEU_PROJECT_ID>
 VITE_STRIPE_PUBLISHABLE_KEY=<SUA_STRIPE_PUBLISHABLE_KEY>
 ```
 
@@ -2493,37 +2728,67 @@ Após criar as funções, configure o arquivo `supabase/config.toml` para desabi
 ```toml
 project_id = "SEU_PROJECT_ID"
 
+[functions.verify-admin-password]
+verify_jwt = false
+
+[functions.payment-webhook]
+verify_jwt = false
+
+[functions.recover-pending-transactions]
+verify_jwt = false
+
+[functions.check-pending-payments]
+verify_jwt = false
+
+[functions.cleanup-expired-transactions]
+verify_jwt = false
+
+[functions.cleanup-old-candles]
+verify_jwt = false
+
+[functions.organize-assets]
+verify_jwt = false
+
+[functions.process-expired-trades]
+verify_jwt = false
+
 [functions.stripe-webhook]
 verify_jwt = false
 
 [functions.coinbase-webhook]
 verify_jwt = false
 
-[functions.payment-webhook]
-verify_jwt = false
-
 [functions.get-vapid-key]
 verify_jwt = false
 
-[functions.update-current-candles]
+[functions.push-subscribe]
 verify_jwt = false
 
-[functions.process-expired-trades]
+[functions.push-unsubscribe]
+verify_jwt = false
+
+[functions.send-push-notification]
+verify_jwt = false
+
+[functions.notify-admins]
 verify_jwt = false
 
 [functions.cleanup-demo-trades]
 verify_jwt = false
 
-[functions.cleanup-old-candles]
-verify_jwt = false
-
-[functions.cleanup-expired-transactions]
-verify_jwt = false
-
-[functions.check-pending-payments]
-verify_jwt = false
-
 [functions.process-admin-notifications]
+verify_jwt = false
+
+[functions.generate-vapid-keys]
+verify_jwt = false
+
+[functions.create-referral]
+verify_jwt = false
+
+[functions.pushin-pay-webhook]
+verify_jwt = false
+
+[functions.woovi-webhook]
 verify_jwt = false
 ```
 
@@ -2570,5 +2835,5 @@ Configure os secrets no Supabase Dashboard → Settings → Edge Functions.
 
 ---
 
-**Documento atualizado em: 14/12/2024**
-**Versão: 3.0 - Com TODAS as Edge Functions e código completo**
+**Documento atualizado em: 21/02/2026**
+**Versão: 4.0 - Atualizado com CPA, notificações admin, weekly leaders, affiliate marketing metrics, phone/email em profiles**
