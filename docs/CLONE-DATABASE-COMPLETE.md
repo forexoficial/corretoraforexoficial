@@ -1,22 +1,31 @@
 # 🗄️ Guia Completo: Clone do Banco de Dados Supabase
 
 Este documento contém TUDO que você precisa para clonar o banco de dados para um novo projeto Supabase.
-**Atualizado em: 14/12/2024 com todos os dados reais do projeto atual.**
+**Atualizado em: 21/02/2026 - Versão 4.1 (Resale Edition)**
 
 ---
 
 ## 📋 PASSOS RESUMIDOS
 
 1. **Criar novo projeto Supabase** em [supabase.com](https://supabase.com)
-2. **Executar PASSO 1** - Estrutura do banco de dados
+2. **Executar PASSO 1** - Estrutura do banco de dados (SQL)
 3. **Executar PASSO 2** - Dados seed (configurações, assets, etc.)
 4. **Executar PASSO 3** - Configurar Storage Buckets
 5. **Executar PASSO 4** - Configurar Realtime
 6. **Executar PASSO 5** - Configurar Cron Jobs
-7. **Configurar Secrets** no Supabase
-8. **Deploy das Edge Functions**
+7. **Executar PASSO 6** - Configurar Secrets do Supabase
+8. **Executar PASSO 7** - Deploy das Edge Functions (CRÍTICO!)
+9. **Executar PASSO 8** - Variáveis de ambiente (Vercel/Hosting)
+10. **Executar PASSO 9** - Criar primeiro Admin
+11. **Executar PASSO 10** - Configurar Webhooks externos
 
 ---
+
+> ⚠️ **AVISO IMPORTANTE SOBRE URLs NOS DADOS SEED:**
+> Os dados seed (PASSO 2) contém URLs de ícones de assets e imagens de fundo do gráfico que apontam para o projeto Supabase ORIGINAL. Após executar o PASSO 2, você deve:
+> 1. Fazer upload das suas próprias imagens nos buckets do seu projeto
+> 2. Atualizar as URLs na tabela `assets` (coluna `icon_url`) e `chart_appearance_settings` (colunas `map_image_url*`)
+> 3. Ou simplesmente usar URLs públicas de ícones (ex: cryptologos.cc)
 
 ## 🔧 PASSO 1: ESTRUTURA DO BANCO DE DADOS
 
@@ -1858,32 +1867,34 @@ ALTER PUBLICATION supabase_realtime ADD TABLE public.transactions;
 
 ## 🔧 PASSO 5: CRON JOBS
 
-Acesse **Database > Extensions** e ative a extensão `pg_cron`.
+Acesse **Database > Extensions** e ative as extensões `pg_cron` e `pg_net`.
+
+> ⚠️ **IMPORTANTE:** O `pg_cron` suporta no mínimo intervalos de **1 minuto**. Não é possível agendar em segundos. Para trades em tempo real, o sistema já possui polling no frontend.
 
 Depois execute:
 
 ```sql
--- Processar trades expirados (a cada 3 segundos)
+-- Processar trades expirados (a cada minuto)
 SELECT cron.schedule(
   'process-expired-trades',
-  '*/3 * * * * *',
+  '* * * * *',
   $$
   SELECT net.http_post(
     url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/process-expired-trades',
-    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
-    body := '{}'::jsonb
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true), 'Content-Type', 'application/json'),
+    body := '{"continuous": true, "interval": 2}'::jsonb
   );
   $$
 );
 
--- Atualizar candles (a cada 10 segundos)
+-- Atualizar candles (a cada minuto)
 SELECT cron.schedule(
   'update-current-candles',
-  '*/10 * * * * *',
+  '* * * * *',
   $$
   SELECT net.http_post(
     url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/update-current-candles',
-    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true), 'Content-Type', 'application/json'),
     body := '{}'::jsonb
   );
   $$
@@ -1896,7 +1907,7 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/cleanup-demo-trades',
-    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true), 'Content-Type', 'application/json'),
     body := '{}'::jsonb
   );
   $$
@@ -1909,7 +1920,7 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/cleanup-old-candles',
-    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true), 'Content-Type', 'application/json'),
     body := '{}'::jsonb
   );
   $$
@@ -1922,7 +1933,7 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/check-pending-payments',
-    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true), 'Content-Type', 'application/json'),
     body := '{}'::jsonb
   );
   $$
@@ -1935,14 +1946,19 @@ SELECT cron.schedule(
   $$
   SELECT net.http_post(
     url := 'https://<SEU_PROJETO>.supabase.co/functions/v1/process-admin-notifications',
-    headers := '{"Authorization": "Bearer <SEU_SERVICE_ROLE_KEY>", "Content-Type": "application/json"}'::jsonb,
+    headers := jsonb_build_object('Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true), 'Content-Type', 'application/json'),
     body := '{}'::jsonb
   );
   $$
 );
 ```
 
-**IMPORTANTE:** Substitua `<SEU_PROJETO>` pelo ID do seu projeto e `<SEU_SERVICE_ROLE_KEY>` pela sua service role key.
+**IMPORTANTE:** Substitua `<SEU_PROJETO>` pelo ID do seu projeto Supabase.
+
+> 💡 **Dica:** Se preferir usar a service_role_key diretamente (em vez de `current_setting`), substitua o `headers` por:
+> ```sql
+> headers := '{"Authorization": "Bearer SUA_SERVICE_ROLE_KEY_AQUI", "Content-Type": "application/json"}'::jsonb
+> ```
 
 ---
 
@@ -1950,59 +1966,23 @@ SELECT cron.schedule(
 
 Vá em **Settings > Edge Functions > Secrets** e adicione:
 
-| Nome do Secret | Descrição |
-|----------------|-----------|
-| `SUPABASE_URL` | URL do projeto (ex: https://xxx.supabase.co) |
-| `SUPABASE_ANON_KEY` | Chave anon do projeto |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave service role |
-| `STRIPE_SECRET_KEY` | Chave secreta do Stripe |
-| `STRIPE_PUBLISHABLE_KEY` | Chave pública do Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe |
-| `VAPID_PUBLIC_KEY` | Chave pública VAPID (push notifications) |
-| `VAPID_PRIVATE_KEY` | Chave privada VAPID |
-| `ADMIN_PANEL_PASSWORD` | Senha do painel admin |
+| Nome do Secret | Descrição | Onde Obter |
+|----------------|-----------|------------|
+| `SUPABASE_URL` | URL do projeto (ex: https://xxx.supabase.co) | Dashboard > Settings > API |
+| `SUPABASE_ANON_KEY` | Chave anon do projeto | Dashboard > Settings > API |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave service role | Dashboard > Settings > API |
+| `STRIPE_SECRET_KEY` | Chave secreta do Stripe | [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
+| `STRIPE_PUBLISHABLE_KEY` | Chave pública do Stripe | [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
+| `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe | Stripe > Webhooks > Signing secret |
+| `VAPID_PUBLIC_KEY` | Chave pública VAPID (push notifications) | Gerar com edge function `generate-vapid-keys` |
+| `VAPID_PRIVATE_KEY` | Chave privada VAPID | Gerar com edge function `generate-vapid-keys` |
+| `ADMIN_PANEL_PASSWORD` | Senha do painel admin | Defina uma senha forte |
+
+> 💡 **Para gerar as chaves VAPID:** Após deployar a edge function `generate-vapid-keys`, chame-a uma vez e copie as chaves retornadas para os secrets.
 
 ---
 
-## 🌐 PASSO 7: VARIÁVEIS DE AMBIENTE (Vercel/Hosting)
-
-No painel do Vercel, adicione:
-
-```
-VITE_SUPABASE_URL=https://<SEU_PROJETO>.supabase.co
-VITE_SUPABASE_PUBLISHABLE_KEY=<SUA_ANON_KEY>
-VITE_SUPABASE_PROJECT_ID=<SEU_PROJECT_ID>
-VITE_STRIPE_PUBLISHABLE_KEY=<SUA_STRIPE_PUBLISHABLE_KEY>
-```
-
----
-
-## 📦 PASSO 8: DEPLOY DAS EDGE FUNCTIONS
-
-As Edge Functions serão automaticamente deployadas quando você fizer push do código para o repositório conectado ao Lovable/Vercel.
-
-**Edge Functions incluídas:**
-- `process-expired-trades` - Processa trades expirados
-- `update-current-candles` - Atualiza candles em tempo real
-- `generate-candles` - Gera novos candles
-- `cleanup-demo-trades` - Limpa trades demo antigos
-- `cleanup-old-candles` - Limpa candles antigos
-- `check-pending-payments` - Verifica pagamentos pendentes
-- `create-stripe-payment-intent` - Cria intenção de pagamento Stripe
-- `stripe-webhook` - Webhook do Stripe
-- `create-coinbase-charge` - Cria cobrança Coinbase
-- `coinbase-webhook` - Webhook do Coinbase
-- `send-push-notification` - Envia notificações push
-- `push-subscribe` - Inscrição em push notifications
-- `push-unsubscribe` - Cancelamento de push notifications
-- `get-vapid-key` - Obtém chave VAPID pública
-- `verify-admin-password` - Verifica senha do admin
-- `notify-admins` - Notifica administradores
-- `process-admin-notifications` - Processa fila de notificações
-
----
-
-## 🚀 PASSO 6: DEPLOY DAS EDGE FUNCTIONS (CRÍTICO!)
+## 📦 PASSO 7: DEPLOY DAS EDGE FUNCTIONS (CRÍTICO!)
 
 **ATENÇÃO:** As Edge Functions NÃO são copiadas automaticamente quando você clona o banco de dados ou o repositório. Você DEVE deployar cada função manualmente no Dashboard do Supabase.
 
@@ -2675,6 +2655,8 @@ As seguintes funções devem ser copiadas do repositório original (`supabase/fu
 - **`check-pending-payments`** - Verifica pagamentos pendentes
 - **`cleanup-expired-transactions`** - Limpa transações expiradas
 - **`recover-pending-transactions`** - Recupera transações pendentes
+- **`pushin-pay-webhook`** - Webhook do Pushin Pay (PIX)
+- **`woovi-webhook`** - Webhook do Woovi/OpenPix (PIX)
 
 ---
 
@@ -2701,7 +2683,7 @@ serve(async (req) => {
 
 #### 17-22. Outras funções de notificação
 
-Copie do repositório original:
+Copie do repositório original (`supabase/functions/`):
 - **`generate-vapid-keys`** - Gera chaves VAPID
 - **`push-subscribe`** - Inscrição push
 - **`push-unsubscribe`** - Cancelar inscrição
@@ -2713,8 +2695,9 @@ Copie do repositório original:
 
 ### 🟢 FUNÇÕES AUXILIARES
 
-#### 23-25. Funções auxiliares
+#### 23-27. Funções auxiliares
 
+Copie do repositório original (`supabase/functions/`):
 - **`create-referral`** - Cria referência de afiliado
 - **`organize-assets`** - Organiza ativos
 - **`verify-admin-password`** - Verifica senha admin
@@ -2794,19 +2777,102 @@ verify_jwt = false
 
 ---
 
+## 🌐 PASSO 8: VARIÁVEIS DE AMBIENTE (Vercel/Hosting)
+
+No painel do Vercel (ou outro hosting), adicione as seguintes variáveis de ambiente:
+
+```
+VITE_SUPABASE_URL=https://<SEU_PROJETO>.supabase.co
+VITE_SUPABASE_PUBLISHABLE_KEY=<SUA_ANON_KEY>
+VITE_SUPABASE_PROJECT_ID=<SEU_PROJECT_ID>
+VITE_STRIPE_PUBLISHABLE_KEY=<SUA_STRIPE_PUBLISHABLE_KEY>
+```
+
+> 💡 Encontre esses valores em: **Supabase Dashboard > Settings > API**
+
+---
+
+## 👤 PASSO 9: CRIAR PRIMEIRO ADMIN
+
+Após registrar o primeiro usuário na plataforma, promova-o a admin executando no **SQL Editor** do Supabase:
+
+```sql
+-- Substitua 'email@admin.com' pelo email do usuário que será admin
+DO $$
+DECLARE
+  v_user_id UUID;
+BEGIN
+  -- Buscar o user_id pelo email
+  SELECT user_id INTO v_user_id 
+  FROM public.profiles 
+  WHERE email = 'email@admin.com';
+  
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Usuário não encontrado com esse email';
+  END IF;
+  
+  -- Marcar como admin no profiles
+  UPDATE public.profiles 
+  SET is_admin = true 
+  WHERE user_id = v_user_id;
+  
+  -- Adicionar role de admin
+  INSERT INTO public.user_roles (user_id, role) 
+  VALUES (v_user_id, 'admin') 
+  ON CONFLICT (user_id, role) DO NOTHING;
+  
+  RAISE NOTICE 'Admin criado com sucesso para user_id: %', v_user_id;
+END;
+$$;
+```
+
+---
+
+## 🔗 PASSO 10: CONFIGURAR WEBHOOKS EXTERNOS
+
+### Stripe Webhook
+1. Acesse [Stripe Dashboard > Webhooks](https://dashboard.stripe.com/webhooks)
+2. Clique em **Add endpoint**
+3. URL: `https://<SEU_PROJETO>.supabase.co/functions/v1/stripe-webhook`
+4. Eventos a escutar:
+   - `payment_intent.succeeded`
+   - `payment_intent.payment_failed`
+   - `payment_intent.canceled`
+5. Copie o **Signing secret** e adicione como secret `STRIPE_WEBHOOK_SECRET` no Supabase
+
+### Coinbase Webhook (se usar)
+1. Acesse [Coinbase Commerce Dashboard](https://commerce.coinbase.com/dashboard/settings)
+2. Em **Webhook subscriptions**, adicione:
+3. URL: `https://<SEU_PROJETO>.supabase.co/functions/v1/coinbase-webhook`
+
+### Pushin Pay Webhook (se usar PIX via Pushin Pay)
+1. Configure no painel do Pushin Pay
+2. URL: `https://<SEU_PROJETO>.supabase.co/functions/v1/pushin-pay-webhook`
+3. Adicione o secret `PUSHIN_PAY_TOKEN` no Supabase
+
+### Woovi/OpenPix Webhook (se usar PIX via Woovi)
+1. Configure no painel da Woovi/OpenPix
+2. URL: `https://<SEU_PROJETO>.supabase.co/functions/v1/woovi-webhook`
+3. Adicione os secrets `WOOVI_APP_ID` e `WOOVI_WEBHOOK_SECRET` no Supabase
+
+---
+
 ## ✅ CHECKLIST FINAL
 
 - [ ] Projeto Supabase criado
-- [ ] PASSO 1 executado (estrutura)
+- [ ] PASSO 1 executado (estrutura do banco)
 - [ ] PASSO 2 executado (dados seed)
-- [ ] PASSO 3 executado (storage)
+- [ ] PASSO 3 executado (storage buckets)
 - [ ] PASSO 4 executado (realtime)
-- [ ] PASSO 5 executado (cron jobs)
-- [ ] **PASSO 6 executado (TODAS as 25 edge functions deployadas)**
-- [ ] Secrets configurados
-- [ ] Variáveis de ambiente no hosting
-- [ ] Webhook Stripe configurado no dashboard Stripe
-- [ ] Webhook Coinbase configurado (se usar)
+- [ ] PASSO 5 executado (cron jobs com pg_cron + pg_net)
+- [ ] PASSO 6 executado (secrets configurados)
+- [ ] **PASSO 7 executado (TODAS as edge functions deployadas)**
+- [ ] PASSO 8 executado (variáveis de ambiente no hosting)
+- [ ] PASSO 9 executado (primeiro admin criado)
+- [ ] PASSO 10 executado (webhooks configurados)
+- [ ] URLs de ícones dos assets atualizadas para o novo projeto
+- [ ] URLs de imagens do gráfico atualizadas para o novo projeto
+- [ ] Plataforma testada: registro, login, trading, depósito
 
 ---
 
@@ -2816,7 +2882,7 @@ verify_jwt = false
 Execute os passos na ordem correta: PASSO 1 antes do PASSO 2.
 
 ### Erro ao gerar candles / "Function not found"
-A edge function `generate-candles` não foi deployada. Execute o PASSO 6.
+A edge function `generate-candles` não foi deployada. Execute o PASSO 7.
 
 ### Trades não expirando
 Verifique se o cron job `process-expired-trades` está ativo e se a edge function está deployada.
@@ -2828,12 +2894,18 @@ Verifique se o cron job `update-current-candles` está ativo e se a edge functio
 Verifique se o PASSO 4 (Realtime) foi executado corretamente.
 
 ### Pagamentos não processando
-Verifique se os webhooks estão configurados corretamente no Stripe/Coinbase dashboards.
+Verifique se os webhooks estão configurados corretamente (PASSO 10).
 
 ### Erro "SUPABASE_URL not found" em edge functions
-Configure os secrets no Supabase Dashboard → Settings → Edge Functions.
+Configure os secrets no Supabase Dashboard → Settings → Edge Functions (PASSO 6).
+
+### Ícones dos assets não aparecem
+As URLs apontam para o projeto original. Faça upload das imagens no seu bucket `popup-images` e atualize a coluna `icon_url` na tabela `assets`.
+
+### Admin não consegue acessar o painel
+Verifique se o PASSO 9 foi executado e se o usuário tem a role `admin` na tabela `user_roles`.
 
 ---
 
 **Documento atualizado em: 21/02/2026**
-**Versão: 4.0 - Atualizado com CPA, notificações admin, weekly leaders, affiliate marketing metrics, phone/email em profiles**
+**Versão: 4.1 - Corrigido: numeração dos passos, cron jobs (pg_cron mínimo 1 min), URLs hardcoded, criação de admin, webhooks PIX, edge functions completas**
