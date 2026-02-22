@@ -163,7 +163,7 @@ CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT
 CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "Admins can view all profiles" ON public.profiles FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Admins can update all profiles" ON public.profiles FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Affiliates can view referred profiles" ON public.profiles FOR SELECT USING (user_id IN (SELECT r.referred_user_id FROM referrals r JOIN affiliates a ON a.id = r.affiliate_id WHERE a.user_id = auth.uid()));
+-- NOTA: A policy "Affiliates can view referred profiles" será criada após a tabela referrals (ver abaixo)
 
 CREATE TRIGGER update_profiles_updated_at
   BEFORE UPDATE ON public.profiles
@@ -228,7 +228,7 @@ CREATE POLICY "Users can create their own transactions" ON public.transactions F
 CREATE POLICY "Admins can view all transactions" ON public.transactions FOR SELECT USING (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Admins can update all transactions" ON public.transactions FOR UPDATE USING (has_role(auth.uid(), 'admin'::app_role)) WITH CHECK (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Admins can delete transactions" ON public.transactions FOR DELETE USING (has_role(auth.uid(), 'admin'::app_role));
-CREATE POLICY "Affiliates can view referred deposits" ON public.transactions FOR SELECT USING ((type = 'deposit') AND (user_id IN (SELECT r.referred_user_id FROM referrals r JOIN affiliates a ON a.id = r.affiliate_id WHERE a.user_id = auth.uid())));
+-- NOTA: A policy "Affiliates can view referred deposits" será criada após a tabela referrals (ver abaixo)
 
 CREATE TRIGGER update_transactions_updated_at
 BEFORE UPDATE ON public.transactions
@@ -382,6 +382,10 @@ ALTER TABLE public.referrals ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Admins can manage all referrals" ON public.referrals FOR ALL USING (has_role(auth.uid(), 'admin'::app_role));
 CREATE POLICY "Affiliates can view their own referrals" ON public.referrals FOR SELECT USING (affiliate_id IN (SELECT id FROM affiliates WHERE user_id = auth.uid()));
+
+-- Policies que dependem da tabela referrals (movidas para cá por ordem de dependência)
+CREATE POLICY "Affiliates can view referred profiles" ON public.profiles FOR SELECT USING (user_id IN (SELECT r.referred_user_id FROM referrals r JOIN affiliates a ON a.id = r.affiliate_id WHERE a.user_id = auth.uid()));
+CREATE POLICY "Affiliates can view referred deposits" ON public.transactions FOR SELECT USING ((type = 'deposit') AND (user_id IN (SELECT r.referred_user_id FROM referrals r JOIN affiliates a ON a.id = r.affiliate_id WHERE a.user_id = auth.uid())));
 
 -- Tabela: commissions
 CREATE TABLE public.commissions (
