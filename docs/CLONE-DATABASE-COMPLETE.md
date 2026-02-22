@@ -1966,11 +1966,10 @@ SELECT cron.schedule(
 
 Vá em **Settings > Edge Functions > Secrets** e adicione:
 
+> ⚠️ **IMPORTANTE:** Os secrets `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` são **injetados automaticamente** pelo Supabase nas Edge Functions. **NÃO tente adicioná-los manualmente** — o Supabase não permite nomes com o prefixo `SUPABASE_`.
+
 | Nome do Secret | Descrição | Onde Obter |
 |----------------|-----------|------------|
-| `SUPABASE_URL` | URL do projeto (ex: https://xxx.supabase.co) | Dashboard > Settings > API |
-| `SUPABASE_ANON_KEY` | Chave anon do projeto | Dashboard > Settings > API |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave service role | Dashboard > Settings > API |
 | `STRIPE_SECRET_KEY` | Chave secreta do Stripe | [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
 | `STRIPE_PUBLISHABLE_KEY` | Chave pública do Stripe | [Stripe Dashboard](https://dashboard.stripe.com/apikeys) |
 | `STRIPE_WEBHOOK_SECRET` | Secret do webhook Stripe | Stripe > Webhooks > Signing secret |
