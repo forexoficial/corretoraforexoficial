@@ -9,6 +9,7 @@ import { useTranslation } from "@/hooks/useTranslation";
 import { useLanguageContext } from "@/contexts/LanguageContext";
 import { StarfieldBackground } from "@/components/StarfieldBackground";
 import defaultBannerSignup from "@/assets/banner-signup.webp";
+import { AuthFooter } from "@/components/auth/AuthFooter";
 
 export default function Signup() {
   const { settings } = usePlatformSettings();
@@ -95,6 +96,7 @@ export default function Signup() {
           </div>
         </Card>
       </div>
+      <AuthFooter />
     </div>
   );
 }
