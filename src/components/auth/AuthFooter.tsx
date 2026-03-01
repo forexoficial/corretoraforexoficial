@@ -6,7 +6,7 @@ export function AuthFooter() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full py-6 px-4 relative z-10">
+    <footer className="w-full pt-12 pb-8 px-4 relative z-10 mt-8">
       <div className="max-w-3xl mx-auto">
         <div className="flex items-center gap-3 mb-4">
           <span className="text-xs text-muted-foreground">
