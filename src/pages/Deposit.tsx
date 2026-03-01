@@ -65,6 +65,7 @@ export default function Deposit() {
   const [stripeAmount, setStripeAmount] = useState(0);
   const [cryptoAmount, setCryptoAmount] = useState(0);
   const [hasStripeGateway, setHasStripeGateway] = useState(false);
+  const [hasPixGateway, setHasPixGateway] = useState(false);
   const [hasCoinbaseGateway, setHasCoinbaseGateway] = useState(false);
 
   const quickAmounts = [50, 100, 500, 1000];
@@ -92,6 +93,15 @@ export default function Deposit() {
       
       setHasStripeGateway(!!stripeData);
 
+      // Check PIX gateway
+      const { data: pixData } = await supabase
+        .from("payment_gateways")
+        .select("*")
+        .eq("type", "pix")
+        .eq("is_active", true);
+      
+      setHasPixGateway(!!(pixData && pixData.length > 0));
+
       // Check Coinbase gateway
       const { data: cryptoGateways } = await supabase
         .from("payment_gateways")
@@ -104,6 +114,15 @@ export default function Deposit() {
         return config?.provider === 'coinbase';
       });
       setHasCoinbaseGateway(!!coinbaseGateway);
+
+      // Auto-select first available method
+      if (stripeData) {
+        setPaymentMethod("stripe");
+      } else if (pixData && pixData.length > 0) {
+        setPaymentMethod("pix");
+      } else if (coinbaseGateway) {
+        setPaymentMethod("crypto");
+      }
     };
     checkGateways();
   }, []);
@@ -458,54 +477,58 @@ export default function Deposit() {
                 
                 {/* Payment Method Tabs */}
                 <div className="space-y-3">
-                  <button
-                    onClick={() => setPaymentMethod("stripe")}
-                    className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
-                      paymentMethod === "stripe"
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-muted-foreground/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-card rounded-lg border border-border">
-                        <CreditCard className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="text-left flex-1">
-                        <div className="font-semibold text-sm flex items-center gap-2">
-                          <Globe className="w-4 h-4" />
-                          {t("global_payment")}
+                  {hasStripeGateway && (
+                    <button
+                      onClick={() => setPaymentMethod("stripe")}
+                      className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
+                        paymentMethod === "stripe"
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-muted-foreground/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-card rounded-lg border border-border">
+                          <CreditCard className="w-6 h-6 text-primary" />
                         </div>
-                        <div className="text-xs text-muted-foreground">
-                          Card, Apple Pay, Google Pay
+                        <div className="text-left flex-1">
+                          <div className="font-semibold text-sm flex items-center gap-2">
+                            <Globe className="w-4 h-4" />
+                            {t("global_payment")}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Card, Apple Pay, Google Pay
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
 
-                  <button
-                    onClick={() => setPaymentMethod("pix")}
-                    className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
-                      paymentMethod === "pix"
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-muted-foreground/50"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-white rounded-lg">
-                        <img 
-                          src={pixIcon} 
-                          alt="PIX" 
-                          className="w-full h-full object-contain p-1" 
-                        />
-                      </div>
-                      <div className="text-left flex-1">
-                        <div className="font-semibold text-sm">PIX (Brasil)</div>
-                        <div className="text-xs text-muted-foreground">
-                          {t("instant_payment") || "Instant payment"}
+                  {hasPixGateway && (
+                    <button
+                      onClick={() => setPaymentMethod("pix")}
+                      className={`w-full rounded-lg p-3 sm:p-4 border-2 transition-all ${
+                        paymentMethod === "pix"
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-muted-foreground/50"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center flex-shrink-0 bg-white rounded-lg">
+                          <img 
+                            src={pixIcon} 
+                            alt="PIX" 
+                            className="w-full h-full object-contain p-1" 
+                          />
+                        </div>
+                        <div className="text-left flex-1">
+                          <div className="font-semibold text-sm">PIX (Brasil)</div>
+                          <div className="text-xs text-muted-foreground">
+                            {t("instant_payment") || "Instant payment"}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
+                    </button>
+                  )}
 
                   {hasCoinbaseGateway && (
                     <button
@@ -534,6 +557,12 @@ export default function Deposit() {
                         </div>
                       </div>
                     </button>
+                  )}
+
+                  {!hasStripeGateway && !hasPixGateway && !hasCoinbaseGateway && (
+                    <div className="text-center text-muted-foreground text-sm py-4">
+                      {t("no_payment_methods", "Nenhum método de pagamento disponível no momento.")}
+                    </div>
                   )}
                 </div>
               </div>
