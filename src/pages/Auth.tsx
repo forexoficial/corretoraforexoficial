@@ -9,6 +9,7 @@ import { SignupForm } from "@/components/auth/SignupForm";
 import { SocialLoginButtons } from "@/components/auth/SocialLoginButtons";
 import { StarfieldBackground } from "@/components/StarfieldBackground";
 import { useTranslation } from "@/hooks/useTranslation";
+import { AuthFooter } from "@/components/auth/AuthFooter";
 
 export default function Auth() {
   const { settings, loading: settingsLoading } = usePlatformSettings();
@@ -37,7 +38,7 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/10 p-4 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background/95 to-primary/10 p-4 relative overflow-hidden">
       <StarfieldBackground />
       <Card className="w-full max-w-md p-8 bg-background/50 backdrop-blur-xl border-primary/20 shadow-2xl relative z-10">
         <div className="text-center mb-8">
@@ -84,6 +85,7 @@ export default function Auth() {
           </div>
         )}
       </Card>
+      <AuthFooter />
     </div>
   );
 }
