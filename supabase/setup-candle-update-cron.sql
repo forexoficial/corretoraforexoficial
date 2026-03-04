@@ -7,7 +7,7 @@ SELECT cron.schedule(
   $$
   SELECT
     net.http_post(
-      url:='https://xhmisqcngalyjapkdwvh.supabase.co/functions/v1/update-current-candles',
+      url:='https://qugyzdkyfnzeepattvzr.supabase.co/functions/v1/update-current-candles',
       headers:='{"Content-Type": "application/json", "Authorization": "Bearer ' || current_setting('app.settings.service_role_key') || '"}'::jsonb,
       body:='{}'::jsonb
     ) as request_id;

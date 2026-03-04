@@ -10,7 +10,7 @@ SELECT cron.schedule(
   '30 seconds',
   $$
   SELECT net.http_post(
-    url := 'https://xhmisqcngalyjapkdwvh.supabase.co/functions/v1/process-admin-notifications',
+    url := 'https://qugyzdkyfnzeepattvzr.supabase.co/functions/v1/process-admin-notifications',
     headers := jsonb_build_object(
       'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || current_setting('app.settings.service_role_key', true)
